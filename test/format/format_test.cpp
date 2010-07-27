@@ -5,9 +5,11 @@
 
 #include <meow/format/format.hpp>
 #include <meow/format/sink/FILE.hpp>
+#include <meow/format/sink/std_string.hpp>
 #include <meow/format/inserter/floating_point.hpp>
 #include <meow/format/inserter/integral.hpp>
 #include <meow/format/inserter/pointer.hpp>
+
 
 namespace ff = meow::format;
 using ff::fmt;
@@ -46,6 +48,13 @@ int main()
 	catch (ff::bad_argref_number_t const&) { printf("extra arg exception caught, works!\n"); }
 	try { fmt(sink, "bad argument string test: "); fmt(sink, "{HO}\n"); }
 	catch (ff::bad_argref_string_t const&) { printf("bad argument string exception caught, works!\n"); }
+
+	// std::string as sink test
+	{
+		std::string s;
+		fmt(s, "test format to string: {0} {1}\n", 10, "abcde");
+		printf("%s", s.c_str());
+	}
 
 	return 0;
 }

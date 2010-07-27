@@ -31,6 +31,22 @@ namespace meow { namespace format {
 	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
+	namespace sink {
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+	template<class T, class Enabler = void>
+	struct sink_write
+	{
+		template<class CharT>
+		static void call(T& sink, size_t total_len, string_ref<CharT> const *slices, size_t n_slices)
+		{
+			sink.write(total_len, slices, n_slices);
+		}
+	};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+	} // namespace sink {
+////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define FMT_NUMBERED_CALL(name, n) BOOST_PP_CAT(BOOST_PP_CAT(name, _), n)
 #define FMT_STRING_STAGE_CALL(n) FMT_NUMBERED_CALL(fmt_string_stage, n)
@@ -51,7 +67,7 @@ namespace meow { namespace format {
 #define FMT_STRING_STAGE_FUNCTION_ARG_ARRAY_FILL(z, n, arr_name) \
 	arr_name[n] = BOOST_PP_CAT(a, n);
 
-#define FMT_STRING_STAGE_FUNCTION_BODY(n) 									\
+#define FMT_STRING_STAGE_FUNCTION_BODY(n) 										\
 	size_t const max_slices = get_max_slices_for_format(fmt); 					\
 	str_ref slices[max_slices]; /* VLA, yo */ 									\
  																				\
@@ -64,7 +80,7 @@ namespace meow { namespace format {
 								, slices, max_slices 							\
 								, arg_slices, n_arg_slices 						\
 								); 												\
-	sink.write(fi.total_length, slices, fi.n_slices); 							\
+	sink::sink_write<S>::call(sink, fi.total_length, slices, fi.n_slices); 		\
 	return sink;
 /**/
 
