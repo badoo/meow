@@ -12,12 +12,23 @@
 #include <boost/preprocessor/repetition/enum_trailing_params.hpp>
 #include <boost/preprocessor/repetition/enum_trailing_binary_params.hpp>
 
+#include <meow/format/format_parser.hpp>
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace format {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	template<class T, class Enabler = void> struct string_access;
-	template<class T, class Enabler = void> struct type_tunnel;
+	template<class T, class Enabler = void>
+	struct string_access
+	{
+		static T const& call(T const& v) { return v; }
+	};
+
+	template<class T, class Enabler = void>
+	struct type_tunnel
+	{
+		static T const& call(T const& v) { return v; }
+	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
