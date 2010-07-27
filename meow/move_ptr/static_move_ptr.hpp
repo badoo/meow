@@ -24,9 +24,9 @@
 #include <boost/type_traits/add_reference.hpp>
 #include <boost/type_traits/is_array.hpp>
 
-#include "cpp-util/move_ptr/default_deleter.hpp"
-#include "cpp-util/move_ptr/is_convertible.hpp"
-#include "cpp-util/move_ptr/move.hpp"
+#include <meow/move_ptr/default_deleter.hpp>
+#include <meow/move_ptr/is_convertible.hpp>
+#include <meow/move_ptr/move.hpp>
 
 #if defined(BOOST_MSVC)
 #pragma warning(push)
