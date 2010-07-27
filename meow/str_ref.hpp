@@ -6,7 +6,6 @@
 #ifndef MEOW_STR_REF_HPP_
 #define MEOW_STR_REF_HPP_
 
-#include <iosfwd> 		// for std::ostream fwd
 #include <algorithm>	// for std::min
 #include <limits> 		// for std::numeric_limits<>
 #include <string>		// for std::string and std::char_traits and stuff
@@ -140,24 +139,6 @@ namespace meow {
 	inline string_ref<Char> ref_array(Char (&arr)[len])
 	{
 		return string_ref<Char>(arr, len);
-	}
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-
-	template<class CharT, class Traits>
-	inline
-	std::basic_ostream<CharT, Traits>&
-	operator<<(std::basic_ostream<CharT, Traits>& o, string_ref<CharT> const& s)
-	{
-		return o.write(s.data(), s.size());
-	}
-
-	template<class CharT, class Traits>
-	inline
-	std::basic_ostream<CharT, Traits>&
-	operator<<(std::basic_ostream<CharT, Traits>& o, string_ref<CharT const> const& s)
-	{
-		return o.write(s.data(), s.size());
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
