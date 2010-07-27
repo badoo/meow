@@ -8,7 +8,10 @@
 
 #include <algorithm>	// for std::min
 #include <limits> 		// for std::numeric_limits<>
+
+// TODO: move this to separate header
 #include <string>		// for std::string and std::char_traits and stuff
+
 #include <boost/assert.hpp>
 #include <boost/type_traits/remove_const.hpp>
 
@@ -113,17 +116,18 @@ namespace meow {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // make str_ref from a string constant
+//  not including the terminating zero
 
 	template<class Char, size_t len>
 	inline string_ref<Char const> ref_lit(Char const(&lit)[len])
 	{
-		return string_ref<Char const>(lit, static_cast<size_t>(len - 1));
+		return string_ref<Char const>(lit, len - 1);
 	}
 
 	template<class Char, size_t len>
 	inline string_ref<Char> ref_lit(Char (&lit)[len])
 	{
-		return string_ref<Char>(lit, static_cast<size_t>(len - 1));
+		return string_ref<Char>(lit, len - 1);
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
