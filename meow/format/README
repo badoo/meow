@@ -1,0 +1,29 @@
+this library was heavily inspired by FastFormat: http://fastformat.org/
+but has a number of important differences
+
++ healder-only, no need to compile/link to a library
++ doesn't require any sort of build process at all, format functions are generated with macros
++ uses traits instead of plain functions to facilitate extencibility, therefore
+	* has no problems with gcc namespace visibility
+	* more flexible: supports enable_if for all metafunctions
+	* allows any order of include declarations to be used
++ supports any character type as well as mixing different ones in same translation unit
+	(this is not fully tested for non plain 'char'-s and obviously has bugs)
+
++ has slightly different behaviour in some aspects
+	* not throwing exceptions if not all args are used by the format
+	* etc.
+
++/- trades a dependency on STLSOFT for a dependency on BOOST
+	(even though a minor one, we depend on type_traits and preprocessor)
+	it's a different approach really
+	fastformat is a standalone lib with an external dependency
+	meow.format is a one-of-many library in meow suite
+
+- lacks some features
+	* no expression cache
+	* no "write" api (this will probably be added in the future)
+	* no width/alighment syntax like {arg_id, full_with, field_width, alignment}
+	* something else i didn't dig too deep into
+	* documentation (weeee, gotta write that, but you know....)
+
