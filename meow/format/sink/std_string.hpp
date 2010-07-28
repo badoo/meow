@@ -6,9 +6,8 @@
 #ifndef MEOW_FORMAT_SINK__STD_STRING_HPP_
 #define MEOW_FORMAT_SINK__STD_STRING_HPP_
 
-#include <cstdlib> // size_t
 #include <string>
-#include <meow/str_ref.hpp>
+#include <meow/format/metafunctions.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace format { namespace sink {

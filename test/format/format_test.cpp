@@ -3,13 +3,13 @@
 // (c) 2010 Anton Povarov <anton.povarov@gmail.com>
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include <meow/format/format.hpp>
 #include <meow/format/sink/FILE.hpp>
 #include <meow/format/sink/std_string.hpp>
 #include <meow/format/inserter/floating_point.hpp>
 #include <meow/format/inserter/integral.hpp>
 #include <meow/format/inserter/pointer.hpp>
 
+#include <meow/format/format.hpp>
 
 namespace ff = meow::format;
 using ff::fmt;

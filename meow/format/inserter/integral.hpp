@@ -15,6 +15,7 @@
 #include <meow/format/detail/integer_to_string.hpp>
 #include <meow/format/detail/integer_traits.hpp>
 #include <meow/format/detail/radix_info.hpp>
+#include <meow/format/metafunctions.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace format {
