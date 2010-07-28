@@ -23,6 +23,7 @@ but has a number of important differences
 - lacks some features
 	* no expression cache
 	* no "write" api (this will probably be added in the future)
+	* no fmtln/writeln functions, handle newlines yourself!
 	* no width/alighment syntax like {arg_id, full_with, field_width, alignment}
 	* something else i didn't dig too deep into
 	* documentation (weeee, gotta write that, but you know....)
