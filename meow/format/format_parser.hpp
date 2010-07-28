@@ -26,7 +26,7 @@ namespace meow { namespace format {
 
 	// return LONG_MAX if conversion failed
 	// actual number if it succedes
-	long str_ref_to_number(str_ref const& s)
+	inline long str_ref_to_number(str_ref const& s)
 	{
 		char *endp = (char*)s.data();
 		long result = ::strtol(s.begin(), &endp, 10);
@@ -41,7 +41,7 @@ namespace meow { namespace format {
 		size_t n_slices;
 	};
 
-	void push_slice(format_info_t& fi, str_ref new_slice, str_ref *slices, size_t n_slices)
+	inline void push_slice(format_info_t& fi, str_ref new_slice, str_ref *slices, size_t n_slices)
 	{
 	//	printf("%s; new_slice: '%.*s'\n", __func__, new_slice.c_length(), new_slice.data());
 
@@ -55,7 +55,7 @@ namespace meow { namespace format {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	format_info_t parse_format_expression(
+	inline format_info_t parse_format_expression(
 			  str_ref fmt
 			, str_ref *slices
 			, size_t n_slices
@@ -142,7 +142,7 @@ namespace meow { namespace format {
 	// need to think of some implementation here
 	// current one is because "{N}" is 3 symbols long
 	// and we get a good upper limit estimate from it
-	size_t get_max_slices_for_format(str_ref const& fmt)
+	inline size_t get_max_slices_for_format(str_ref const& fmt)
 	{
 		return fmt.size() / 3 + 1;
 	}
