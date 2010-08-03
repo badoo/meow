@@ -2,6 +2,10 @@
 // vim: set filetype=cpp autoindent noexpandtab tabstop=4 shiftwidth=4 foldmethod=marker :
 // (c) 2010 Anton Povarov <anton.povarov@gmail.com>
 ////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// cd meow/test/format/
+// g++ -O0 -g3 -o format_test -I ~/_Dev/meow/ -I ~/_Dev/_libs/boost/1.41.0 format_test.cpp
+//
 
 #include <meow/format/sink/FILE.hpp>
 #include <meow/format/sink/std_string.hpp>
