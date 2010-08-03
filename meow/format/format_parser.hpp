@@ -142,9 +142,10 @@ namespace meow { namespace format {
 	// need to think of some implementation here
 	// current one is because "{N}" is 3 symbols long
 	// and we get a good upper limit estimate from it
+	//  division by 2 and not 3 because we can have stuff between the markers
 	inline size_t get_max_slices_for_format(str_ref const& fmt)
 	{
-		return fmt.size() / 3 + 1;
+		return fmt.size() / 2 + 1;
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////

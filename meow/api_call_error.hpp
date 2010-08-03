@@ -6,6 +6,7 @@
 #ifndef MEOW_API_CALL_ERROR_HPP_
 #define MEOW_API_CALL_ERROR_HPP_
 
+#include <cerrno> 		// errno!
 #include <cstdio>		// for snprintf
 #include <cstring>		// for strerror_r
 #include <cstdarg>		// for va_*

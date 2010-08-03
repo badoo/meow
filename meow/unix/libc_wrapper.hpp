@@ -108,15 +108,15 @@ MEOW_DEFINE_LIBC_THROWING_WRAPPER(int, inotify_init)
 #define MEOW_DEFINE_LIBC_THROWING_WRAPPER_IMPL(res_t, syscall_name, n, types, formats)	\
 	inline res_t BOOST_PP_CAT(syscall_name, _ex)									\
 		(MEOW_LIBCWRAP_ENUM_ARGS(n, types))											\
-		throw(meow::api_call_error_ex)												\
+		throw(meow::api_call_error)													\
 	{																				\
 		res_t res = ::syscall_name(BOOST_PP_ENUM_PARAMS(n, arg));					\
 		if (-1 == res)																\
 		{																			\
-			throw meow::api_call_error_ex(											\
+			throw meow::api_call_error(												\
 					BOOST_PP_STRINGIZE(syscall_name)								\
 					"("																\
-						MEOW_LIBCWRAP_FORMAT_STRING(n, formats)					\
+						MEOW_LIBCWRAP_FORMAT_STRING(n, formats)						\
 					")"																\
 					BOOST_PP_ENUM_TRAILING_PARAMS(n, arg)							\
 				);																	\
