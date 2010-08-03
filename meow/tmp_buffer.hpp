@@ -34,6 +34,9 @@ namespace meow {
 		value_type* begin() const { return buf; }
 		value_type* end() const { return begin() + size(); }
 
+//		tmp_buffer_ex() { fprintf(stderr, "%s\n", __PRETTY_FUNCTION__); }
+//		~tmp_buffer_ex() { fprintf(stderr, "%s\n", __PRETTY_FUNCTION__); }
+
 	private:
 		mutable buffer_type buf;
 	};

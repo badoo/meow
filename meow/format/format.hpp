@@ -27,6 +27,7 @@ namespace meow { namespace format {
 #define FMT_TEMPLATE_PARAMS(n) BOOST_PP_ENUM_TRAILING_PARAMS(n, class A)
 #define FMT_DEF_PARAMS(n) BOOST_PP_ENUM_TRAILING_BINARY_PARAMS(n, A, const& a)
 #define FMT_CALL_PARAMS(n) BOOST_PP_ENUM_TRAILING_BINARY_PARAMS(n, A, const& a)
+#define FMT_CALL_SITE_ARGS(n) BOOST_PP_ENUM_TRAILING_PARAMS(n, a)
 
 #define FMT_TRAITS_CALL_n(z, n, call_name) 								\
 	call_name<BOOST_PP_CAT(A, n)>::call(BOOST_PP_CAT(a, n)) 			\

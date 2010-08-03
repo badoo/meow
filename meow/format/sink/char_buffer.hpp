@@ -6,7 +6,9 @@
 #ifndef MEOW_FORMAT_SINK_CHAR_BUFFER_HPP_
 #define MEOW_FORMAT_SINK_CHAR_BUFFER_HPP_
 
-#include <cstdlib> // size_t
+#include <cstdlib> 		// size_t
+#include <stdexcept> 	// std::runtime_error
+
 #include <meow/str_ref.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -16,9 +18,9 @@ namespace meow { namespace format { namespace sink {
 	template<class CharT>
 	struct char_buffer_sink_t
 	{
-		typedef char_buffer_sink_t 	self_t;
-		typedef CharT 				char_t;
-		typedef string_ref<char_t> 	string_slice_t;
+		typedef char_buffer_sink_t 			self_t;
+		typedef CharT 						char_t;
+		typedef string_ref<char_t const> 	string_slice_t;
 
 	private:
 
