@@ -10,6 +10,9 @@
 
 #include <boost/utility/enable_if.hpp>
 #include <boost/type_traits/is_pointer.hpp>
+#include <boost/type_traits/remove_cv.hpp>
+#include <boost/type_traits/remove_pointer.hpp>
+#include <boost/type_traits/is_same.hpp>
 
 #include <meow/str_ref.hpp>
 #include <meow/tmp_buffer.hpp>
@@ -24,8 +27,21 @@ namespace meow { namespace format {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	// all pointers printing
+	// except for (char|wchar_t) [const|volatile] *, which is handled by default case
 	template<class T>
-	struct type_tunnel<T, typename boost::enable_if<boost::is_pointer<T> >::type>
+	struct type_tunnel<
+			  T
+			, typename boost::enable_if_c<
+				   boost::is_pointer<T>::value
+				&& !boost::is_same<
+						  typename boost::remove_cv<typename boost::remove_pointer<T>::type>::type
+						, char
+					>::value
+				&& !boost::is_same<
+						  typename boost::remove_cv<typename boost::remove_pointer<T>::type>::type
+						, wchar_t
+					>::value
+			>::type>
 	{
 		enum { radix = 16 };
 		enum { buffer_size = detail::number_buffer_max_length<sizeof(T)*8, radix>::value };
