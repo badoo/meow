@@ -31,9 +31,9 @@ namespace meow { namespace tree {
 		switch (node->type())
 		{
 			case node_type::directory:
-				return node;
+				return as_directory(node);
 
-			case node_type::file
+			case node_type::file:
 				return (node->parent())
 					? as_directory(node->parent())
 					: NULL
