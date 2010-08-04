@@ -8,6 +8,7 @@
 
 #include <cxxabi.h>		// for __cxa_demangle
 
+#include <cstdlib> 		// for std::free
 #include <stdexcept>
 
 #include <boost/assert.hpp>
