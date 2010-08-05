@@ -118,7 +118,7 @@ namespace meow { namespace format {
 						if (LONG_MAX == arg_n)
 							throw bad_argref_string_t(arg_s);
 
-						if ((0 > arg_n) || (arg_n >= n_arg_slices))
+						if ((0 > arg_n) || (size_t(arg_n) >= n_arg_slices))
 							throw bad_argref_number_t(arg_n);
 
 						push_slice(result, str_ref(arg_slices[arg_n]), slices, n_slices);

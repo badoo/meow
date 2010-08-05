@@ -33,7 +33,7 @@ namespace meow { namespace format { namespace detail {
 			static size_t const chars_sz = sizeof(chars_) / sizeof(chars_[0]);
 
 			ssize_t const off = val + 1;
-			BOOST_ASSERT(off < chars_sz);
+			BOOST_ASSERT((0 <= off) && (size_t(off) < chars_sz));
 			return chars_[off];
 		}
 	};
@@ -53,7 +53,7 @@ namespace meow { namespace format { namespace detail {
 			static size_t const chars_sz = sizeof(chars_) / sizeof(chars_[0]);
 
 			ssize_t const off = val + 9;
-			BOOST_ASSERT(off < chars_sz);
+			BOOST_ASSERT((0 <= off) && (size_t(off) < chars_sz));
 			return chars_[off];
 		}
 	};
@@ -73,7 +73,7 @@ namespace meow { namespace format { namespace detail {
 			static size_t const chars_sz = sizeof(chars_) / sizeof(chars_[0]);
 
 			ssize_t const off = val + 15;
-			BOOST_ASSERT(off < chars_sz);
+			BOOST_ASSERT((0 <= off) && (size_t(off) < chars_sz));
 			return chars_[off];
 		}
 	};
@@ -95,7 +95,7 @@ namespace meow { namespace format { namespace detail {
 			static size_t const chars_sz = sizeof(chars_) / sizeof(chars_[0]);
 
 			ssize_t const off = val + 15;
-			BOOST_ASSERT(off < chars_sz);
+			BOOST_ASSERT((0 <= off) && (size_t(off) < chars_sz));
 			return chars_[off];
 		}
 	};
