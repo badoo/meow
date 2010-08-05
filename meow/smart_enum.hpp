@@ -12,6 +12,8 @@
 #include <boost/preprocessor/seq.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>
 
+#include <meow/str_ref.hpp>
+
 // TODO: make enum value support and generate a switch on items,
 // 			not a names array.
 // 		this will require changing simple syntax
@@ -30,17 +32,21 @@ namespace request_type {
 		, add
 		, del
 		, upd
-		, max // <-- special element
+		, _max // <-- special element
+		, _none = _max
 	};
 
+	enum { _total = 4 /* total_number_of_elements */ };
+
 	namespace detail {
-		static char const* names[] = {
+		static meow::str_ref names[] = {
 			  "unknown"
 			, "add"
 			, "delete"
 			, "update"
 		};
-		BOOST_STATIC_ASSERT(request_type::max == (sizeof(names) / sizeof(names[0])));
+		enum { names_size = (sizeof(names) / sizeof(names[0])) };
+		BOOST_STATIC_ASSERT(request_type::max == names_size);
 	}
 
 	inline char const* enum_as_string(type t)
@@ -48,6 +54,9 @@ namespace request_type {
 		BOOST_ASSERT(t < request_type::max);
 		return detail::names[t];
 	}
+
+	inline meow::str_ref enum_as_str_ref(type t) // returns name by enum
+	type enum_from_str_ref(meow::str_ref s); // returns enum by it's name
 }
 #endif
 
@@ -62,23 +71,28 @@ namespace request_type {
 				, MEOW_SMART_ENUM_ENUM_ITEM 		\
 				, enum_seq 							\
 			) 										\
+		, _max 										\
+		, _none = _max 								\
 	}; 												\
-	enum { _total = BOOST_PP_SEQ_SIZE(enum_seq) }; 	\
+	enum { 											\
+		  _total = BOOST_PP_SEQ_SIZE(enum_seq) 		\
+	}; 												\
 /**/
 
 #define MEOW_SMART_ENUM_NAME_ITEM(z, n, seq) 			\
 	BOOST_PP_TUPLE_ELEM(2, 1, BOOST_PP_SEQ_ELEM(n, seq)) 	\
 /**/
 
-#define MEOW_SMART_ENUM_GEN_NAMES(ns_name, enum_seq) 	\
-	static char const* names[] = { 							\
+#define MEOW_SMART_ENUM_GEN_NAMES(ns_name, enum_seq) 		\
+	static meow::str_ref names[] = { 						\
 		BOOST_PP_ENUM( 										\
 				  BOOST_PP_SEQ_SIZE(enum_seq) 				\
 				, MEOW_SMART_ENUM_NAME_ITEM 				\
 				, enum_seq 									\
 			) 												\
 	}; 														\
-	BOOST_STATIC_ASSERT(size_t(ns_name::_total) == (sizeof(names) / sizeof(names[0]))); \
+	enum { names_size = (sizeof(names) / sizeof(names[0])) }; 	\
+	BOOST_STATIC_ASSERT(size_t(ns_name::_total) == size_t(names_size)); \
 /**/
 
 #define MEOW_SMART_ENUM_SWITCH_ITEM(r, ns_name, item) 	 	\
@@ -87,7 +101,7 @@ namespace request_type {
 /**/
 
 #define MEOW_SMART_ENUM_GEN_FUNCTIONS(decl_prefix, ns_name, enum_seq)		\
-	decl_prefix char const* enum_as_string(ns_name::type t) { 			\
+	decl_prefix meow::str_ref enum_as_str_ref(ns_name::type t) { 			\
 		switch (t) { 											\
 			BOOST_PP_SEQ_FOR_EACH( 								\
 					  MEOW_SMART_ENUM_SWITCH_ITEM 			\
@@ -97,6 +111,15 @@ namespace request_type {
 			default: 											\
 				BOOST_ASSERT(!"invalid enum value"); 			\
 		} 														\
+	} 															\
+	decl_prefix char const* enum_as_string(ns_name::type t) { 	\
+		return enum_as_str_ref(t).data(); 						\
+	} 															\
+	decl_prefix ns_name::type enum_from_str_ref(meow::str_ref s) { 	\
+		for (size_t i = 0; i < detail::names_size; ++i) 		\
+			if (detail::names[i] == s) 									\
+				return (ns_name::type)i; 						\
+		return ns_name::_none; 									\
 	} 															\
 /**/
 
