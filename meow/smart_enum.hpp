@@ -64,19 +64,29 @@ namespace request_type {
 	BOOST_PP_TUPLE_ELEM(2, 0, BOOST_PP_SEQ_ELEM(n, arr)) 	\
 /**/
 
-#define MEOW_SMART_ENUM_GEN_ENUM(enum_seq) 		\
+#define MEOW_SMART_ENUM_GEN_ENUM(enum_seq, extra_items_macro) 		\
 	enum type { 									\
 		BOOST_PP_ENUM( 								\
 				  BOOST_PP_SEQ_SIZE(enum_seq) 		\
 				, MEOW_SMART_ENUM_ENUM_ITEM 		\
 				, enum_seq 							\
 			) 										\
-		, _max 										\
-		, _none = _max 								\
+		extra_items_macro 							\
 	}; 												\
 	enum { 											\
 		  _total = BOOST_PP_SEQ_SIZE(enum_seq) 		\
 	}; 												\
+/**/
+
+#define MEOW_SMART_ENUM_GEN_ENUM_NOTHING 	\
+/**/
+
+#define MEOW_SMART_ENUM_GEN_ENUM_EXTRAS 	\
+	, _none 								\
+/**/
+
+#define MEOW_SMART_ENUM_GEN_ENUM_WITH_NONE(enum_seq) 		\
+	MEOW_SMART_ENUM_GEN_ENUM(enum_seq, MEOW_SMART_ENUM_GEN_ENUM_EXTRAS) 	\
 /**/
 
 #define MEOW_SMART_ENUM_NAME_ITEM(z, n, seq) 			\
@@ -115,28 +125,37 @@ namespace request_type {
 	decl_prefix char const* enum_as_string(ns_name::type t) { 	\
 		return enum_as_str_ref(t).data(); 						\
 	} 															\
-	decl_prefix ns_name::type enum_from_str_ref(meow::str_ref s) { 	\
+	decl_prefix ns_name::type enum_from_str_ref(meow::str_ref s, ns_name::type not_found_res) { 	\
 		for (size_t i = 0; i < detail::names_size; ++i) 		\
-			if (detail::names[i] == s) 									\
+			if (detail::names[i] == s) 							\
 				return (ns_name::type)i; 						\
-		return ns_name::_none; 									\
+		return not_found_res; 								\
 	} 															\
 /**/
 
-#define MEOW_DEFINE_SMART_ENUM(ns_name, enum_seq) 			\
-	namespace ns_name { 										\
-		MEOW_SMART_ENUM_GEN_ENUM(enum_seq) 					\
-		namespace detail { 										\
-			MEOW_SMART_ENUM_GEN_NAMES(ns_name, enum_seq) 	\
-		}; 														\
+#define MEOW_DEFINE_SMART_ENUM_I(ns_name, enum_seq, extra_items_macro_n) 	\
+	namespace ns_name { 											\
+		MEOW_SMART_ENUM_GEN_ENUM(enum_seq, extra_items_macro_n) 	\
+		namespace detail { 											\
+			MEOW_SMART_ENUM_GEN_NAMES(ns_name, enum_seq) 			\
+		}; 															\
 		MEOW_SMART_ENUM_GEN_FUNCTIONS(inline, ns_name, enum_seq) 	\
-	} 															\
-	typedef ns_name::type BOOST_PP_CAT(ns_name, _t); 			\
+	} 																\
+	typedef ns_name::type BOOST_PP_CAT(ns_name, _t); 				\
+/**/
+
+
+#define MEOW_DEFINE_SMART_ENUM(ns_name, enum_seq) 			\
+	MEOW_DEFINE_SMART_ENUM_I(ns_name, enum_seq, MEOW_SMART_ENUM_GEN_ENUM_NOTHING) \
+/**/
+
+#define MEOW_DEFINE_SMART_ENUM_WITH_NONE(ns_name, enum_seq) 	\
+	MEOW_DEFINE_SMART_ENUM_I(ns_name, enum_seq, MEOW_SMART_ENUM_GEN_ENUM_EXTRAS) \
 /**/
 
 #define MEOW_DEFINE_SMART_ENUM_STRUCT(ns_name, enum_seq) 	\
 	struct ns_name { 											\
-		MEOW_SMART_ENUM_GEN_ENUM(enum_seq) 					\
+		MEOW_SMART_ENUM_GEN_ENUM(enum_seq, MEOW_SMART_ENUM_GEN_ENUM_NOTHING) 					\
 		MEOW_SMART_ENUM_GEN_FUNCTIONS(inline static, ns_name, enum_seq) 	\
 	}; 															\
 	typedef ns_name::type BOOST_PP_CAT(ns_name, _t); 			\
