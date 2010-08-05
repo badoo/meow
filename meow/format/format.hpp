@@ -14,5 +14,7 @@
 #include "inserter/floating_point.hpp"
 #include "inserter/pointer.hpp"
 
+#include "sink/FILE.hpp"
+
 #endif // MEOW_FORMAT__FORMAT_HPP_
 

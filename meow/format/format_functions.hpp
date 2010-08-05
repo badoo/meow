@@ -72,18 +72,18 @@ namespace meow { namespace format {
 			); 															\
 /**/
 
-#define FMT_DEFINE_MULTI_ARG_FUNCTION(n, fn_name, fn_body_macro) 		\
+#define FMT_DEFINE_MULTI_ARG_FUNCTION(n, decl_spec, fn_name, fn_body_macro) \
 template<class S, class F FMT_TEMPLATE_PARAMS(n)> 						\
-S& fn_name(S& sink, F const& fmt FMT_DEF_PARAMS(n)) 					\
+decl_spec S& fn_name(S& sink, F const& fmt FMT_DEF_PARAMS(n)) 			\
 { 																		\
 	fn_body_macro(n) 													\
 } 																		\
 /**/
 
 #define DEFINE_FMT_FUNCTION(z, n, d) 									\
-	FMT_DEFINE_MULTI_ARG_FUNCTION(n, FMT_STRING_STAGE_CALL(n), FMT_STRING_STAGE_FUNCTION_BODY) \
-	FMT_DEFINE_MULTI_ARG_FUNCTION(n, FMT_TUNNEL_STAGE_CALL(n), FMT_TUNNEL_STAGE_FUNCTION_BODY) \
-	FMT_DEFINE_MULTI_ARG_FUNCTION(n, FMT_INTERFACE_CALL(n), FMT_INTERFACE_FUNCTION_BODY) \
+	FMT_DEFINE_MULTI_ARG_FUNCTION(n, inline, FMT_STRING_STAGE_CALL(n), FMT_STRING_STAGE_FUNCTION_BODY) \
+	FMT_DEFINE_MULTI_ARG_FUNCTION(n, inline, FMT_TUNNEL_STAGE_CALL(n), FMT_TUNNEL_STAGE_FUNCTION_BODY) \
+	FMT_DEFINE_MULTI_ARG_FUNCTION(n, inline, FMT_INTERFACE_CALL(n), FMT_INTERFACE_FUNCTION_BODY) \
 /**/
 
 BOOST_PP_REPEAT(32, DEFINE_FMT_FUNCTION, _);
