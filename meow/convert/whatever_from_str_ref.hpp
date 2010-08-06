@@ -1,0 +1,61 @@
+////////////////////////////////////////////////////////////////////////////////////////////////
+// vim: set filetype=cpp autoindent noexpandtab tabstop=4 shiftwidth=4 foldmethod=marker :
+// (c) 2010 Anton Povarov <anton.povarov@gmail.com>
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+#ifndef MEOW_CONVERT__WHATEVER_FROM_STR_REF_HPP_
+#define MEOW_CONVERT__WHATEVER_FROM_STR_REF_HPP_
+
+#include <boost/lexical_cast.hpp> // blergh
+
+#include <meow/str_ref.hpp>
+#include <meow/str_ref_to_ostream.hpp>
+
+#include "number_from_string.hpp"
+#include "whatever_cast.hpp"
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+namespace meow {
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+	template<class T>
+	struct whatever_cast<
+			  T
+			, str_ref
+			, typename boost::enable_if<boost::is_arithmetic<T> >::type
+			>
+	{
+		void operator()(T& to, str_ref const& from) const { to = number_from_string<To>(from); }
+	};
+
+	template<>
+	struct whatever_cast<bool, str_ref>
+	{
+		void operator()(T& to, str_ref const& from) const
+		{
+			if (   (ref_lit("1") == from)
+				|| (ref_lit("yes") == from)
+				|| (ref_lit("true") == from)
+				)
+			{
+				to = true;
+			}
+			else
+			{
+				to = false;
+			}
+		}
+	};
+
+	template<class T>
+	struct whatever_cast<T, str_ref>
+	{
+		void operator()(T& to, str_ref const& from) const { to = boost::lexical_cast<To>(from); }
+	};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+} // namespace meow {
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+#endif // MEOW_CONVERT__WHATEVER_FROM_STR_REF_HPP_
+
