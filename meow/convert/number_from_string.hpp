@@ -40,19 +40,25 @@ namespace detail {
 			  T
 			, typename boost::enable_if_c<
 				   boost::is_integral<T>::value
+				&& boost::is_signed<T>::value
 				&& (sizeof(T) <= sizeof(long))
 			>::type
 			>
 	{
-		static T cast(char const *b, char **e, typename boost::enable_if<boost::is_signed<T> >::type * = 0)
-		{
-			return ::strtol(b, e, 0);
-		}
+		static T cast(char const *b, char **e) { return ::strtol(b, e, 0); }
+	};
 
-		static T cast(char const *b, char **e, typename boost::enable_if<boost::is_unsigned<T> >::type * = 0)
-		{
-			return ::strtoul(b, e, 0);
-		}
+	template<class T>
+	struct number_from_string_caster_t<
+			  T
+			, typename boost::enable_if_c<
+				   boost::is_integral<T>::value
+				&& boost::is_unsigned<T>::value
+				&& (sizeof(T) <= sizeof(long))
+			>::type
+			>
+	{
+		static T cast(char const *b, char **e) { return ::strtoul(b, e, 0); }
 	};
 
 #define DEFINE_SIMPLE_NUMBER_CASTER(type, function) 	\
@@ -85,7 +91,7 @@ namespace detail {
 	template<class To>
 	To number_from_string(char const *b, char const *e)
 	{
-		char *p = e;
+		char *p = NULL;
 		To const to = detail::number_from_string_caster_t<To>::cast(b, &p);
 		if (p != e)
 			throw bad_number_from_string();
