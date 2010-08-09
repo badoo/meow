@@ -11,6 +11,7 @@
 #endif
 #include <getopt.h>		// for getopt_long()
 
+#include <limits>
 #include <string>
 #include <vector>
 #include <exception>
@@ -52,16 +53,21 @@ so we'll rely on this behaviour and define these constants even when they're not
 		, arg_optional = optional_argument
 	} argmode_t;
 
-////////////////////////////////////////////////////////////////////////////////////////////////
-namespace cmdline_detail {
-////////////////////////////////////////////////////////////////////////////////////////////////
-
 	struct optinfo_t
 	{
 		char opt_char;		// if an option has short variant, here it is
 		char const *name;	// the long option name
 		argmode_t argmode;
 	};
+
+	typedef std::string shopt_string_t;
+
+	typedef struct ::option sys_option_t;
+	typedef std::vector<sys_option_t> lopts_holder_t;
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+namespace cmdline_detail {
+////////////////////////////////////////////////////////////////////////////////////////////////
 
 	inline optinfo_t make_mixed_option(char const *lname, char opt_char, argmode_t am)
 	{
@@ -77,7 +83,6 @@ namespace cmdline_detail {
 	// make a short options string, sutable for handing to getopt/getopt_long
 	//  don't care about memory management here
 	//  maybe a version with explicit mm will be required, and maybe the one with temp buf
-	typedef std::string shopt_string_t;
 
 	template<class OptinfoT>
 	inline shopt_string_t make_short_optstring(OptinfoT const *opts, size_t opts_size)
@@ -115,9 +120,6 @@ namespace cmdline_detail {
 	//  lopts_holder_t h = make_long_optarray(...);
 	//  getopt_long(argc, argv, short_opts, &*h.begin(), 0)
 	//
-	typedef struct ::option sys_option_t;
-	typedef std::vector<sys_option_t> lopts_holder_t;
-
 	// @param: id_offset - start sys_option_t->val values from this number
 	//						used to avoid clashing with other options
 	template<class OptinfoT>
@@ -158,7 +160,7 @@ namespace cmdline_detail {
 		{
 			handler_fn_t handler_fn;
 
-			opt_trampoline_t(cmdline_detail::optinfo_t const& opt_i, handler_fn_t const& h)
+			opt_trampoline_t(optinfo_t const& opt_i, handler_fn_t const& h)
 				: optinfo_t(opt_i)
 				, handler_fn(h)
 			{
@@ -189,10 +191,10 @@ namespace cmdline_detail {
 
 		opt_trampoline_t const* get_short_option(int id) const
 		{
-			BOOST_ASSERT((0 <= id) && (id < std::numeric_limits<char>::max));
+			BOOST_ASSERT((0 <= id) && (id < (int)std::numeric_limits<char>::max()));
 			for (opts_iterator_t i = opts_.begin(); i != opts_.end(); ++i)
 			{
-				optinfo_t *opt = &*i;
+				opt_trampoline_t const *opt = &*i;
 				if (opt->opt_char == (char)id)
 					return opt;
 			}
@@ -300,8 +302,8 @@ namespace cmdline_detail {
 	template<class ContextT>
 	void map_command_line(int argc, char **argv, cmdline_mapping_t<ContextT> const& mapping, ContextT *ctx)
 	{
-		shopt_string_t shopts = mapping.get_short_optstring();
-		lopts_holder_t lopts = mapping.get_long_optarray();
+		shopt_string_t shopts = mapping.short_optstring();
+		lopts_holder_t lopts = mapping.long_optarray();
 
 		typedef typename cmdline_mapping_t<ContextT>::opt_trampoline_t opt_trampoline_t;
 

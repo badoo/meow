@@ -40,11 +40,11 @@ namespace meow { namespace mapping {
 		template<class To, class From>
 		void operator()(To& to, From const&) const
 		{
+			static whatever_cast<To, ValueT> caster_;
 			caster_(to, value_);
 		}
 
 	private:
-		whatever_cast<To, ValueT> caster_;
 		ValueT const value_;
 	};
 

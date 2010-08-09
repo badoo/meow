@@ -130,13 +130,13 @@ namespace meow { namespace mapping {
 		}
 	};
 
-	struct seq_push_back_t : public seq_opbase_t
+	struct seq_push_front_t : public seq_opbase_t
 	{
 		template<class SequenceT>
 		typename result<SequenceT>::type operator()(SequenceT& seq) const
 		{
-			seq.push_back(typename result<SequenceT>::obj_type());
-			return seq.back();
+			seq.push_front(typename result<SequenceT>::obj_type());
+			return seq.front();
 		}
 	};
 
@@ -232,7 +232,7 @@ namespace meow { namespace mapping {
 	set_value(InnerMT T:: *inner_p, OuterMT InnerMT:: *outer_p)
 	{
 		typedef typename set_value_2_result<OuterMT, InnerMT, T>::type result_type;
-		return result_type(composite_cast(member(outer_p), member(inner_p)), assign_to);
+		return result_type(composite_cast(member(outer_p), member(inner_p)), default_assign_t());
 	}
 
 	template<class TargetT>
@@ -244,16 +244,16 @@ namespace meow { namespace mapping {
 	}
 
 	template<class MT, class T>
-	extract_and_call_t<select_member_t<MT, T>, assign_specific_value_t<MT> >
+	extract_and_call_t<select_member_t<MT, T>, specific_value_assign_t<MT> >
 	just_assign(MT T:: *p, MT const& value)
 	{
-		typedef extract_and_call_t<select_member_t<MT, T>, assign_specific_value_t<MT> > result_type;
+		typedef extract_and_call_t<select_member_t<MT, T>, specific_value_assign_t<MT> > result_type;
 		return result_type(member(p), assign_specific(value));
 	}
 
 #define DEFINE_JUST_ASSIGN_SPECIALIZATION(spec_func_name, just_value)				\
 	template<class MT, class T>														\
-	extract_and_call_t<select_member_t<MT, T>, assign_specific_value_t<MT> >		\
+	extract_and_call_t<select_member_t<MT, T>, specific_value_assign_t<MT> >		\
 	spec_func_name(MT T:: *p)	{ 													\
 		return just_assign(p, just_value);											\
 	}																				\

@@ -18,6 +18,12 @@
 namespace meow {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
+	template<>
+	struct whatever_cast<str_ref, str_ref>
+	{
+		void operator()(str_ref& to, str_ref const& from) const { to = from; }
+	};
+
 	template<class T>
 	struct whatever_cast<
 			  T
@@ -25,13 +31,13 @@ namespace meow {
 			, typename boost::enable_if<boost::is_arithmetic<T> >::type
 			>
 	{
-		void operator()(T& to, str_ref const& from) const { to = number_from_string<To>(from); }
+		void operator()(T& to, str_ref const& from) const { to = number_from_string<T>(from); }
 	};
 
 	template<>
 	struct whatever_cast<bool, str_ref>
 	{
-		void operator()(T& to, str_ref const& from) const
+		void operator()(bool& to, str_ref const& from) const
 		{
 			if (   (ref_lit("1") == from)
 				|| (ref_lit("yes") == from)
@@ -48,9 +54,13 @@ namespace meow {
 	};
 
 	template<class T>
-	struct whatever_cast<T, str_ref>
+	struct whatever_cast<
+		  T
+		, str_ref
+		, typename boost::disable_if<boost::is_arithmetic<T> >::type
+		>
 	{
-		void operator()(T& to, str_ref const& from) const { to = boost::lexical_cast<To>(from); }
+		void operator()(T& to, str_ref const& from) const { to = boost::lexical_cast<T>(from); }
 	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
