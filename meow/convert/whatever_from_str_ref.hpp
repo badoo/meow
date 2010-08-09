@@ -24,6 +24,12 @@ namespace meow {
 		void operator()(str_ref& to, str_ref const& from) const { to = from; }
 	};
 
+	template<>
+	struct whatever_cast<char const*, str_ref>
+	{
+		void operator()(char const*& to, str_ref const& from) const { to = from.data(); }
+	};
+
 	template<class T>
 	struct whatever_cast<
 			  T

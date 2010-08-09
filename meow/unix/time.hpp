@@ -3,8 +3,8 @@
 // (c) 2007 Anton Povarov <anton.povarov@gmail.com>
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef MEOW_UNIX_TIME_HPP_
-#define MEOW_UNIX_TIME_HPP_
+#ifndef MEOW_UNIX__TIME_HPP_
+#define MEOW_UNIX__TIME_HPP_
 
 #include <sys/types.h>
 #include <sys/time.h>			// for gettimeofday, settimeofday, timeval, etc.
@@ -169,5 +169,5 @@ namespace os_unix {
 } // namespace os_unix {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#endif // MEOW_UNIX_TIME_HPP_
+#endif // MEOW_UNIX__TIME_HPP_
 

@@ -90,10 +90,28 @@ struct simple_error_string
 		explicit api_call_error(int code, char const *fmt, ...) throw();// MEOW_PRINTF_LIKE(5,6);
 	};
 
+	template<class ErrorPrinter>
+	struct api_call_error_ex : public api_call_error_base<ErrorPrinter>
+	{
+		typedef api_call_error_base<ErrorPrinter> base_type;
+
+		// NOTE: disabled printf-like checks, because gcc-4.2-apple was broken with it
+		//  		and was giving incorrect warnings for formats with more than 1 argument
+		//  		and anyay we don't really need it much, as it's all generated
+		explicit api_call_error_ex(char const *fmt, ...) throw();// MEOW_PRINTF_LIKE(4,5);
+		explicit api_call_error_ex(int code, char const *fmt, ...) throw();// MEOW_PRINTF_LIKE(5,6);
+	};
+
 #define CTOR_BODY()	va_list ap; va_start(ap, fmt); this->init(fmt, ap);	va_end(ap); /**/
 
 	inline api_call_error::api_call_error(char const *fmt, ...) throw() : base_type(errno) { CTOR_BODY(); }
 	inline api_call_error::api_call_error(int code, char const *fmt, ...) throw() : base_type(code) { CTOR_BODY(); }
+
+	template<class T>
+	inline api_call_error_ex<T>::api_call_error_ex(char const *fmt, ...) throw() : base_type(errno) { CTOR_BODY(); }
+
+	template<class T>
+	inline api_call_error_ex<T>::api_call_error_ex(int code, char const *fmt, ...) throw() : base_type(code) { CTOR_BODY(); }
 
 #undef CTOR_BODY
 

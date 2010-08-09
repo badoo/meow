@@ -36,6 +36,78 @@ namespace meow { namespace format {
 	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
+
+	struct timestamp_as_abs_t
+	{
+		time_t ts;
+	};
+
+	inline timestamp_as_abs_t as_abstime(time_t t)
+	{
+		timestamp_as_abs_t const r = { ts: t };
+		return r;
+	}
+
+	struct timestamp_as_rel_t
+	{
+		time_t ts;
+	};
+
+	inline timestamp_as_rel_t as_reltime(time_t t)
+	{
+		timestamp_as_rel_t const r = { ts: t };
+		return r;
+	}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+	template<>
+	struct type_tunnel<timestamp_as_abs_t>
+	{
+		enum { buffer_size = sizeof("dd/mm/yyyy hh:mm:ss UTC") };
+		typedef meow::tmp_buffer<buffer_size> buffer_t;
+
+		static str_ref call(timestamp_as_abs_t const& t, buffer_t const& buf = buffer_t())
+		{
+			struct tm tm;
+			::gmtime_r(&t.ts, &tm);
+
+			ssize_t n = ::snprintf(
+					  buf.get(), buf.size()
+					, "%02u/%02u/%04u %02u:%02u:%02u UTC"
+					, tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900
+					, tm.tm_hour, tm.tm_min, tm.tm_sec
+				);
+
+			BOOST_ASSERT(n == (buffer_size - 1));
+			return buf.get();
+		}
+	};
+
+	template<>
+	struct type_tunnel<timestamp_as_rel_t>
+	{
+		enum { buffer_size = sizeof("xxxxdays xx:xx:xx") };
+		typedef meow::tmp_buffer<buffer_size> buffer_t;
+
+		static str_ref call(timestamp_as_rel_t const& t, buffer_t const& buf = buffer_t())
+		{
+			static unsigned const seconds_in_hour = 60 * 60;
+			static unsigned const seconds_in_day = seconds_in_hour * 24;
+
+			unsigned days = t.ts / seconds_in_day;
+			unsigned hours = (t.ts % seconds_in_day) / seconds_in_hour;
+			unsigned mins = (t.ts % seconds_in_hour) / 60;
+			unsigned secs = (t.ts % seconds_in_hour) % 60;
+
+			ssize_t n = ::snprintf(buf.get(), buf.size(), "%04udays %02u:%02u:%02u", days % 10000, hours, mins, secs);
+
+			BOOST_ASSERT(n == (buffer_size - 1));
+			return buf.get();
+		}
+	};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
 }} // namespace meow { namespace format {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
