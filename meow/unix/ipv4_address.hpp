@@ -109,9 +109,9 @@ namespace meow { namespace format {
 		static str_ref call(ipv4::address_t const& a, buffer_t const& buf = buffer_t())
 		{
 			#if (CPPUTIL_ARCH_BYTE_ORDER == 1234)
-				enum { _3, _2, _1, _0 };
-			#else
 				enum { _0, _1, _2, _3 };
+			#else
+				enum { _3, _2, _1, _0 };
 			#endif
 
 			uint8_t const* b = reinterpret_cast<uint8_t const*>(&a.addr);
@@ -129,9 +129,9 @@ namespace meow { namespace format {
 		static str_ref call(ipv4_address_just_ip_t const& a, buffer_t const& buf = buffer_t())
 		{
 			#if (CPPUTIL_ARCH_BYTE_ORDER == 1234)
-				enum { _3, _2, _1, _0 };
-			#else
 				enum { _0, _1, _2, _3 };
+			#else
+				enum { _3, _2, _1, _0 };
 			#endif
 
 			uint8_t const* b = reinterpret_cast<uint8_t const*>(&a.addr.addr);

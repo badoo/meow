@@ -35,11 +35,18 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-	size_t os_addrinfo_list_size(os_addrinfo_list_ptr const& al)
+	inline size_t os_addrinfo_list_size(os_addrinfo_list_ptr const& al)
 	{
 		size_t result = 0;
 		MEOW_UNIX_ADDRINFO_LIST_FOR_EACH_EX(al, curr_ai) { ++result; }
 		return result;
+	}
+
+	template<class T>
+	T* os_addrinfo_addr(os_addrinfo_t const& ai)
+	{
+		BOOST_ASSERT(sizeof(T) == ai.ai_addrlen);
+		return reinterpret_cast<T*>(ai.ai_addr);
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -59,7 +66,7 @@ namespace os_unix {
 	// if (NULL == host) -> assumes everything i.e. INADDR_ANY for IPv4
 	// returns: addrinfo call result, empty pointer if not found
 	// throws: api_call_error_ex on real errors
-	os_addrinfo_list_ptr getaddrinfo_ex(
+	inline os_addrinfo_list_ptr getaddrinfo_ex(
 			  char const *host
 			, char const *port
 			, int proto_family
@@ -72,8 +79,11 @@ namespace os_unix {
 		hints.ai_socktype = socktype;
 		hints.ai_protocol = proto;
 
-		if (NULL == host)
+		if (NULL == host || '*' == host[0])
+		{
 			hints.ai_flags |= AI_PASSIVE;
+			host = NULL;
+		}
 
 		struct addrinfo *result = NULL;
 		int r = ::getaddrinfo(host, port, &hints, &result);
