@@ -7,6 +7,7 @@
 #define MEOW_FORMAT_INSERTER_INTEGRAL_HPP_
 
 #include <boost/utility/enable_if.hpp>
+#include <boost/type_traits/is_enum.hpp>
 #include <boost/type_traits/is_integral.hpp>
 
 #include <meow/str_ref.hpp>
@@ -91,6 +92,27 @@ namespace meow { namespace format {
 		{
 			char *b = detail::integer_to_string_ex<RI>(buf.get(), buf.size(), v.value);
 			return str_ref(b, buf.get() + buf.size());
+		}
+	};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+// enums
+
+	template<class T>
+	struct type_tunnel<
+			  T
+			, typename boost::enable_if<boost::is_enum<T> >::type
+			>
+	{
+		enum { radix = 10 };
+		enum { buffer_size = detail::number_buffer_max_length<sizeof(T)*8, radix>::value };
+		typedef meow::tmp_buffer<buffer_size> buffer_t;
+
+		static str_ref call(T v, buffer_t const& buf = buffer_t())
+		{
+			typedef detail::radix_info_t<radix> rinfo_t;
+			char *b = detail::integer_to_string_ex<rinfo_t>(buf.get(), buf.size(), (int)v);
+			return str_ref(b, buf.end() - 1); // don't include the terminating-zero at end
 		}
 	};
 
