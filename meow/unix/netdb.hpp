@@ -79,11 +79,11 @@ namespace os_unix {
 		hints.ai_socktype = socktype;
 		hints.ai_protocol = proto;
 
-		if (NULL == host || '*' == host[0])
-		{
-			hints.ai_flags |= AI_PASSIVE;
+		if (host && '*' == *host)
 			host = NULL;
-		}
+
+		if (NULL == host)
+			hints.ai_flags |= AI_PASSIVE;
 
 		struct addrinfo *result = NULL;
 		int r = ::getaddrinfo(host, port, &hints, &result);
