@@ -289,6 +289,7 @@ namespace meow { namespace mapping {
 	MEOW_MAPPING_DEFINE_SEQUENCE_OP(seq_append, seq_append_t, default_assign_t);
 	MEOW_MAPPING_DEFINE_SEQUENCE_OP(seq_push_back, seq_push_back_t, default_assign_t);
 	MEOW_MAPPING_DEFINE_SEQUENCE_OP(seq_prepend, seq_prepend_t, default_assign_t);
+	MEOW_MAPPING_DEFINE_SEQUENCE_OP(seq_push_front, seq_push_front_t, default_assign_t);
 
 #define DEFINE_SEQUENCE_MEMBER_CAST(name, seq_op)		\
 	template<class MT, class T>							\
