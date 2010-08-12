@@ -17,6 +17,12 @@
 
 #include "detail/assign.hpp"
 
+// FIXME: could split this file into a couple of smaller ones
+//  		at least we have a couple types of 'stuff that matters' here
+//  		1. object casters (cast the object to the type i can assign to)
+//  		2. handlers: the objects combining caster + assigner
+//  		3. convenience functions, for auto template-type deduction, etc.
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace mapping {
 ////////////////////////////////////////////////////////////////////////////////////////////////
