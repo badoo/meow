@@ -21,7 +21,7 @@
 #include <meow/libxml2/tree.hpp>
 #include <meow/libxml2/xpath.hpp>
 
-#include <meow/mapping/actor.hpp>
+#include <meow/mapping/actor.hpp> // for meow::mapping::dont_cast()
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace libxml2 {
