@@ -22,7 +22,7 @@ namespace path_private {
 	};
 	typedef path_node_type::type path_node_type_t;
 
-	path_node_type_t parse_path_node(char const *path)
+	inline path_node_type_t parse_path_node(char const *path)
 	{
 		switch (*path++)
 		{
@@ -54,7 +54,7 @@ namespace path_private {
 		}
 	}
 
-	node_t* get_path_relative(node_t *node, char const *path)
+	inline node_t* get_path_relative(node_t *node, char const *path)
 	{
 //		fprintf(stderr, "%s[0]; node: %p, path: '%s'\n", __func__, node, path);
 
@@ -105,7 +105,7 @@ namespace path_private {
 		}
 	}
 
-	node_t* get_path_absolute(node_t *node, char const *path)
+	inline node_t* get_path_absolute(node_t *node, char const *path)
 	{
 		BOOST_ASSERT('/' == *path);
 		return get_path_relative(get_root(node), ++path);
