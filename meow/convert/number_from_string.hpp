@@ -6,7 +6,7 @@
 #ifndef MEOW_CONVERT__NUMBER_FROM_STRING_HPP_
 #define MEOW_CONVERT__NUMBER_FROM_STRING_HPP_
 
-#include <exception>
+#include <typeinfo> 	// std::bad_cast
 
 #include <boost/utility/enable_if.hpp>
 
