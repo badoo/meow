@@ -37,7 +37,7 @@ namespace os_unix {
 	inline int close_on_exec(int s)
 	{
 		return ::fcntl(s, F_SETFD, FD_CLOEXEC) ? -1 : s;
-	}	
+	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 } // namespace os_unix {
