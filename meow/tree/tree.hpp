@@ -224,7 +224,7 @@ MEOW_DEFINE_SMART_ENUM(node_type,	((file, 		"file"))
 #define MEOW_SELF_FROM_MEMBER(class_name, member_name, member_ptr) \
 		((class_name*)((char*)member_ptr - MEOW_OFFSETOF(class_name, member_name)))
 
-		friend self_t* file_from_value(value_t *v)
+		static self_t* self_from_value(value_t *v)
 		{
 			return MEOW_SELF_FROM_MEMBER(self_t, value_, v);
 		}
@@ -237,6 +237,12 @@ MEOW_DEFINE_SMART_ENUM(node_type,	((file, 		"file"))
 	private:
 		T value_;
 	};
+
+	template<class T>
+	inline file_impl_t<T>* file_from_value(T *value)
+	{
+		return file_impl_t<T>::self_from_value(value);
+	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 

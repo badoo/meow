@@ -6,6 +6,8 @@
 #ifndef MEOW_LOGGING__LOGGER_IMPL_HPP_
 #define MEOW_LOGGING__LOGGER_IMPL_HPP_
 
+#include <boost/function.hpp>
+
 #include <meow/format/format.hpp>
 #include <meow/format/metafunctions.hpp>
 
@@ -15,10 +17,14 @@
 namespace meow { namespace logging {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define LOG_GENERIC_LEVEL(l, lvl, args...) 		\
+#define LOG_GENERIC_LEVEL_I(l, lvl, args...) 	\
 	do { if ((l)->does_accept(lvl)) 			\
 		(l)->write(lvl, args); 					\
 	} while(0); 								\
+/**/
+
+#define LOG_GENERIC_LEVEL(l, lvl, args...) 				\
+	LOG_GENERIC_LEVEL_I(l, meow::logging::lvl, args) 	\
 /**/
 
 #define LOG_EMERG(l, args...) 	LOG_GENERIC_LEVEL(l, log_level::emerg, args)
@@ -45,8 +51,16 @@ namespace meow { namespace logging {
 
 	public:
 
-		logger_impl_t() {}
-		explicit logger_impl_t(writer_fn_t const& w) : writer_(w) {}
+		logger_impl_t()
+			: level_(log_level::off)
+		{
+		}
+
+		explicit logger_impl_t(writer_fn_t const& w)
+			: level_(log_level::off)
+			, writer_(w)
+		{
+		}
 
 		log_level_t level() const { return level_; }
 		log_level_t set_level(log_level_t l) { return level_ = l; }
@@ -88,6 +102,7 @@ namespace meow { namespace format { namespace sink {
 	template<class Traits>
 	struct sink_write<meow::logging::logger_impl_t<Traits> >
 	{
+		template<class CharT>
 		static void call(
 				  meow::logging::logger_impl_t<Traits>& l
 				, size_t total_len
