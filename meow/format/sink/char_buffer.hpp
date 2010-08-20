@@ -16,9 +16,9 @@ namespace meow { namespace format { namespace sink {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	template<class CharT>
-	struct char_buffer_sink_t
+	struct char_buffer_sink_impl_t
 	{
-		typedef char_buffer_sink_t 			self_t;
+		typedef char_buffer_sink_impl_t 	self_t;
 		typedef CharT 						char_t;
 		typedef string_ref<char_t const> 	string_slice_t;
 
@@ -29,7 +29,7 @@ namespace meow { namespace format { namespace sink {
 
 	public:
 
-		char_buffer_sink_t(char_t *b, size_t sz)
+		char_buffer_sink_impl_t(char_t *b, size_t sz)
 			: buf_(b)
 			, buf_sz_(sz)
 			, offset_(0)
@@ -54,6 +54,11 @@ namespace meow { namespace format { namespace sink {
 			BOOST_ASSERT(offset_ <= buf_sz_);
 		}
 	};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+	typedef char_buffer_sink_impl_t<char> 		char_buffer_sink_t;
+	typedef char_buffer_sink_impl_t<wchar_t> 	wchar_buffer_sink_t;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 }}} // namespace meow { namespace format { namespace sink {
