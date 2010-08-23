@@ -17,6 +17,7 @@
 
 namespace ff = meow::format;
 using ff::fmt;
+using ff::write;
 
 int main()
 {
@@ -27,6 +28,10 @@ int main()
 	fmt(sink, "preved\n", "");
 	fmt(sink, "no args test\n");
 
+	// write
+	write(sink, "write test: hey, ", 10, "; float is: ", 0.25f, "\n");
+
+	// numbers
 	int number = 1234567890;
 	fmt(sink, "number test, n = {0}\n", uint32_t(number));
 	fmt(sink, "number test, n = {0}\n", 0);
