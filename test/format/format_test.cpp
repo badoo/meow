@@ -12,6 +12,7 @@
 #include <meow/format/inserter/floating_point.hpp>
 #include <meow/format/inserter/integral.hpp>
 #include <meow/format/inserter/pointer.hpp>
+#include <meow/format/inserter/hex_string.hpp>
 
 #include <meow/format/format.hpp>
 
@@ -63,6 +64,16 @@ int main()
 		std::string s;
 		fmt(s, "test format to string: {0} {1}\n", 10, "abcde");
 		printf("%s", s.c_str());
+	}
+
+	// as_hex_string inserter
+	{
+		char buf[24]; std::memset(buf, 0, sizeof(buf));
+		ff::fmt(sink, "as_hex_string test[0]: {0}\n", ff::as_hex_string(meow::ref_array(buf)));
+	}
+	{
+		meow::str_ref n_str((char*)&number, (size_t)sizeof(number));
+		ff::fmt(sink, "as_hex_string test[1]: {0}\n", ff::as_hex_string(n_str));
 	}
 
 	return 0;

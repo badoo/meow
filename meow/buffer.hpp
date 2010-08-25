@@ -13,6 +13,7 @@
 
 #include <boost/assert.hpp>
 #include <boost/noncopyable.hpp>
+#include <boost/type_traits/remove_const.hpp>
 
 #include <meow/str_ref.hpp>
 #include <meow/move_ptr/static_move_ptr.hpp>
@@ -21,23 +22,42 @@
 namespace meow {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	struct buffer_t : private boost::noncopyable
+	template<class CharT>
+	struct buffer_impl_t : private boost::noncopyable
 	{
+		typedef buffer_impl_t 								self_t;
+		typedef typename boost::remove_const<CharT>::type 	char_t;
+
 	private:
 		// physical dimensions
-		char * begin_;
-		char * end_; // <-- past the end ptr
+		char_t * begin_;
+		char_t * end_; // <-- past the end ptr
+
+		static char_t* do_malloc(size_t const n_chars)
+		{
+			return (char_t*)std::malloc(n_chars * sizeof(char_t));
+		}
+
+		static char_t* do_realloc(char_t *p, size_t const n_chars)
+		{
+			return (char_t*)std::realloc(p, n_chars * sizeof(char_t));
+		}
+
+		static void do_free(char_t *p)
+		{
+			std::free(p);
+		}
 
 	public:
 
 		// logical dimensions (filled with meaningful data)
-		char *first;
-		char *last; // <-- past last char ptr
+		char_t *first;
+		char_t *last; // <-- past last element ptr
 
 	public:
 
-		buffer_t(size_t sz)
-			: begin_((char*)std::malloc(sz))
+		buffer_impl_t(size_t sz)
+			: begin_(self_t::do_malloc(sz))
 			, end_(begin_ + sz)
 			, first(begin_)
 			, last(first)
@@ -46,17 +66,17 @@ namespace meow {
 				throw std::bad_alloc();
 		}
 
-		~buffer_t()
+		~buffer_impl_t()
 		{
-			std::free(begin_);
+			self_t::do_free(begin_);
 		}
 		
-		char* begin() const { return begin_; }
-		char* end() const { return end_; }
+		char_t* begin() const { return begin_; }
+		char_t* end() const { return end_; }
 
 		void resize_to(size_t new_sz)
 		{
-			char *new_begin = (char*)std::realloc(begin_, new_sz);
+			char_t *new_begin = self_t::do_realloc(begin_, new_sz);
 			if (NULL == new_begin)
 				throw std::bad_alloc();
 
@@ -69,9 +89,9 @@ namespace meow {
 			invariant_check();
 		}
 
-		util::buffer_ref ref() const { return util::buffer_ref(begin_, end_); }
-		util::buffer_ref used_part() const { return util::buffer_ref(first, last); }
-		util::buffer_ref free_part() const { return util::buffer_ref(last, end_); }
+		buffer_ref ref() const { return buffer_ref(begin_, end_); }
+		buffer_ref used_part() const { return buffer_ref(first, last); }
+		buffer_ref free_part() const { return buffer_ref(last, end_); }
 
 		size_t size() const { return size_t(end_ - begin_); }
 		size_t used_size() const { return size_t(last - first); }
@@ -80,8 +100,8 @@ namespace meow {
 		bool is_full() const { return (last == end_); }
 		bool is_empty() const { return (first == last); }
 
-		void reset_first(char *p) { first = p; invariant_check(); }
-		void reset_last(char *p) { last = p; invariant_check(); }
+		void reset_first(char_t *p) { first = p; invariant_check(); }
+		void reset_last(char_t *p) { last = p; invariant_check(); }
 
 		void advance_first(size_t offset) { first += offset; invariant_check(); }
 		void advance_last(size_t offset) { last += offset; invariant_check(); }
@@ -89,7 +109,10 @@ namespace meow {
 	private:
 		void invariant_check() { BOOST_ASSERT((begin_ <= first) && (first <= last) && (first <= end_)); }
 	};
-	typedef boost::static_move_ptr<buffer_t> buffer_move_ptr;
+
+	typedef buffer_impl_t<char> 				buffer_t;
+	typedef buffer_impl_t<wchar_t> 				w_buffer_t;
+	typedef boost::static_move_ptr<buffer_t> 	buffer_move_ptr;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
