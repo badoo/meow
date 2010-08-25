@@ -75,6 +75,10 @@ int main()
 		meow::str_ref n_str((char*)&number, (size_t)sizeof(number));
 		ff::fmt(sink, "as_hex_string test[1]: {0}\n", ff::as_hex_string(n_str));
 	}
+	{
+		meow::str_ref n_str((char*)&number, (size_t)sizeof(number));
+		ff::fmt(sink, "as_hex_string test[1]: {0}\n", ff::as_escaped_hex_string(n_str));
+	}
 
 	return 0;
 }

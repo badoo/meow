@@ -64,6 +64,19 @@ namespace meow {
 		return to;
 	}
 
+	// length must be sufficient
+	//  returns to + 4 * (e - b)
+	inline char* copy_bin2hex_escaped(char const *b, char const *e, char *to)
+	{
+		for (; b != e; ++b)
+		{
+			*to++ = '\\';
+			*to++ = 'x';
+			to = bin2hex(*b, to);
+		}
+		return to;
+	}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 } // namespace meow {
 ////////////////////////////////////////////////////////////////////////////////////////////////
