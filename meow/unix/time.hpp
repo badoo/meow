@@ -114,14 +114,14 @@
 
 	namespace time_detail_ {
 
-		typedef meow::tmp_buffer<sizeof("-123456789.123456")> tv_buf_t;
+		typedef meow::tmp_buffer<sizeof("-1234567890.123456")> tv_buf_t;
 
 	} // namespace detail
 	
 	inline char const* os_timeval_tmp_str(timeval const& tv, time_detail_::tv_buf_t const& buf = time_detail_::tv_buf_t())
 	{
 		size_t n = ::snprintf(buf.get(), buf.size(), "%ld.%.6d", tv.tv_sec, static_cast<int>(tv.tv_usec));
-		BOOST_ASSERT(n == (time_detail_::tv_buf_t::buffer_size - 1));
+		BOOST_ASSERT(n <= (time_detail_::tv_buf_t::buffer_size - 1));
 		return buf.get();
 	}
 

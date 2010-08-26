@@ -30,7 +30,7 @@ namespace meow { namespace format {
 		static str_ref call(struct timeval const& tv, buffer_t const& buf = buffer_t())
 		{
 			size_t n = ::snprintf(buf.get(), buf.size(), "%ld.%.6d", tv.tv_sec, static_cast<int>(tv.tv_usec));
-			BOOST_ASSERT(n == (buffer_size - 1));
+			BOOST_ASSERT(n <= (buffer_size - 1));
 			return buf.get();
 		}
 	};
