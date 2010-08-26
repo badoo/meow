@@ -30,7 +30,7 @@ namespace meow { namespace libxml2 {
 	struct tree_mapping_error : public std::runtime_error
 	{
 		tree_mapping_error(xmlNodePtr n, char const *msg) 
-			: basic_exception(msg)
+			: std::runtime_error(msg)
 			, node_(n)
 		{
 			BOOST_ASSERT(NULL != node_);
@@ -80,7 +80,7 @@ namespace meow { namespace libxml2 {
 			BOOST_ASSERT(NULL != xpath_expr);
 
 			typedef typename Caster::template result<ContextT>::type cast_result_type;
-			sub_nodes_.push_back(node_info_t(xpath_expr, boost::bind<void>(sub_node, bind<cast_result_type>(cast, _1), _2, _3)));
+			sub_nodes_.push_back(node_info_t(xpath_expr, boost::bind<void>(sub_node, boost::bind<cast_result_type>(cast, _1), _2, _3)));
 			return *this;
 		}
 
