@@ -48,19 +48,6 @@ namespace meow { namespace format {
 		return r;
 	}
 
-	struct timestamp_as_rel_t
-	{
-		time_t ts;
-	};
-
-	inline timestamp_as_rel_t as_reltime(time_t t)
-	{
-		timestamp_as_rel_t const r = { ts: t };
-		return r;
-	}
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-
 	template<>
 	struct type_tunnel<timestamp_as_abs_t>
 	{
@@ -84,6 +71,27 @@ namespace meow { namespace format {
 		}
 	};
 
+	// this function is useful for converting the timestamp into a string in-place
+	//  even if it looks somewhat unpleasanat on implementation
+	typedef type_tunnel<timestamp_as_abs_t>::buffer_t format_abstime_b_t;
+	inline str_ref format_abstime(time_t t, format_abstime_b_t const& buf = format_abstime_b_t())
+	{
+		return type_tunnel<timestamp_as_abs_t>::call(as_abstime(t), buf);
+	}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+	struct timestamp_as_rel_t
+	{
+		time_t ts;
+	};
+
+	inline timestamp_as_rel_t as_reltime(time_t t)
+	{
+		timestamp_as_rel_t const r = { ts: t };
+		return r;
+	}
+
 	template<>
 	struct type_tunnel<timestamp_as_rel_t>
 	{
@@ -106,6 +114,12 @@ namespace meow { namespace format {
 			return buf.get();
 		}
 	};
+
+	typedef type_tunnel<timestamp_as_rel_t>::buffer_t format_reltime_b_t;
+	inline str_ref format_reltime(time_t t, format_reltime_b_t const& buf = format_reltime_b_t())
+	{
+		return type_tunnel<timestamp_as_rel_t>::call(as_reltime(t), buf);
+	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 }} // namespace meow { namespace format {
