@@ -26,6 +26,15 @@ namespace ipv4 {
 		return address_t(a);
 	}
 
+	inline address_t getsockname_ex(int fd)
+	{
+		sockaddr_in a;
+		socklen_t len = sizeof(a);
+		::getsockname(fd, (struct sockaddr*)&a, &len);
+		BOOST_ASSERT(len == sizeof(a));
+		return address_t(a);
+	}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 } // namespace ipv4 {
 ////////////////////////////////////////////////////////////////////////////////////////////////

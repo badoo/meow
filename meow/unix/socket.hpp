@@ -58,6 +58,15 @@ namespace os_unix {
 		return result;
 	}
 
+	template<class T>
+	int setsockopt_ex(int fd, int level, int opt, T const& value)
+	{
+		int r = ::setsockopt(fd, level, opt, &value, sizeof(value));
+		if (-1 == r)
+			throw meow::api_call_error("setsockopt(%d, %d, %d, val_sz: %zu)", fd, level, opt, sizeof(value));
+		return r;
+	}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 } // namespace os_unix {
 ////////////////////////////////////////////////////////////////////////////////////////////////
