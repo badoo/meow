@@ -15,6 +15,7 @@
 #include <meow/format/inserter/hex_string.hpp>
 
 #include <meow/format/format.hpp>
+#include <meow/format/format_tmp.hpp>
 
 namespace ff = meow::format;
 using ff::fmt;
@@ -79,6 +80,10 @@ int main()
 		meow::str_ref n_str((char*)&number, (size_t)sizeof(number));
 		ff::fmt(sink, "as_hex_string test[1]: {0}\n", ff::as_escaped_hex_string(n_str));
 	}
+
+	// fmt_tmp and fmt_str
+	ff::fmt(sink, "fmt_tmp test, inner format: \"{0}\"\n", ff::fmt_tmp<256>("inner format whatever {0}, {1}", 10, -125.67890));
+	ff::fmt(sink, "fmt_str test, inner format: \"{0}\"\n", ff::fmt_str("inner format whatever {0}, {1}", 10, -125.67890));
 
 	return 0;
 }
