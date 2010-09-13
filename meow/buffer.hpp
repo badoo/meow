@@ -97,8 +97,8 @@ namespace meow {
 		size_t used_size() const { return size_t(last - first); }
 		size_t free_size() const { return size_t(end_ - last); }
 
-		bool is_full() const { return (last == end_); }
-		bool is_empty() const { return (first == last); }
+		bool full() const { return (last == end_); }
+		bool empty() const { return (first == last); }
 
 		void reset_first(char_t *p) { first = p; invariant_check(); }
 		void reset_last(char_t *p) { last = p; invariant_check(); }
