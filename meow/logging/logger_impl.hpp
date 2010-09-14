@@ -11,30 +11,41 @@
 #include <meow/format/format.hpp>
 #include <meow/format/metafunctions.hpp>
 
+#include <meow/utility/line_mode.hpp>
+
 #include "log_level.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace logging {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define LOG_GENERIC_LEVEL_I(l, lvl, args...) 	\
-	do { if ((l)->does_accept(lvl)) 			\
-		(l)->write(lvl, args); 					\
-	} while(0); 								\
+#define LOG_GENERIC_LEVEL_I(l, lvl, lmode, args...) 	\
+	do { if ((l)->does_accept(lvl)) 					\
+		(l)->write(lvl, lmode, args); 					\
+	} while(0) 											\
 /**/
 
-#define LOG_GENERIC_LEVEL(l, lvl, args...) 				\
-	LOG_GENERIC_LEVEL_I(l, meow::logging::lvl, args) 	\
+#define LOG_GENERIC_LEVEL(l, lvl, lmode, args...) 		\
+	LOG_GENERIC_LEVEL_I(l, meow::logging::log_level::lvl, lmode, args) 	\
 /**/
 
-#define LOG_EMERG(l, args...) 	LOG_GENERIC_LEVEL(l, log_level::emerg, args)
-#define LOG_ALERT(l, args...) 	LOG_GENERIC_LEVEL(l, log_level::alert, args)
-#define LOG_CRIT(l, args...) 	LOG_GENERIC_LEVEL(l, log_level::crit, args)
-#define LOG_ERROR(l, args...) 	LOG_GENERIC_LEVEL(l, log_level::error, args)
-#define LOG_WARN(l, args...) 	LOG_GENERIC_LEVEL(l, log_level::warn, args)
-#define LOG_NOTICE(l, args...) 	LOG_GENERIC_LEVEL(l, log_level::notice, args)
-#define LOG_INFO(l, args...) 	LOG_GENERIC_LEVEL(l, log_level::info, args)
-#define LOG_DEBUG(l, args...) 	LOG_GENERIC_LEVEL(l, log_level::debug, args)
+#define LOG_EMERG_EX(l, lmode, args...) 	LOG_GENERIC_LEVEL(l, emerg, lmode, args)
+#define LOG_ALERT_EX(l, lmode, args...) 	LOG_GENERIC_LEVEL(l, alert, lmode, args)
+#define LOG_CRIT_EX(l, lmode, args...) 		LOG_GENERIC_LEVEL(l, crit, lmode, args)
+#define LOG_ERROR_EX(l, lmode, args...) 	LOG_GENERIC_LEVEL(l, error, lmode, args)
+#define LOG_WARN_EX(l, lmode, args...) 		LOG_GENERIC_LEVEL(l, warn, lmode, args)
+#define LOG_NOTICE_EX(l, lmode, args...) 	LOG_GENERIC_LEVEL(l, notice, lmode, args)
+#define LOG_INFO_EX(l, lmode, args...) 		LOG_GENERIC_LEVEL(l, info, lmode, args)
+#define LOG_DEBUG_EX(l, lmode, args...) 	LOG_GENERIC_LEVEL(l, debug, lmode, args)
+
+#define LOG_EMERG(l, args...) 	LOG_EMERG_EX(l, meow::line_mode::single, args)
+#define LOG_ALERT(l, args...) 	LOG_ALERT_EX(l, meow::line_mode::single, args)
+#define LOG_CRIT(l, args...) 	LOG_CRIT_EX(l, meow::line_mode::single, args)
+#define LOG_ERROR(l, args...) 	LOG_ERROR_EX(l, meow::line_mode::single, args)
+#define LOG_WARN(l, args...) 	LOG_WARN_EX(l, meow::line_mode::single, args)
+#define LOG_NOTICE(l, args...) 	LOG_NOTICE_EX(l, meow::line_mode::single, args)
+#define LOG_INFO(l, args...) 	LOG_INFO_EX(l, meow::line_mode::single, args)
+#define LOG_DEBUG(l, args...) 	LOG_DEBUG_EX(l, meow::line_mode::single, args)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -74,15 +85,21 @@ namespace meow { namespace logging {
 			writer_(total_len, slices, n_slices);
 		}
 
-#define LOG_DEFINE_WRITE_FUNCTION(z, n, d) 									\
+#define LOG_DEFINE_WRITE_FUNCTION(z, n, d) 										\
 		template<class F FMT_TEMPLATE_PARAMS(n)> 								\
-		void write(log_level_t lvl, F const& fmt FMT_DEF_PARAMS(n)) 			\
+		void write( 															\
+				  log_level_t lvl 												\
+				, line_mode_t lmode 											\
+				, F const& fmt 													\
+				  FMT_DEF_PARAMS(n)) 											\
 		{ 																		\
 			if (!writer_) 														\
 				return; 														\
-			meow::format::fmt(*this, "{0}", prefix_t::prefix(this, lvl)); 		\
+			if (line_mode::prefix & lmode) 										\
+				meow::format::write(*this, prefix_t::prefix(this, lvl)); 		\
 			meow::format::fmt(*this, fmt FMT_CALL_SITE_ARGS(n)); 				\
-			meow::format::fmt(*this, "\n"); 									\
+			if (line_mode::suffix & lmode) 										\
+				meow::format::write(*this, "\n"); 								\
 		} 																		\
 	/**/
 
