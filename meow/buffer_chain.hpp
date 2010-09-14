@@ -17,7 +17,7 @@ namespace meow {
 	{
 		namespace bi = boost::intrusive;
 
-		typedef bi::slist_base_hook_t<> hook_t;
+		typedef bi::slist_base_hook<> hook_t;
 
 		template<class T>
 		struct list_gen
@@ -26,7 +26,7 @@ namespace meow {
 						  T
 						, bi::base_hook<hook_t>
 						, bi::constant_time_size<true>
-						, bi::cache_last<false>
+						, bi::cache_last<true>
 						>
 						type;
 		};
@@ -46,7 +46,7 @@ namespace meow {
 			{
 			}
 		};
-		typedef buffer_detail_::list_gen<item_t> list_t;
+		typedef buffer_detail_::list_gen<item_t>::type list_t;
 		typedef boost::static_move_ptr<item_t> item_move_ptr;
 
 	public:
@@ -64,7 +64,7 @@ namespace meow {
 		buffer_t* front() const
 		{
 			BOOST_ASSERT(!this->empty());
-			return &l_.front();
+			return get_pointer(l_.front().buf);
 		}
 
 		void pop_front()
@@ -77,7 +77,8 @@ namespace meow {
 		void push_back(buffer_move_ptr b)
 		{
 			item_move_ptr item(new item_t(b));
-			l_.push_back(item.release());
+			l_.push_back(*item);
+			item.release();
 		}
 
 		void clear()

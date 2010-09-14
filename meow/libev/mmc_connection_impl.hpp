@@ -3,8 +3,14 @@
 // Copyright(c) 2010 Anton Povarov <anton.povarov@gmail.com>
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
+#ifndef MEOW_LIBEV__MMC_CONNECTION_IMPL_HPP_
+#define MEOW_LIBEV__MMC_CONNECTION_IMPL_HPP_
+
 #include <meow/buffer.hpp>
 #include <meow/buffer_chain.hpp>
+#include <meow/format/format.hpp>
+#include <meow/format/format_tmp.hpp>
+#include <meow/str_ref_algo.hpp> 		// strstr_ex
 
 #include <meow/unix/fcntl.hpp> 			// os_unix::nonblocking
 #include <meow/utility/offsetof.hpp> 	// for MEOW_SELF_FROM_MEMBER
@@ -13,7 +19,7 @@
 #include "io_machine.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
-namespace libev {
+namespace meow { namespace libev {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	template<class ContextT>
@@ -34,12 +40,12 @@ namespace libev {
 			return EV_READ | EV_WRITE | EV_CUSTOM;
 		}
 
-		#define DEFINE_CONNECTION_TRAITS_FMT_FUNCTION(z, n, d) 			\
-			template<class F FMT_TEMPLATE_PARAMS(n)> 					\
-			static void log_debug(context_t *ctx, F const& fmt FMT_DEF_PARAMS(n)) \
-			{ 															\
-				ctx->cb_log_debug(fmt FMT_CALL_SITE_ARGS(n)); 			\
-			} 															\
+		#define DEFINE_CONNECTION_TRAITS_FMT_FUNCTION(z, n, d) 							\
+			template<class F FMT_TEMPLATE_PARAMS(n)> 									\
+			static void log_debug(context_t *ctx, line_mode_t lmode, F const& fmt FMT_DEF_PARAMS(n)) 		\
+			{ 																			\
+				ctx->cb_log_debug(lmode, format::fmt_tmp<1024>(fmt FMT_CALL_SITE_ARGS(n))); 	\
+			} 																			\
 		/**/
 
 		BOOST_PP_REPEAT(32, DEFINE_CONNECTION_TRAITS_FMT_FUNCTION, _);
@@ -50,7 +56,7 @@ namespace libev {
 		template<class ContextT>
 		static buffer_ref write_get_buffer(ContextT *ctx)
 		{
-			buffer_chain_t& wchain = ctx->wchain_;
+			buffer_chain_t& wchain = ctx->wchain_ref();
 
 			if (wchain.empty())
 				return buffer_ref();
@@ -77,14 +83,11 @@ namespace libev {
 			// check if we did actualy write something
 			if (!written_br.empty())
 			{
-				buffer_t *& b = wchain.front();
+				buffer_t *b = wchain.front();
 				b->advance_first(written_br.size());
 
 				if (0 == b->used_size())
-				{
-					buffer_move_ptr buf_wrap(b);
 					wchain.pop_front();
-				}
 			}
 			else
 			{
@@ -142,7 +145,8 @@ namespace libev {
 	template<class Traits>
 	struct mmc_connection_traits_read
 	{
-		typedef str_ref message_t;
+		typedef mmc_connection_traits_read 	self_t;
+		typedef str_ref 					message_t;
 
 		struct context_t
 		{
@@ -153,6 +157,21 @@ namespace libev {
 			{
 			}
 		};
+
+	private:
+
+		static buffer_t& buffer_move_used_part_to_front(buffer_t& buf)
+		{
+			if (buf.begin() != buf.first)
+			{
+				meow::str_ref const remainder_s = buf.used_part();
+				std::memmove(buf.begin(), remainder_s.begin(), remainder_s.size());
+				buf.reset_first(buf.begin());
+				buf.reset_last(buf.begin() + remainder_s.size());
+			}
+
+			return buf;
+		}
 
 	public:
 
@@ -189,7 +208,7 @@ namespace libev {
 					if (b->full())
 					{
 						// try recover by moving the data around
-						buffer_move_used_part_to_front(*b);
+						self_t::buffer_move_used_part_to_front(*b);
 
 						// if it's still full -> we have to bail
 						if (b->full())
@@ -262,7 +281,6 @@ namespace libev {
 		~mmc_connection_impl_t()
 		{
 			iomachine_t::release_context(this);
-			destroy_queue_elements(wchain_);
 		}
 
 	public: // public ops for the brave, if you can cast to this type
@@ -281,28 +299,18 @@ namespace libev {
 		void cb_reader_message(str_ref m) { ev_->on_message(this, m); }
 		void cb_reader_error(str_ref m) { ev_->on_reader_error(this, m); }
 
-	public: // logging
+		void cb_log_debug(line_mode_t lmode, str_ref msg) { Traits::log_debug(this, lmode, msg); }
 
-		#define DEFINE_MMC_CONNECTION_FMT_FUNCTION(z, n, d) 			\
-			template<class F FMT_TEMPLATE_PARAMS(n)> 					\
-			static void log_debug(F const& fmt FMT_DEF_PARAMS(n)) 		\
-			{ 															\
-				Traits::log_debug(fmt FMT_CALL_SITE_ARGS(n)); 			\
-			} 															\
-		/**/
-
-		BOOST_PP_REPEAT(32, DEFINE_MMC_CONNECTION_FMT_FUNCTION, _);
-
-	private:
+	public:
 
 		virtual int fd() const { return io_.fd(); }
 		virtual void activate() { iomachine_t::rw_loop(this); }
 
-	private:
+	public:
 
 		virtual void send(buffer_move_ptr buf)
 		{
-			wchain_.push_back(buf.release());
+			wchain_.push_back(move(buf));
 			iomachine_t::w_activate(this);
 		}
 
@@ -320,6 +328,8 @@ namespace libev {
 	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
-} // namespace libev {
+}} // namespace meow { namespace libev {
 ////////////////////////////////////////////////////////////////////////////////////////////////
+
+#endif // MEOW_LIBEV__MMC_CONNECTION_IMPL_HPP_
 
