@@ -246,14 +246,14 @@ MEOW_DEFINE_SMART_ENUM(node_type,	((file, 		"file"))
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	directory_t* create_directory_p() { return new directory_t; }
-	directory_ptr create_directory() { return directory_ptr(create_directory_p()); }
+	inline directory_t* create_directory_p() { return new directory_t; }
+	inline directory_ptr create_directory() { return directory_ptr(create_directory_p()); }
 
 	template<class T>
-	file_t* create_file_p(T const& v = T()) { return new file_impl_t<T>(); }
+	inline file_t* create_file_p(T const& v = T()) { return new file_impl_t<T>(); }
 
 	template<class T>
-	file_ptr create_file(T const& v = T()) { return file_ptr(create_file_p<T>(v)); }
+	inline file_ptr create_file(T const& v = T()) { return file_ptr(create_file_p<T>(v)); }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
