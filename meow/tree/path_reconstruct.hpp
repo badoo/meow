@@ -44,7 +44,7 @@ namespace meow { namespace tree {
 
 	inline str_ref reconstruct_path_tmp(node_t *node, tmp_buffer<PATH_MAX> const& buf = tmp_buffer<PATH_MAX>())
 	{
-		meow::format::sink::char_buffer_sink_t<char> sink(buf.get(), buf.size());
+		meow::format::sink::char_buffer_sink_t sink(buf.get(), buf.size());
 		reconstruct_path(sink, node);
 		return str_ref(buf.get(), sink.size());
 	}

@@ -103,6 +103,8 @@ namespace path_private {
 			}
 			break;
 		}
+
+		BOOST_ASSERT(!"can't be reached");
 	}
 
 	inline node_t* get_path_absolute(node_t *node, char const *path)

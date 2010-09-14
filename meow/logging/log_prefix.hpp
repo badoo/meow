@@ -97,7 +97,7 @@ namespace meow { namespace logging {
 		{
 			using namespace meow::format;
 
-			sink::char_buffer_sink_t<char> sink(buf.begin(), buf.size());
+			sink::char_buffer_sink_t sink(buf.begin(), buf.size());
 			if (ef_->datetime)
 				fmt(sink, "[{0}]", format::as_log_ts(os_unix::gettimeofday_ex()));
 
