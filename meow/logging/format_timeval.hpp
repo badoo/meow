@@ -18,6 +18,10 @@
 namespace meow { namespace format {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
+// NOTE:
+// this header is *NOT* a duplicate for format/inserter/timeval.hpp
+//  as we have very special timeval formatting for logging purposes
+
 	struct time_as_log_insert_wrapper_t
 	{
 		struct timeval tv;

@@ -7,6 +7,7 @@
 #define MEOW_LOGGING__LOG_PREFIX_HPP_
 
 #include <meow/format/format.hpp>
+#include <meow/unix/time.hpp>
 #include <meow/utility/bitmask.hpp>
 
 #if defined(MEOW_LOGGING_PREFIX_TREE_ENABLED) && (MEOW_LOGGING_PREFIX_TREE_ENABLED != 0)
@@ -23,10 +24,7 @@
 	#include <meow/tree/path_reconstruct.hpp>
 #endif // MEOW_LOGGING_PREFIX_TREE_ENABLED_INTERNAL
 
-#include <meow/unix/time.hpp>
-
 #include "log_level.hpp"
-#include "format_timeval.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace logging {
