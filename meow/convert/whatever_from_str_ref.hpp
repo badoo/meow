@@ -31,9 +31,9 @@ namespace meow {
 	};
 
 	template<class CharT>
-	struct whatever_cast<std::basic_string<CharT>, string_ref<CharT> >
+	struct whatever_cast<std::string, string_ref<CharT> >
 	{
-		void operator()(std::basic_string<CharT>& to, string_ref<CharT> const& from) const
+		void operator()(std::string& to, string_ref<CharT const> const& from) const
 		{
 			to.assign(from.begin(), from.end());
 		}
@@ -68,14 +68,14 @@ namespace meow {
 		}
 	};
 
-	template<class T>
+	template<class T, class CharT>
 	struct whatever_cast<
 		  T
-		, str_ref
+		, string_ref<CharT>
 		, typename boost::disable_if<boost::is_arithmetic<T> >::type
 		>
 	{
-		void operator()(T& to, str_ref const& from) const { to = boost::lexical_cast<T>(from); }
+		void operator()(T& to, string_ref<CharT const> const& from) const { to = boost::lexical_cast<T>(from); }
 	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
