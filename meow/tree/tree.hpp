@@ -7,6 +7,7 @@
 #define MEOW_TREE__TREE_HPP_
 
 #include <vector> 	// directory children holder
+#include <typeinfo> // required for std::type_info
 
 #include <boost/assert.hpp>
 #include <boost/range/iterator_range.hpp> // dir children range
