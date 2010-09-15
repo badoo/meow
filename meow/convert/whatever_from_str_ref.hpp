@@ -30,6 +30,15 @@ namespace meow {
 		void operator()(char const*& to, str_ref const& from) const { to = from.data(); }
 	};
 
+	template<class CharT>
+	struct whatever_cast<std::basic_string<CharT>, string_ref<CharT> >
+	{
+		void operator()(std::basic_string<CharT>& to, string_ref<CharT> const& from) const
+		{
+			to.assign(from.begin(), from.end());
+		}
+	};
+
 	template<class T>
 	struct whatever_cast<
 			  T
