@@ -46,7 +46,7 @@ namespace meow { namespace format {
 
 			size_t n = snprintf(
 							  buf.begin(), buf.size()
-							, "%04u%02u%02u %02u%02u%02u.%06u"
+							, "%04u%02u%02u %02u%02u%02u.%06lu"
 							, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday
 							, tm.tm_hour, tm.tm_min, tm.tm_sec
 							, twrap.tv.tv_usec

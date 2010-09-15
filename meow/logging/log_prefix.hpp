@@ -24,6 +24,7 @@
 	#include <meow/tree/path_reconstruct.hpp>
 #endif // MEOW_LOGGING_PREFIX_TREE_ENABLED_INTERNAL
 
+#include "format_timeval.hpp"
 #include "log_level.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
