@@ -100,6 +100,8 @@ namespace meow {
 		bool is_full() const { return (last == end_); }
 		bool is_empty() const { return (first == last); }
 
+		void clear() { first = last = begin_; invariant_check(); }
+
 		void reset_first(char_t *p) { first = p; invariant_check(); }
 		void reset_last(char_t *p) { last = p; invariant_check(); }
 
