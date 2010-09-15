@@ -7,6 +7,8 @@
 #define MEOW_JUDY__TABLE_INDEX_HPP_
 
 #include <cstdlib> 	// for malloc
+#include <cstring> 	// for memcpy
+
 #include <memory> 	// for std::auto_ptr
 #include <vector> 	// for std::vector
 
