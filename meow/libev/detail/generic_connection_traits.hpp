@@ -11,6 +11,9 @@
 #include <meow/buffer.hpp>
 #include <meow/buffer_chain.hpp>
 
+#include <meow/format/format.hpp> 		// FMT_TEMPLATE_PARAMS, etc.
+#include <meow/format/format_tmp.hpp>
+
 #include <meow/libev/libev.hpp>
 #include <meow/libev/io_context.hpp>
 #include <meow/libev/io_close_report.hpp>
