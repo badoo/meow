@@ -14,6 +14,9 @@ namespace meow { namespace logging {
 	MEOW_DEFINE_SMART_ENUM(
 			log_level,
 
+			/* turned off, writing nothing */
+			((off, 			"off"))
+
 			/* The most severe messages that prevent continuation of operation,
 			 *  such as immediate system shutdown.
 			 *  PANIC OMG OMG, KILL ALL HUMANS...
@@ -59,8 +62,8 @@ namespace meow { namespace logging {
 			/* Messages for debugging purposes. */
 			((debug, 		"debug"))
 
-			/* turned off, writing nothing */
-			((off, 			"off"))
+			/* turned on, writing everything */
+			((on, 			"on"))
 
 		);
 
