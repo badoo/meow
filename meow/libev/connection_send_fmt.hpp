@@ -14,7 +14,7 @@ namespace meow { namespace libev {
 
 	#define DEFINE_CONNECTION_SEND_FMT_BODY(z, n, fn_name) 		\
 	template<class C, class F FMT_TEMPLATE_PARAMS(n)> 		\
-	void connection_send_fmt(C *c, F const& fmt FMT_DEF_PARAMS(n)) 	\
+	inline void connection_send_fmt(C *c, F const& fmt FMT_DEF_PARAMS(n)) 	\
 	{ 														\
 		buffer_move_ptr b(new buffer_t(1024)); 				\
 		format::fmt(*b, fmt FMT_CALL_SITE_ARGS(n)); 		\

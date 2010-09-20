@@ -188,7 +188,7 @@ namespace meow {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	std::vector<str_ref> split_ex(str_ref s, str_ref spaces)
+	inline std::vector<str_ref> split_ex(str_ref s, str_ref spaces)
 	{
 		std::vector<str_ref> result;
 
