@@ -8,6 +8,7 @@
 
 #include <cstring> 		// for std::memchr
 #include <algorithm> 	// for std::find
+#include <vector>
 
 #include <boost/assert.hpp>
 #include <boost/next_prior.hpp>
@@ -183,6 +184,33 @@ namespace meow {
 		}
 
 		return str_t();
+	}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+	std::vector<str_ref> split_ex(str_ref s, str_ref spaces)
+	{
+		std::vector<str_ref> result;
+
+		for (str_ref::iterator i = s.begin(), n = i; i != s.end(); /**/)
+		{
+			n = std::find_if(
+					  i, s.end()
+					, meow::detail::equal_to_any(spaces.begin(), spaces.end())
+				);
+
+			str_ref const part = str_ref(i, n);
+
+			if (!part.empty())
+				result.push_back(part);
+
+			if (n != s.end())
+				i = ++n;
+			else
+				i = n;
+		}
+
+		return result;
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
