@@ -275,6 +275,7 @@ namespace meow { namespace libev {
 			, is_closing_(0)
 			, ev_(ev)
 		{
+			os_unix::nonblocking(fd);
 			iomachine_t::prepare_context(this);
 		}
 
