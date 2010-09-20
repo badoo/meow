@@ -3,8 +3,8 @@
 // (c) 2010 Anton Povarov <anton.povarov@gmail.com>
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LOCATOR_PROXY__BUFFER_SINK_HPP_
-#define LOCATOR_PROXY__BUFFER_SINK_HPP_
+#ifndef MEOW_FORMAT_SINK__BUFFER_HPP_
+#define MEOW_FORMAT_SINK__BUFFER_HPP_
 
 #include <meow/buffer.hpp>
 #include <meow/format/metafunctions.hpp>
@@ -65,5 +65,5 @@ namespace meow { namespace format { namespace sink {
 }}} // namespace meow { namespace format { namespace sink {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#endif // LOCATOR_PROXY__BUFFER_SINK_HPP_
+#endif // MEOW_FORMAT_SINK__BUFFER_HPP_
 
