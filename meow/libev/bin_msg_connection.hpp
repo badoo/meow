@@ -39,6 +39,7 @@ namespace meow { namespace libev {
 
 		virtual void activate() = 0;
 		virtual void send(buffer_move_ptr) = 0;
+		virtual void send_spliced_chain(buffer_chain_t&) = 0;
 
 		virtual void close_after_write() = 0;
 		virtual void close_immediately() = 0;
