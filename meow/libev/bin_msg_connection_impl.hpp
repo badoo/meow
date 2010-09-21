@@ -244,10 +244,8 @@ namespace meow { namespace libev {
 			return ev_->on_read_error(this, error_msg);
 		}
 
-		void cb_log_debug(line_mode_t lmode, str_ref msg)
-		{
-			Traits::log_debug(this, lmode, msg);
-		}
+		bool cb_log_is_allowed() { return Traits::log_is_allowed(this); }
+		void cb_log_debug(line_mode_t lmode, str_ref msg) { Traits::log_message(this, lmode, msg); }
 
 	public:
 

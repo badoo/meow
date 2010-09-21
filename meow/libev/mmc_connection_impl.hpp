@@ -6,126 +6,14 @@
 #ifndef MEOW_LIBEV__MMC_CONNECTION_IMPL_HPP_
 #define MEOW_LIBEV__MMC_CONNECTION_IMPL_HPP_
 
-#include <meow/buffer.hpp>
-#include <meow/buffer_chain.hpp>
-#include <meow/format/format.hpp>
-#include <meow/format/format_tmp.hpp>
-#include <meow/str_ref_algo.hpp> 		// strstr_ex
+#include <meow/bitfield_union.hpp>
+#include <meow/unix/fcntl.hpp>
 
-#include <meow/unix/fcntl.hpp> 			// os_unix::nonblocking
-#include <meow/utility/offsetof.hpp> 	// for MEOW_SELF_FROM_MEMBER
-
-#include "libev.hpp"
 #include "io_machine.hpp"
+#include "detail/generic_connection_traits.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace libev {
-////////////////////////////////////////////////////////////////////////////////////////////////
-
-	template<class ContextT>
-	struct mmc_connection_traits_base
-	{
-		typedef ContextT context_t;
-
-		static libev::evloop_t* ev_loop(context_t *ctx) { return ctx->loop_; }
-		static libev::io_context_t* io_context_ptr(context_t *ctx) { return &ctx->io_; }
-
-		static context_t* context_from_io(libev::io_context_t *io_ctx)
-		{
-			return MEOW_SELF_FROM_MEMBER(context_t, io_, io_ctx);
-		}
-
-		static int io_allowed_ops(context_t *ctx)
-		{
-			return EV_READ | EV_WRITE | EV_CUSTOM;
-		}
-
-		#define DEFINE_CONNECTION_TRAITS_FMT_FUNCTION(z, n, d) 							\
-			template<class F FMT_TEMPLATE_PARAMS(n)> 									\
-			static void log_debug(context_t *ctx, line_mode_t lmode, F const& fmt FMT_DEF_PARAMS(n)) 		\
-			{ 																			\
-				ctx->cb_log_debug(lmode, format::fmt_tmp<1024>(fmt FMT_CALL_SITE_ARGS(n))); 	\
-			} 																			\
-		/**/
-
-		BOOST_PP_REPEAT(32, DEFINE_CONNECTION_TRAITS_FMT_FUNCTION, _);
-	};
-
-	struct mmc_connection_traits_write
-	{
-		template<class ContextT>
-		static buffer_ref write_get_buffer(ContextT *ctx)
-		{
-			buffer_chain_t& wchain = ctx->wchain_ref();
-
-			if (wchain.empty())
-				return buffer_ref();
-
-			return wchain.front()->used_part();
-		}
-
-		template<class ContextT>
-		static wr_complete_status_t write_complete(ContextT *ctx, buffer_ref written_br, write_status_t w_status)
-		{
-			if (write_status::error == w_status)
-			{
-				ctx->cb_write_closed(io_close_report(io_close_reason::io_error, errno));
-				return wr_complete_status::closed;
-			}
-			if (write_status::closed == w_status)
-			{
-				ctx->cb_write_closed(io_close_report(io_close_reason::peer_close));
-				return wr_complete_status::closed;
-			}
-
-			buffer_chain_t& wchain = ctx->wchain_;
-
-			// check if we did actualy write something
-			if (!written_br.empty())
-			{
-				buffer_t *b = wchain.front();
-				b->advance_first(written_br.size());
-
-				if (0 == b->used_size())
-					wchain.pop_front();
-			}
-			else
-			{
-				BOOST_ASSERT(write_status::again == w_status);
-			}
-
-			if (wchain.empty())
-			{
-				if (ctx->close_after_write_)
-				{
-					ctx->cb_write_closed(io_close_report(io_close_reason::write_close));
-					return wr_complete_status::closed;
-				}
-				return wr_complete_status::finished;
-			}
-
-			return wr_complete_status::more;
-		}
-	};
-
-	struct mmc_connection_traits_custom_op
-	{
-		template<class ContextT>
-		static bool requires_custom_op(ContextT *ctx)
-		{
-			return ctx->is_closing_;
-		}
-
-		template<class ContextT>
-		static custom_op_status_t custom_operation(ContextT *ctx)
-		{
-			BOOST_ASSERT(ctx->is_closing_);
-
-			ctx->cb_custom_closed(io_close_report(io_close_reason::custom_close));
-			return custom_op_status::closed;
-		}
-	};
-
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 #if 0
@@ -200,7 +88,7 @@ namespace meow { namespace libev {
 			buffer_move_ptr& b = ctx->r_buf;
 			b->advance_last(read_part.size());
 
-			while (!ctx->is_closing_ && !ctx->close_after_write_)
+			while (!ctx->cb_is_closing_immediately() && !ctx->cb_is_closing_after_write())
 			{
 				message_t const message_s = Traits::read_fetch_message(ctx, b->used_part());
 				if (!message_s)
@@ -243,14 +131,14 @@ namespace meow { namespace libev {
 		, public mmc_connection_traits_read<Traits>::context_t
 	{
 		typedef mmc_connection_impl_t 	self_t;
-		typedef mmc_connection_traits_base<self_t> base_traits_t;
+		typedef generic_connection_traits_base<self_t> base_traits_t;
 
 		typedef libev::io_machine_t<
 					  self_t
 					, base_traits_t
 					, mmc_connection_traits_read<Traits>
-					, mmc_connection_traits_write
-					, mmc_connection_traits_custom_op
+					, generic_connection_traits_write<base_traits_t>
+					, generic_connection_traits_custom_op
 				> iomachine_t;
 
 	public: // traits need access to this stuff
@@ -260,8 +148,13 @@ namespace meow { namespace libev {
 
 		buffer_chain_t 	wchain_;
 
-		bool 			close_after_write_ : 1;
-		bool 			is_closing_ : 1;
+		struct close_data_t
+		{
+			bool after_write : 1;
+			bool immediately : 1;
+		};
+		typedef meow::bitfield_union<close_data_t> close_t;
+		close_t 		close_;
 
 	private:
 		events_t 		*ev_;
@@ -271,8 +164,6 @@ namespace meow { namespace libev {
 		mmc_connection_impl_t(evloop_t *loop, int fd, events_t *ev)
 			: loop_(loop)
 			, io_(fd)
-			, close_after_write_(0)
-			, is_closing_(0)
 			, ev_(ev)
 		{
 			os_unix::nonblocking(fd);
@@ -300,7 +191,12 @@ namespace meow { namespace libev {
 		void cb_reader_message(str_ref m) { ev_->on_message(this, m); }
 		void cb_reader_error(str_ref m) { ev_->on_reader_error(this, m); }
 
-		void cb_log_debug(line_mode_t lmode, str_ref msg) { Traits::log_debug(this, lmode, msg); }
+		bool cb_is_closing() const { return close_ != 0; }
+		bool cb_is_closing_after_write() const { return close_->after_write != 0; }
+		bool cb_is_closing_immediately() const { return close_->immediately != 0; }
+
+		bool cb_log_is_allowed() { return Traits::log_is_allowed(this); }
+		void cb_log_debug(line_mode_t lmode, str_ref msg) { Traits::log_message(this, lmode, msg); }
 
 	public:
 
@@ -317,13 +213,13 @@ namespace meow { namespace libev {
 
 		virtual void close_after_write()
 		{
-			this->close_after_write_ = 1;
+			this->close_->after_write = 1;
 			iomachine_t::w_activate(this);
 		}
 
 		virtual void close_immediately()
 		{
-			this->is_closing_ = 1;
+			this->close_->immediately = 1;
 			iomachine_t::custom_activate(this);
 		}
 	};

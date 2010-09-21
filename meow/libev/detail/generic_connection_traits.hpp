@@ -47,11 +47,20 @@ namespace meow { namespace libev {
 			return EV_READ | EV_WRITE | EV_CUSTOM;
 		}
 
+		static bool log_is_allowed(context_t *ctx)
+		{
+			return ctx->cb_log_is_allowed();
+		}
+
 		#define DEFINE_CONNECTION_TRAITS_FMT_FUNCTION(z, n, d) 							\
 			template<class F FMT_TEMPLATE_PARAMS(n)> 									\
-			static void log_debug(context_t *ctx, line_mode_t lmode, F const& fmt FMT_DEF_PARAMS(n)) 		\
+			static void log_message( 													\
+					  context_t *ctx 													\
+					, line_mode_t lmode 												\
+					, F const& fmt 														\
+					  FMT_DEF_PARAMS(n)) 												\
 			{ 																			\
-				ctx->cb_log_debug(lmode, format::fmt_tmp<1024>(fmt FMT_CALL_SITE_ARGS(n))); 	\
+				ctx->cb_log_debug(lmode, format::fmt_tmp<512>(fmt FMT_CALL_SITE_ARGS(n))); 	\
 			} 																			\
 		/**/
 

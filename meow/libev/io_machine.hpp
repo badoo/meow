@@ -77,8 +77,11 @@ namespace meow { namespace libev {
 		// get io ops mask, if we want to read only, write only or both
 		static int io_allowed_ops(context_t *ctx) {}
 
-		// log a debug message from the engine
-		int log_debug(context_t *ctx, line_mode_t lmode, char *fmt, ...) {}
+		// ask if the log messages are enabled now
+		static bool log_is_allowed(context_t *ctx) {}
+
+		// log a message from the engine
+		static void log_message(context_t *ctx, line_mode_t lmode, char *fmt, ...) {}
 	};
 
 	struct iomachine_read_traits_def
@@ -129,6 +132,14 @@ namespace meow { namespace libev {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
+	#define LOG_MESSAGE_WRAPPER(ctx, lmode, args...) 		\
+		do { if (BaseTraits::log_is_allowed(ctx)) { 		\
+			BaseTraits::log_message(ctx, lmode, args); 		\
+		} } while(0) 										\
+	/**/
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
 	template<
 		  class ContextT 		// the context we'll be operating on
 		, class BaseTraits 		// base traits, giving us global information, like evloop
@@ -151,7 +162,7 @@ namespace meow { namespace libev {
 
 		static void cb(context_t *ctx, int revents)
 		{
-//			BaseTraits::log_debug(ctx, line_mode::single, "{0}; ctx: {1}, revents: 0x{2}", __func__, ctx, meow::format::as_hex(revents));
+//			BaseTraits::log_message(ctx, line_mode::single, "{0}; ctx: {1}, revents: 0x{2}", __func__, ctx, meow::format::as_hex(revents));
 			self_t::run_loop(ctx, revents);
 		}
 
@@ -180,15 +191,23 @@ namespace meow { namespace libev {
 				if (curr_offset == buf_len)
 					return read_result_t(read_status::full, curr_offset);
 
-				BaseTraits::log_debug(ctx, line_mode::prefix, "::read({0}, {1} + {2}, {3} = {4} - {5}) = "
-						, fd, buf, curr_offset
-						, buf_len - curr_offset, buf_len, curr_offset
-					);
+				if (BaseTraits::log_is_allowed(ctx))
+				{
+					BaseTraits::log_message(ctx, line_mode::prefix, "::read({0}, {1} + {2}, {3} = {4} - {5}) = "
+							, fd, buf, curr_offset
+							, buf_len - curr_offset, buf_len, curr_offset
+						);
+				}
+
 				ssize_t n = ::read(fd, (char*)buf + curr_offset, buf_len - curr_offset);
-				if (-1 == n)
-					BaseTraits::log_debug(ctx, line_mode::suffix, "{0}, errno: {1} : {2}", n, errno, strerror(errno));
-				else
-					BaseTraits::log_debug(ctx, line_mode::suffix, "{0}", n);
+
+				if (BaseTraits::log_is_allowed(ctx))
+				{
+					if (-1 == n)
+						BaseTraits::log_message(ctx, line_mode::suffix, "{0}, errno: {1} : {2}", n, errno, strerror(errno));
+					else
+						BaseTraits::log_message(ctx, line_mode::suffix, "{0}", n);
+				}
 
 				if (-1 == n)
 				{
@@ -231,15 +250,23 @@ namespace meow { namespace libev {
 				if (curr_offset == buf_len)
 					return write_result_t(write_status::empty, curr_offset);
 
-				BaseTraits::log_debug(ctx, line_mode::prefix, "::write({0}, {1} + {2}, {3} = {4} - {5}) = "
-						, fd, buf, curr_offset
-						, buf_len - curr_offset, buf_len, curr_offset
-					);
+				if (BaseTraits::log_is_allowed(ctx))
+				{
+					BaseTraits::log_message(ctx, line_mode::prefix, "::write({0}, {1} + {2}, {3} = {4} - {5}) = "
+							, fd, buf, curr_offset
+							, buf_len - curr_offset, buf_len, curr_offset
+						);
+				}
+
 				ssize_t n = ::write(fd, (char*)buf + curr_offset, buf_len - curr_offset);
-				if (-1 == n)
-					BaseTraits::log_debug(ctx, line_mode::suffix, "{0}, errno: {1} : {2}", n, errno, strerror(errno));
-				else
-					BaseTraits::log_debug(ctx, line_mode::suffix, "{0}", n);
+
+				if (BaseTraits::log_is_allowed(ctx))
+				{
+					if (-1 == n)
+						BaseTraits::log_message(ctx, line_mode::suffix, "{0}, errno: {1} : {2}", n, errno, strerror(errno));
+					else
+						BaseTraits::log_message(ctx, line_mode::suffix, "{0}", n);
+				}
 
 				if (-1 == n)
 				{
@@ -320,20 +347,26 @@ namespace meow { namespace libev {
 			//  might be a wrong thing to do tho, time will tell
 			io_context_t *io_ctx = BaseTraits::io_context_ptr(ctx);
 
-			BaseTraits::log_debug(ctx, line_mode::single, "{0}; fd: {1}; aop: 0x{2}, rop: 0x{3}, eop: 0x{4}"
-					, __func__, io_ctx->fd()
-					, meow::format::as_hex(io_allowed_ops)
-					, meow::format::as_hex(io_requested_ops)
-					, meow::format::as_hex(io_executed_ops)
-					);
+			if (BaseTraits::log_is_allowed(ctx))
+			{
+				BaseTraits::log_message(ctx, line_mode::single, "{0}; fd: {1}; aop: 0x{2}, rop: 0x{3}, eop: 0x{4}"
+						, __func__, io_ctx->fd()
+						, meow::format::as_hex(io_allowed_ops)
+						, meow::format::as_hex(io_requested_ops)
+						, meow::format::as_hex(io_executed_ops)
+						);
+			}
 
 			for (int io_current_ops = io_executed_ops; EV_NONE != io_current_ops; /**/)
 			{
-				BaseTraits::log_debug(ctx, line_mode::single, "{0}; io_current_ops = 0x{1}, ev_ops: 0x{2}"
-						, __func__
-						, meow::format::as_hex(io_current_ops)
-						, meow::format::as_hex(io_ctx->event()->events)
-						);
+				if (BaseTraits::log_is_allowed(ctx))
+				{
+					BaseTraits::log_message(ctx, line_mode::single, "{0}; io_current_ops = 0x{1}, ev_ops: 0x{2}"
+							, __func__
+							, meow::format::as_hex(io_current_ops)
+							, meow::format::as_hex(io_ctx->event()->events)
+							);
+				}
 
 				if (bitmask_test(io_current_ops, EV_CUSTOM))
 				{
@@ -356,7 +389,13 @@ namespace meow { namespace libev {
 					//  when connection is idle
 					if (!self_t::fd_has_data_or_error(io_ctx))
 					{
-						BaseTraits::log_debug(ctx, line_mode::single, "{0}; fd_has_data_or_error(): no available data on socket", __func__);
+						if (BaseTraits::log_is_allowed(ctx))
+						{
+							BaseTraits::log_message(ctx, line_mode::single
+									, "{0}; fd_has_data_or_error(): no available data on socket"
+									, __func__
+									);
+						}
 						bitmask_clear(io_current_ops, EV_READ);
 						bitmask_set(io_wait_ops, EV_READ);
 						break;
@@ -368,7 +407,13 @@ namespace meow { namespace libev {
 					// don't read anymore till re-entering this function
 					if (buf_to.empty())
 					{
-						BaseTraits::log_debug(ctx, line_mode::single, "{0}; empty buffer from ReadTraits::read_get_buffer()", __func__);
+						if (BaseTraits::log_is_allowed(ctx))
+						{
+							BaseTraits::log_message(ctx, line_mode::single
+									, "{0}; empty buffer from ReadTraits::read_get_buffer()"
+									, __func__
+									);
+						}
 						bitmask_clear(io_current_ops, EV_READ);
 						bitmask_clear(io_wait_ops, EV_READ);
 						break;
@@ -416,7 +461,13 @@ namespace meow { namespace libev {
 
 					if (buf.empty())
 					{
-						BaseTraits::log_debug(ctx, line_mode::single, "{0}; empty buffer from WriteTraits::write_get_buffer()", __func__);
+						if (BaseTraits::log_is_allowed(ctx))
+						{
+							BaseTraits::log_message(ctx, line_mode::single
+									, "{0}; empty buffer from WriteTraits::write_get_buffer()"
+									, __func__
+									);
+						}
 						bitmask_clear(io_current_ops, EV_WRITE);
 						bitmask_clear(io_wait_ops, EV_WRITE);
 						break;
@@ -465,14 +516,18 @@ namespace meow { namespace libev {
 			bitmask_clear(new_wait_ops, io_executed_ops); 	// clear out masked space
 			bitmask_set(new_wait_ops, io_wait_ops); 		// set the new event bits
 
-			BaseTraits::log_debug(
-							  ctx, line_mode::single
-							, "{0}; fd: {1}; loop end; curr_ev_ops: 0x{2}, new_wait_ops = 0x{3}"
-							, __func__
-							, io_ctx->fd()
-							, meow::format::as_hex(io_ctx->event()->events)
-							, meow::format::as_hex(new_wait_ops)
-							);
+			if (BaseTraits::log_is_allowed(ctx))
+			{
+				BaseTraits::log_message(
+								  ctx, line_mode::single
+								, "{0}; fd: {1}; loop end; curr_ev_ops: 0x{2}, new_wait_ops = 0x{3}"
+								, __func__
+								, io_ctx->fd()
+								, meow::format::as_hex(io_ctx->event()->events)
+								, meow::format::as_hex(new_wait_ops)
+								);
+			}
+
 			if (io_ctx->event()->events != new_wait_ops)
 			{
 				evloop_t *loop = BaseTraits::ev_loop(ctx);
