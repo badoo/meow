@@ -36,6 +36,7 @@ namespace meow { namespace libev {
 		};
 
 		virtual int fd() const = 0;
+		virtual evloop_t* loop() const = 0;
 
 		virtual void activate() = 0;
 		virtual void send(buffer_move_ptr) = 0;

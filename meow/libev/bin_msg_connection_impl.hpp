@@ -250,6 +250,7 @@ namespace meow { namespace libev {
 	public:
 
 		virtual int fd() const { return io_.fd(); }
+		virtual evloop_t* loop() const { return loop_; }
 		virtual void activate() { iomachine_t::rw_loop(this); }
 
 	public:

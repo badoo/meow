@@ -49,6 +49,8 @@ namespace meow { namespace tree {
 		T      * operator->()       { return value_; }
 		T const* operator->() const { return value_; }
 
+		friend T* get_handle(static_node_t const& n) { return n.value_; }
+
 	public:
 
 		static_node_t(node_t *root, char const *path)
