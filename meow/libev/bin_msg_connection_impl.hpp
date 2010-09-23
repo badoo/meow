@@ -139,17 +139,19 @@ namespace meow { namespace libev {
 					ctx->r_state = read_state::body;
 
 					/*
-					ff::fmt(stdout
+					format::fmt(stdout
 							, "{0}; b: {{ size: {1}, used: {2}, free: {3} }\n"
 							, __func__
 							, b->size(), b->used_size(), b->free_size()
 							);
 					*/
 
-					break;
 					/* don't need a loop here to fetch extra messages
 					 	as we're reading only sizeof(header) bytes first at start
 					*/
+
+					// break;
+					/* fall through */
 
 				case read_state::body:
 					// do we have full body in the buffer?
