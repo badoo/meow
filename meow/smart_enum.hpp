@@ -110,6 +110,11 @@ namespace request_type {
 		return BOOST_PP_TUPLE_ELEM(2, 1, item); 				\
 /**/
 
+#define MEOW_SMART_ENUM_FROM_IF_ITEM(r, ns_name, item) 		\
+	if (ref_lit(BOOST_PP_TUPLE_ELEM(2, 1, item)) == s) 		\
+		return ns_name::BOOST_PP_TUPLE_ELEM(2, 0, item); 	\
+/**/
+
 #define MEOW_SMART_ENUM_GEN_FUNCTIONS(decl_prefix, ns_name, enum_seq)		\
 	decl_prefix meow::str_ref enum_as_str_ref(ns_name::type t) { 			\
 		switch (t) { 											\
@@ -126,9 +131,7 @@ namespace request_type {
 		return enum_as_str_ref(t).data(); 						\
 	} 															\
 	decl_prefix ns_name::type enum_from_str_ref(meow::str_ref s, ns_name::type not_found_res) { 	\
-		for (size_t i = 0; i < detail::names_size; ++i) 		\
-			if (detail::names[i] == s) 							\
-				return (ns_name::type)i; 						\
+		BOOST_PP_SEQ_FOR_EACH(MEOW_SMART_ENUM_FROM_IF_ITEM, ns_name, enum_seq) \
 		return not_found_res; 								\
 	} 															\
 /**/
