@@ -94,7 +94,7 @@ namespace meow { namespace tree {
 			if (NULL == node)
 			{
 				throw std::logic_error(format::fmt_str(
-							  "static_node_t<>::init(): root: \"{1}\", can't find path: \"{0}\""
+							  "static_node_t<>::init(): root: \"{0}\", can't find path: \"{1}\""
 							, reconstruct_path_tmp(root)
 							, path
 							));
