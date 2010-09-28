@@ -133,6 +133,7 @@ namespace detail {
 		  class K 						// key
 		, class V 						// value
 		, class EqualF 					// test equality of key K and Value V
+		, size_t alignment_sz_arg = 0 	// see the description in table_index_t
 	>
 	struct index_leaf_t : private index_equal_base_t<EqualF>
 	{
@@ -143,8 +144,20 @@ namespace detail {
 
 	public:
 
+		template<class T, size_t sz>
+		struct alignment_helper
+		{
+			static size_t const alignment_sz = sz;
+		};
+
+		template<class T>
+		struct alignment_helper<T, 0>
+		{
+			static size_t const alignment_sz = boost::alignment_of<T>::value;
+		};
+
 		// number of bits we can use for own purposes in user-exposed pointers
-		static size_t const alignment_sz = boost::alignment_of<V>::value;
+		static size_t const alignment_sz = alignment_helper<V, alignment_sz_arg>::alignment_sz;
 		static size_t const alignment_bits = meow::static_log2<alignment_sz, meow::lower_bound_tag>::value;
 
 		// TODO: implement the case for 1 too, this will mean
@@ -526,6 +539,10 @@ namespace detail {
 		, class V 				// value
 		, class HashF 			// hash(): key -> size_t
 		, class EqualF 			// equal(): key, value -> bool
+		, size_t alignment_sz = 0   // the alignment of the type we'll be referencing
+									// you need it only when the target type is incomplete
+									// and it's alignment can't be determined automaticaly
+									// 0 - reserved value, to indicate default behaviour
 		>
 	struct table_index_t : private detail::index_hash_base_t<HashF>
 	{
@@ -533,7 +550,7 @@ namespace detail {
 		typedef K 				key_t;
 		typedef V 				value_t;
 
-		typedef detail::index_leaf_t<K, V, EqualF> 	leaf_t;
+		typedef detail::index_leaf_t<K, V, EqualF, alignment_sz> 	leaf_t;
 		typedef judy::index_t<size_t, leaf_t> 		index_t;
 		index_t j_;
 
@@ -631,17 +648,17 @@ namespace detail {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	template<class K, class V, class H, class E>
-	V** index_get(table_index_t<K, V, H, E> const& idx, K const& k) { return idx.get(k); }
+	template<class K, class V, class H, class E, size_t A>
+	V** index_get(table_index_t<K, V, H, E, A> const& idx, K const& k) { return idx.get(k); }
 
-	template<class K, class V, class H, class E>
-	V** index_get_or_create(table_index_t<K, V, H, E>& idx, K const& k) { return idx.get_or_create(k); }
+	template<class K, class V, class H, class E, size_t A>
+	V** index_get_or_create(table_index_t<K, V, H, E, A>& idx, K const& k) { return idx.get_or_create(k); }
 
-	template<class K, class V, class H, class E>
-	bool index_del(table_index_t<K, V, H, E>& idx, K const& k) { return idx.del(k); }
+	template<class K, class V, class H, class E, size_t A>
+	bool index_del(table_index_t<K, V, H, E, A>& idx, K const& k) { return idx.del(k); }
 
-	template<class K, class V, class H, class E>
-	void index_clear(table_index_t<K, V, H, E>& idx) { return idx.clear(); }
+	template<class K, class V, class H, class E, size_t A>
+	void index_clear(table_index_t<K, V, H, E, A>& idx) { return idx.clear(); }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 } // namespace judy {
