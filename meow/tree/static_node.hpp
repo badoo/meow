@@ -6,10 +6,18 @@
 #ifndef MEOW_TREE__STATIC_NODE_HPP_
 #define MEOW_TREE__STATIC_NODE_HPP_
 
+#include <stdexcept> // for std::logic_error
+
 #include <boost/assert.hpp>
+
+// formating exception text
+#include <meow/format/format.hpp>
+#include <meow/format/format_tmp.hpp>
+#include <meow/format/sink/std_string.hpp>
 
 #include "tree.hpp"
 #include "path.hpp"
+#include "path_reconstruct.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace tree {
@@ -82,7 +90,15 @@ namespace meow { namespace tree {
 		void init(node_t *root, char const *path)
 		{
 			node_t *node = get_path(root, path);
-			BOOST_ASSERT(NULL != node);
+
+			if (NULL == node)
+			{
+				throw std::logic_error(format::fmt_str(
+							  "static_node_t<>::init(): root: \"{1}\", can't find path: \"{0}\""
+							, reconstruct_path_tmp(root)
+							, path
+							));
+			}
 
 			this->init_from_node(node);
 		}
