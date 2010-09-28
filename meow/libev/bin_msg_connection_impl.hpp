@@ -159,6 +159,10 @@ namespace meow { namespace libev {
 						break;
 
 					ctx->cb_read_buffer(ctx->r_header, move(b));
+
+					// go for the next request
+					ctx->r_state = read_state::header;
+					ctx->r_header = header_t();
 					break;
 			}
 
