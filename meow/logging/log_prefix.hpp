@@ -70,7 +70,7 @@ namespace meow { namespace logging {
 		prefix_fields_t prefix_fields() { return pf_; }
 		void set_prefix_fields(prefix_fields_t const& pf) { pf_ = pf; }
 
-	protected:
+	public:
 
 		typedef meow::tmp_buffer<64> buffer_t;
 

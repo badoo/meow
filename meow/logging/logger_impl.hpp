@@ -21,7 +21,7 @@ namespace meow { namespace logging {
 
 #define LOG_GENERIC_LEVEL_I(l, lvl, lmode, args...) 	\
 	do { if ((l)->does_accept(lvl)) 					\
-		(l)->write(lvl, lmode, args); 					\
+		log_write((*(l)), lvl, lmode, args); 			\
 	} while(0) 											\
 /**/
 
@@ -52,9 +52,10 @@ namespace meow { namespace logging {
 	template<class PrefixT, class CharT = char>
 	struct logger_impl_t : public PrefixT
 	{
-		typedef logger_impl_t 	self_t;
-		typedef PrefixT 		prefix_t;
-		typedef boost::function<void(size_t, string_ref<CharT const> const*, size_t)> writer_fn_t;
+		typedef logger_impl_t 				self_t;
+		typedef PrefixT 					prefix_t;
+		typedef string_ref<CharT const> 	str_t;
+		typedef boost::function<void(size_t, str_t const*, size_t)> writer_fn_t;
 
 	private:
 		log_level_t 	level_;
@@ -77,34 +78,37 @@ namespace meow { namespace logging {
 		log_level_t set_level(log_level_t l) { return level_ = l; }
 		bool does_accept(log_level_t const l) const { return l <= level_; }
 
+		writer_fn_t const& writer() const { return writer_; }
 		void set_writer(writer_fn_t const& w) { writer_ = w; }
 
-		void do_write(size_t total_len, str_ref const *slices, size_t n_slices)
+		void do_write(size_t total_len, str_t const *slices, size_t n_slices)
 		{
 			BOOST_ASSERT(writer_);
 			writer_(total_len, slices, n_slices);
 		}
 
-#define LOG_DEFINE_WRITE_FUNCTION(z, n, d) 										\
-		template<class F FMT_TEMPLATE_PARAMS(n)> 								\
-		void write( 															\
-				  log_level_t lvl 												\
-				, line_mode_t lmode 											\
-				, F const& fmt 													\
-				  FMT_DEF_PARAMS(n)) 											\
-		{ 																		\
-			if (!writer_) 														\
-				return; 														\
-			if (line_mode::prefix & lmode) 										\
-				meow::format::write(*this, prefix_t::prefix(this, lvl)); 		\
-			meow::format::fmt(*this, fmt FMT_CALL_SITE_ARGS(n)); 				\
-			if (line_mode::suffix & lmode) 										\
-				meow::format::write(*this, "\n"); 								\
-		} 																		\
-	/**/
-
-		BOOST_PP_REPEAT(32, LOG_DEFINE_WRITE_FUNCTION, _);
 	};
+
+#define LOG_DEFINE_WRITE_FREE_FUNCTION(z, n, d) 							\
+	template<class PrefixT, class F FMT_TEMPLATE_PARAMS(n)> 				\
+	void log_write( 														\
+			  logger_impl_t<PrefixT>& log 									\
+			, log_level_t lvl 												\
+			, line_mode_t lmode 											\
+			, F const& fmt 													\
+			  FMT_DEF_PARAMS(n)) 											\
+	{ 																		\
+		if (!log.writer()) 													\
+			return; 														\
+		if (line_mode::prefix & lmode) 										\
+			meow::format::write(log, PrefixT::prefix(&log, lvl)); 			\
+		meow::format::fmt(log, fmt FMT_CALL_SITE_ARGS(n)); 					\
+		if (line_mode::suffix & lmode) 										\
+			meow::format::write(log, "\n"); 								\
+	} 																		\
+/**/
+
+	BOOST_PP_REPEAT(32, LOG_DEFINE_WRITE_FREE_FUNCTION, _);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 }} // namespace meow { namespace logging {
