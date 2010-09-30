@@ -10,6 +10,8 @@
 #include <meow/unix/time.hpp>
 #include <meow/utility/bitmask.hpp>
 
+#include <meow/format/sink/char_buffer.hpp>
+
 #if defined(MEOW_LOGGING_PREFIX_TREE_ENABLED) && (MEOW_LOGGING_PREFIX_TREE_ENABLED != 0)
 	#define MEOW_LOGGING_PREFIX_TREE_ENABLED_INTERNAL
 #endif
