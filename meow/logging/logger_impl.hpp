@@ -11,72 +11,24 @@
 #include <meow/format/format.hpp>
 #include <meow/format/metafunctions.hpp>
 
-#include <meow/utility/line_mode.hpp>
-
 #include "log_level.hpp"
+#include "logger.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace logging {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define LOG_GENERIC_LEVEL_I(l, lvl, lmode, args...) 	\
-	do { if ((l)->does_accept(lvl)) 					\
-		log_write((*(l)), lvl, lmode, args); 			\
-	} while(0) 											\
-/**/
-
-#define LOG_GENERIC_LEVEL(l, lvl, lmode, args...) 		\
-	LOG_GENERIC_LEVEL_I(l, meow::logging::log_level::lvl, lmode, args) 	\
-/**/
-
-#define LOG_EMERG_EX(l, lmode, args...) 	LOG_GENERIC_LEVEL(l, emerg, lmode, args)
-#define LOG_ALERT_EX(l, lmode, args...) 	LOG_GENERIC_LEVEL(l, alert, lmode, args)
-#define LOG_CRIT_EX(l, lmode, args...) 		LOG_GENERIC_LEVEL(l, crit, lmode, args)
-#define LOG_ERROR_EX(l, lmode, args...) 	LOG_GENERIC_LEVEL(l, error, lmode, args)
-#define LOG_WARN_EX(l, lmode, args...) 		LOG_GENERIC_LEVEL(l, warn, lmode, args)
-#define LOG_NOTICE_EX(l, lmode, args...) 	LOG_GENERIC_LEVEL(l, notice, lmode, args)
-#define LOG_INFO_EX(l, lmode, args...) 		LOG_GENERIC_LEVEL(l, info, lmode, args)
-#define LOG_DEBUG_EX(l, lmode, args...) 	LOG_GENERIC_LEVEL(l, debug, lmode, args)
-
-#define LOG_EMERG(l, args...) 	LOG_EMERG_EX(l, meow::line_mode::single, args)
-#define LOG_ALERT(l, args...) 	LOG_ALERT_EX(l, meow::line_mode::single, args)
-#define LOG_CRIT(l, args...) 	LOG_CRIT_EX(l, meow::line_mode::single, args)
-#define LOG_ERROR(l, args...) 	LOG_ERROR_EX(l, meow::line_mode::single, args)
-#define LOG_WARN(l, args...) 	LOG_WARN_EX(l, meow::line_mode::single, args)
-#define LOG_NOTICE(l, args...) 	LOG_NOTICE_EX(l, meow::line_mode::single, args)
-#define LOG_INFO(l, args...) 	LOG_INFO_EX(l, meow::line_mode::single, args)
-#define LOG_DEBUG(l, args...) 	LOG_DEBUG_EX(l, meow::line_mode::single, args)
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-
 	template<class PrefixT, class CharT = char>
-	struct logger_impl_t : public PrefixT
+	struct logger_impl_t : public logger_base_t<CharT>
 	{
-		typedef logger_impl_t 				self_t;
-		typedef PrefixT 					prefix_t;
-		typedef string_ref<CharT const> 	str_t;
+		typedef logger_base_t<CharT> 	base_t;
+		typedef PrefixT 				prefix_t;
+		typedef typename base_t::str_t 	str_t;
 		typedef boost::function<void(size_t, str_t const*, size_t)> writer_fn_t;
-
-	private:
-		log_level_t 	level_;
-		writer_fn_t 	writer_;
 
 	public:
 
-		logger_impl_t()
-			: level_(log_level::off)
-		{
-		}
-
-		explicit logger_impl_t(writer_fn_t const& w)
-			: level_(log_level::off)
-			, writer_(w)
-		{
-		}
-
-		log_level_t level() const { return level_; }
-		log_level_t set_level(log_level_t l) { return level_ = l; }
-		bool does_accept(log_level_t const l) const { return l <= level_; }
+		prefix_t& prefix() { return prefix_; }
 
 		writer_fn_t const& writer() const { return writer_; }
 		void set_writer(writer_fn_t const& w) { writer_ = w; }
@@ -87,28 +39,127 @@ namespace meow { namespace logging {
 			writer_(total_len, slices, n_slices);
 		}
 
+		virtual void write(
+						  log_level_t 	lvl
+						, line_mode_t 	lmode
+						, size_t 		total_len
+						, str_t const 	*slices
+						, size_t 		n_slices
+						)
+		{
+			if (line_mode::prefix & lmode)
+				format::write(*this, prefix_.prefix(lvl));
+
+			this->do_write(total_len, slices, n_slices);
+
+			if (line_mode::suffix & lmode)
+				format::write(*this, ref_lit("\n"));
+		}
+
+	public:
+
+		explicit logger_impl_t(log_level_t lvl = log_level::off)
+			: base_t(lvl)
+			, writer_()
+		{
+		}
+
+		explicit logger_impl_t(writer_fn_t const& w, log_level_t lvl = log_level::off)
+			: base_t(lvl)
+			, writer_(w)
+		{
+		}
+
+	private:
+		prefix_t 	prefix_;
+		writer_fn_t writer_;
 	};
 
-#define LOG_DEFINE_WRITE_FREE_FUNCTION(z, n, d) 							\
-	template<class PrefixT, class F FMT_TEMPLATE_PARAMS(n)> 				\
-	void log_write( 														\
-			  logger_impl_t<PrefixT>& log 									\
-			, log_level_t lvl 												\
-			, line_mode_t lmode 											\
-			, F const& fmt 													\
-			  FMT_DEF_PARAMS(n)) 											\
-	{ 																		\
-		if (!log.writer()) 													\
-			return; 														\
-		if (line_mode::prefix & lmode) 										\
-			meow::format::write(log, PrefixT::prefix(&log, lvl)); 			\
-		meow::format::fmt(log, fmt FMT_CALL_SITE_ARGS(n)); 					\
-		if (line_mode::suffix & lmode) 										\
-			meow::format::write(log, "\n"); 								\
-	} 																		\
-/**/
+////////////////////////////////////////////////////////////////////////////////////////////////
 
-	BOOST_PP_REPEAT(32, LOG_DEFINE_WRITE_FREE_FUNCTION, _);
+	template<class CharT = char>
+	struct logger_proxy_t : public logger_base_t<CharT>
+	{
+		typedef logger_base_t<CharT> 	base_t;
+		typedef base_t 					target_t;
+		typedef typename base_t::str_t 	str_t;
+
+	public:
+
+		virtual void write(
+						  log_level_t 	lvl
+						, line_mode_t 	lmode
+						, size_t 		total_len
+						, str_t const 	*slices
+						, size_t 		n_slices
+						)
+		{
+			BOOST_ASSERT(target_);
+
+			if (target_->does_accept(lvl))
+				target_->write(lvl, lmode, total_len, slices, n_slices);
+		}
+
+	public:
+
+		explicit logger_proxy_t(target_t *target, log_level_t lvl = log_level::off)
+			: base_t(lvl)
+			, target_(target)
+		{
+		}
+
+	private:
+		target_t *target_;
+	};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+	template<class PrefixT, class CharT = char>
+	struct logger_prefix_proxy_t : public logger_base_t<CharT>
+	{
+		typedef logger_base_t<CharT> 	base_t;
+		typedef PrefixT 				prefix_t;
+		typedef base_t 					target_t;
+		typedef typename base_t::str_t 	str_t;
+
+	public:
+
+		prefix_t& prefix() { return prefix_; }
+
+		virtual void write(
+						  log_level_t 	lvl
+						, line_mode_t 	lmode
+						, size_t 		total_len
+						, str_t const 	*slices
+						, size_t 		n_slices
+						)
+		{
+			BOOST_ASSERT(target_);
+
+			if (!target_->does_accept(lvl))
+				return;
+
+			if (line_mode::prefix & lmode)
+			{
+				lmode &= ~line_mode::prefix;
+				log_write(*target_, lvl, line_mode::middle, prefix_.prefix(lvl));
+			}
+
+			target_->write(lvl, lmode, total_len, slices, n_slices);
+		}
+
+	public:
+
+		explicit logger_prefix_proxy_t(target_t *target, log_level_t lvl = log_level::off)
+			: base_t(lvl)
+			, target_(target)
+		{
+		}
+
+	private:
+		PrefixT 	prefix_;
+		target_t 	*target_;
+	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 }} // namespace meow { namespace logging {
@@ -120,12 +171,11 @@ namespace meow { namespace format { namespace sink {
 
 	// a custom meow.format sink that logger can be used as
 
-	template<class Traits>
-	struct sink_write<meow::logging::logger_impl_t<Traits> >
+	template<class Traits, class CharT>
+	struct sink_write<meow::logging::logger_impl_t<Traits, CharT> >
 	{
-		template<class CharT>
 		static void call(
-				  meow::logging::logger_impl_t<Traits>& l
+				  meow::logging::logger_impl_t<Traits, CharT>& l
 				, size_t total_len
 				, meow::string_ref<CharT const> const* slices
 				, size_t n_slices

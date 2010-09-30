@@ -12,20 +12,6 @@
 
 #include <meow/format/sink/char_buffer.hpp>
 
-#if defined(MEOW_LOGGING_PREFIX_TREE_ENABLED) && (MEOW_LOGGING_PREFIX_TREE_ENABLED != 0)
-	#define MEOW_LOGGING_PREFIX_TREE_ENABLED_INTERNAL
-#endif
-
-#ifdef MEOW_LOGGING_PREFIX_TREE_ENABLED_INTERNAL
-	#include <boost/utility/enable_if.hpp>
-	#include <boost/type_traits/is_base_and_derived.hpp>
-
-	#include <meow/format/sink/std_string.hpp>
-
-	#include <meow/tree/tree.hpp>
-	#include <meow/tree/path_reconstruct.hpp>
-#endif // MEOW_LOGGING_PREFIX_TREE_ENABLED_INTERNAL
-
 #include "format_timeval.hpp"
 #include "log_level.hpp"
 
@@ -40,63 +26,35 @@ namespace meow { namespace logging {
 		static int_t const _null 		= 0x00000000;
 		static int_t const datetime 	= 0x00000001;
 		static int_t const log_level 	= 0x00000010;
-
-#ifdef MEOW_LOGGING_PREFIX_TREE_ENABLED_INTERNAL
-		static int_t const log_path 	= 0x00000100;
-#endif // MEOW_LOGGING_PREFIX_TREE_ENABLED_INTERNAL
+		static int_t const log_name 	= 0x00000100;
 	};
 	typedef prefix_field::int_t prefix_fields_t;
 
+////////////////////////////////////////////////////////////////////////////////////////////////
+
 	struct default_prefix_t
 	{
-		typedef default_prefix_t 	self_t;
-
-#ifdef MEOW_LOGGING_PREFIX_TREE_ENABLED_INTERNAL
-		typedef std::string 		log_path_t;
-#endif // MEOW_LOGGING_PREFIX_TREE_ENABLED_INTERNAL
-
-	public:
-
 		default_prefix_t()
 		{
 			prefix_fields_t f;
 			bitmask_set(f, prefix_field::datetime);
 			bitmask_set(f, prefix_field::log_level);
-#ifdef MEOW_LOGGING_PREFIX_TREE_ENABLED_INTERNAL
-			bitmask_clear(f, prefix_field::log_path);
-#endif // MEOW_LOGGING_PREFIX_TREE_ENABLED_INTERNAL
+			bitmask_clear(f, prefix_field::log_name);
 
-			this->set_prefix_fields(f);
+			this->set_fields(f);
 		}
 
-		prefix_fields_t prefix_fields() { return pf_; }
-		void set_prefix_fields(prefix_fields_t const& pf) { pf_ = pf; }
+		prefix_fields_t const& fields() { return pf_; }
+		void set_fields(prefix_fields_t const& pf) { pf_ = pf; }
+
+		std::string const& log_name() const { return log_name_; }
+		void set_log_name(std::string const& n) { log_name_ = n; }
 
 	public:
 
 		typedef meow::tmp_buffer<64> buffer_t;
 
-		template<class L>
-		static str_ref prefix(L *log, log_level_t lvl, buffer_t const& buf = buffer_t())
-		{
-			return static_cast<self_t*>(log)->do_prefix(log, lvl, buf);
-		}
-
-	private:
-
-#ifdef MEOW_LOGGING_PREFIX_TREE_ENABLED_INTERNAL
-		template<class L>
-		str_ref prefix_get_log_path(L *log, typename boost::enable_if<boost::is_base_and_derived<self_t, L>, L>::type *dummy=0)
-		{
-			if (log_path.empty())
-				tree::reconstruct_path(log_path, tree::file_from_value(log));
-
-			return str_ref(log_path);
-		}
-#endif // MEOW_LOGGING_PREFIX_TREE_ENABLED_INTERNAL
-
-		template<class L>
-		str_ref do_prefix(L *log, log_level_t lvl, buffer_t const& buf)
+		str_ref prefix(log_level_t lvl, buffer_t const& buf = buffer_t())
 		{
 			using namespace meow::format;
 
@@ -104,10 +62,8 @@ namespace meow { namespace logging {
 			if (pf_ & prefix_field::datetime)
 				fmt(sink, "[{0}]", format::as_log_ts(os_unix::gettimeofday_ex()));
 
-#ifdef MEOW_LOGGING_PREFIX_TREE_ENABLED_INTERNAL
-			if (pf_ & prefix_field::log_path)
-				fmt(sink, "[{0}]", prefix_get_log_path(log));
-#endif // MEOW_LOGGING_PREFIX_TREE_ENABLED_INTERNAL
+			if (pf_ & prefix_field::log_name)
+				fmt(sink, "[{0}]", log_name_);
 
 			if (pf_ & prefix_field::log_level)
 				fmt(sink, "[{0}]", enum_as_str_ref(lvl));
@@ -120,10 +76,7 @@ namespace meow { namespace logging {
 
 	private:
 		prefix_fields_t 	pf_;
-
-#ifdef MEOW_LOGGING_PREFIX_TREE_ENABLED_INTERNAL
-		log_path_t 			log_path;
-#endif // MEOW_LOGGING_PREFIX_TREE_ENABLED_INTERNAL
+		std::string 		log_name_;
 	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
