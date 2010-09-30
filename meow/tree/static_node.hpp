@@ -44,7 +44,12 @@ namespace meow { namespace tree {
 		template<class T>
 		static void checked_init(T*& value, file_t *file)
 		{
-			value = as_file_impl<T>(file)->local_value();
+			// not trying to cast this to the file_impl_t<T>
+			//  because it will break if T is abstract
+			//  assuming U is the type stored in the file
+			//  we just need U* to be convertible to T*
+			//  but that can not be checked without knowing what U is
+			value = file->value();
 		}
 	}
 

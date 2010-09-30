@@ -42,6 +42,14 @@ namespace meow { namespace tree {
 		return sink;
 	}
 
+	// convenience function, when you can just copy a sink (think sink == std::string)
+	template<class S>
+	S reconstruct_path(node_t *node)
+	{
+		S sink;
+		return reconstruct_path(sink, node);
+	}
+
 	inline str_ref reconstruct_path_tmp(node_t *node, tmp_buffer<PATH_MAX> const& buf = tmp_buffer<PATH_MAX>())
 	{
 		meow::format::sink::char_buffer_sink_t sink(buf.get(), buf.size());
