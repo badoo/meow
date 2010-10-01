@@ -11,6 +11,8 @@
 #include <meow/api_call_error.hpp>
 #include <meow/utility/offsetof.hpp>
 
+#include <meow/libev/libev.hpp>
+
 #include <meow/unix/fd_handle.hpp>
 #include <meow/unix/fcntl.hpp>
 #include <meow/unix/socket.hpp>
