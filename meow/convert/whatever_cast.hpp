@@ -6,6 +6,7 @@
 #ifndef MEOW_CONVERT__WHATEVER_CAST_HPP_
 #define MEOW_CONVERT__WHATEVER_CAST_HPP_
 
+#include <boost/type_traits/is_convertible.hpp>
 #include <boost/utility/enable_if.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
