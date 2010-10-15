@@ -66,9 +66,6 @@ namespace meow { namespace mapping {
 		typename result<T>::type operator()(T& obj) const { return obj.*member_p; }
 	};
 
-	template<class MT, class T>
-	select_member_t<MT, T> member(MT T::* p) { return select_member_t<MT, T>(p); }
-
 // interpreting address offsets as typed values
 	template<class TargetT>
 	struct typed_offset_t
@@ -212,6 +209,18 @@ namespace meow { namespace mapping {
 
 	template<class MT, class T>
 	inline select_member_t<MT, T> do_cast(MT T::* p) { return member(p); }
+
+	template<class MT, class T>
+	select_member_t<MT, T> member(MT T::* p) { return select_member_t<MT, T>(p); }
+
+	template<class OuterMT, class InnerMT, class T>
+	composite_caster_t<
+			  select_member_t<OuterMT, InnerMT>
+			, select_member_t<InnerMT, T> >
+	member(InnerMT T:: *inner_p, OuterMT InnerMT:: *outer_p)
+	{
+		return composite_cast(member(outer_p), member(inner_p));
+	}
 
 	template<class MT, class T>
 	extract_and_call_t<select_member_t<MT, T>, default_assign_t>

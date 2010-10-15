@@ -9,8 +9,8 @@
 // application.
 // 
 
-#ifndef BOOST_MOVE_PTR_ARRAYS_HPP_INCLUDED
-#define BOOST_MOVE_PTR_ARRAYS_HPP_INCLUDED
+#ifndef MEOW_MOVE_PTR__IS_CONVERTIBLE_HPP_
+#define MEOW_MOVE_PTR__IS_CONVERTIBLE_HPP_
 
 #include <boost/config.hpp> // BOOST_STATIC_CONSTANT.
 #include <boost/mpl/aux_/lambda_support.hpp>
@@ -69,4 +69,4 @@ struct is_smart_ptr_convertible
 
 } }         // End namespaces move_ptrs, boost.
 
-#endif      // #ifndef BOOST_MOVE_PTR_ARRAYS_HPP_INCLUDED
+#endif      // #ifndef MEOW_MOVE_PTR__IS_CONVERTIBLE_HPP_

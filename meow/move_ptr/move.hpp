@@ -5,8 +5,8 @@
 // Contains the definitions of the class template move_source and the function
 // template move, which together make move pointers moveable.
 
-#ifndef BOOST_MOVE_HPP_INCLUDED
-#define BOOST_MOVE_HPP_INCLUDED
+#ifndef MEOW_MOVE_PTR__MOVE_HPP_
+#define MEOW_MOVE_PTR__MOVE_HPP_
 
 namespace boost {
 
@@ -30,4 +30,5 @@ move_ptrs::move_source<T> move(T& x)
 
 } // End namespace boost.
 
-#endif // #ifndef BOOST_MOVE_HPP_INCLUDED
+#endif // #ifndef MEOW_MOVE_PTR__MOVE_HPP_
+

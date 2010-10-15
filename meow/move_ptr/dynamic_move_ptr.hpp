@@ -13,8 +13,8 @@
 // by Jonathan Turkanis to incorporating ideas of Howard Hinnant,
 // Rani Sharoni and Bronek Kozecki.
 
-#ifndef BOOST_DYNAMIC_MOVE_PTR_HPP_INCLUDED
-#define BOOST_DYNAMIC_MOVE_PTR_HPP_INCLUDED
+#ifndef MEOW_MOVE_PTR__DYNAMIC_MOVE_PTR_HPP_
+#define MEOW_MOVE_PTR__DYNAMIC_MOVE_PTR_HPP_
 
 #include <boost/config.hpp> // Member template friends, put size_t in std.
 #include <algorithm>        // swap.
@@ -205,4 +205,4 @@ T* get_pointer(dynamic_move_ptr<T> const& p) { return p.get(); }
 #pragma warning(pop) // #pragma warning(disable:4251)
 #endif
 
-#endif      // #ifndef BOOST_DYNAMIC_MOVE_PTR_HPP_INCLUDED
+#endif      // #ifndef MEOW_MOVE_PTR__DYNAMIC_MOVE_PTR_HPP_

@@ -8,8 +8,8 @@
 // is constructed, so that move_ptrs can delete objects of incomplete 
 // type by default.
 
-#ifndef BOOST_MOVE_PTR_DEFAULT_DELETER_HPP_INCLUDED
-#define BOOST_MOVE_PTR_DEFAULT_DELETER_HPP_INCLUDED 
+#ifndef MEOW_MOVE_PTR__DEFAULT_DELETER_HPP_
+#define MEOW_MOVE_PTR__DEFAULT_DELETER_HPP_ 
 
 #include <boost/checked_delete.hpp>
 #include <boost/mpl/if.hpp>
@@ -66,4 +66,4 @@ struct default_deleter
 
 } } // End namespaces move_ptrs, boost.
 
-#endif // #ifndef BOOST_MOVE_PTR_DEFAULT_DELETER_HPP_INCLUDED
+#endif // #ifndef MEOW_MOVE_PTR__DEFAULT_DELETER_HPP_

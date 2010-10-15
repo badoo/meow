@@ -7,8 +7,8 @@
 // implement stateless deleters for dynamic_move_ptr, yielding an interface 
 // similar to boost::shared_ptr.
 
-#ifndef BOOST_MOVE_PTR_BOUND_DELETER_HPP_INCLUDED
-#define BOOST_MOVE_PTR_BOUND_DELETER_HPP_INCLUDED
+#ifndef MEOW_MOVE_PTR__BOUND_DELETER_HPP_
+#define MEOW_MOVE_PTR__BOUND_DELETER_HPP_
 
 #include <boost/checked_delete.hpp> 
 #include <boost/mpl/if.hpp>
@@ -65,4 +65,4 @@ struct bound_deleter {
 
 } } // End namespaces move_ptr, boost.
 
-#endif // #ifndef BOOST_MOVE_PTR_BOUND_DELETER_HPP_INCLUDED
+#endif // #ifndef MEOW_MOVE_PTR__BOUND_DELETER_HPP_
