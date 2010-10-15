@@ -11,6 +11,7 @@
 #endif
 #include <getopt.h>		// for getopt_long()
 
+#include <cstdarg> 		// va_start, etc.
 #include <limits>
 #include <string>
 #include <vector>
