@@ -22,7 +22,7 @@ namespace meow { namespace format {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	template<>
-	struct type_tunnel<struct timeval>
+	struct type_tunnel<timeval>
 	{
 		enum { buffer_size = sizeof("-1234567890.123456") };
 		typedef meow::tmp_buffer<buffer_size> buffer_t;
