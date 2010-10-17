@@ -125,12 +125,16 @@ namespace meow { namespace libev {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	template<class Traits>
+	template<
+		  class Traits
+		, class Interface = mmc_connection_t
+	>
 	struct mmc_connection_impl_t 
-		: public mmc_connection_t
+		: public Interface
 		, public mmc_connection_traits_read<Traits>::context_t
 	{
-		typedef mmc_connection_impl_t 	self_t;
+		typedef mmc_connection_impl_t 			self_t;
+		typedef typename Interface::events_t 	events_t;
 		typedef generic_connection_traits_base<self_t> base_traits_t;
 
 		typedef libev::io_machine_t<
