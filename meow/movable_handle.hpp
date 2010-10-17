@@ -143,6 +143,12 @@ namespace meow {
 	typename movable_handle<Traits>::reference
 	get_handle(movable_handle<Traits>& h) { return h.ref(); }
 
+	template<class T>
+	T const& get_handle(T const& h) { return h; }
+
+	template<class T>
+	T& get_handle(T& h) { return h; }
+
 	template<class Traits>
 	inline
 	typename movable_handle<Traits>::pointer
