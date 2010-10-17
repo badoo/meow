@@ -14,10 +14,10 @@ namespace meow {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	template<class To, class From, class Enabler = void>
-	struct whatever_cast;
+	struct whatever_caster_t;
 
 	template<class To, class From>
-	struct whatever_cast<To, From, typename boost::enable_if<boost::is_convertible<From, To> >::type>
+	struct whatever_caster_t<To, From, typename boost::enable_if<boost::is_convertible<From, To> >::type>
 	{
 		void operator()(To& to, From const& from) const { to = from; }
 	};
@@ -27,8 +27,17 @@ namespace meow {
 	template<class To, class From>
 	inline void whatever_assign(To& to, From const& from)
 	{
-		static whatever_cast<To, From> caster_;
+		static whatever_caster_t<To, From> caster_;
 		caster_(to, from);
+	}
+
+	template<class To, class From>
+	inline To whatever_cast(From const& from)
+	{
+		static whatever_caster_t<To, From> caster_;
+		To to;
+		caster_(to, from);
+		return to;
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////

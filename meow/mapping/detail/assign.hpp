@@ -20,7 +20,7 @@ namespace meow { namespace mapping {
 		template<class To, class From>
 		void operator()(To& to, From const& from) const
 		{
-			static whatever_cast<To, From> caster_;
+			static whatever_caster_t<To, From> caster_;
 			caster_(to, from);
 		}
 	};
@@ -40,7 +40,7 @@ namespace meow { namespace mapping {
 		template<class To, class From>
 		void operator()(To& to, From const&) const
 		{
-			static whatever_cast<To, ValueT> caster_;
+			static whatever_caster_t<To, ValueT> caster_;
 			caster_(to, value_);
 		}
 

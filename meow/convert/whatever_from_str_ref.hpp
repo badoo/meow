@@ -19,19 +19,19 @@ namespace meow {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	template<>
-	struct whatever_cast<str_ref, str_ref>
+	struct whatever_caster_t<str_ref, str_ref>
 	{
 		void operator()(str_ref& to, str_ref const& from) const { to = from; }
 	};
 
 	template<>
-	struct whatever_cast<char const*, str_ref>
+	struct whatever_caster_t<char const*, str_ref>
 	{
 		void operator()(char const*& to, str_ref const& from) const { to = from.data(); }
 	};
 
 	template<class CharT>
-	struct whatever_cast<std::string, string_ref<CharT> >
+	struct whatever_caster_t<std::string, string_ref<CharT> >
 	{
 		void operator()(std::string& to, string_ref<CharT const> const& from) const
 		{
@@ -40,7 +40,7 @@ namespace meow {
 	};
 
 	template<class T>
-	struct whatever_cast<
+	struct whatever_caster_t<
 			  T
 			, str_ref
 			, typename boost::enable_if<boost::is_arithmetic<T> >::type
@@ -50,7 +50,7 @@ namespace meow {
 	};
 
 	template<>
-	struct whatever_cast<bool, str_ref>
+	struct whatever_caster_t<bool, str_ref>
 	{
 		void operator()(bool& to, str_ref const& from) const
 		{
@@ -69,7 +69,7 @@ namespace meow {
 	};
 
 	template<class T, class CharT>
-	struct whatever_cast<
+	struct whatever_caster_t<
 		  T
 		, string_ref<CharT>
 		, typename boost::disable_if<boost::is_arithmetic<T> >::type
