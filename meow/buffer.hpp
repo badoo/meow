@@ -129,6 +129,14 @@ namespace meow {
 		buf.advance_last(data_len); // will assert if we overflowed
 	}
 
+	inline void append_to_buffer(buffer_t& buf, void const *data, size_t data_len)
+	{
+		if (buf.free_size() < data_len)
+			buf.resize_to(buf.size() + data_len - buf.free_size());
+
+		copy_to_buffer(buf, data, data_len);
+	}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 } // namespace meow {
 ////////////////////////////////////////////////////////////////////////////////////////////////
