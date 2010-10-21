@@ -139,9 +139,6 @@ namespace request_type {
 #define MEOW_DEFINE_SMART_ENUM_I(ns_name, enum_seq, extra_items_macro_n) 	\
 	namespace ns_name { 											\
 		MEOW_SMART_ENUM_GEN_ENUM(enum_seq, extra_items_macro_n) 	\
-		namespace detail { 											\
-			MEOW_SMART_ENUM_GEN_NAMES(ns_name, enum_seq) 			\
-		}; 															\
 		MEOW_SMART_ENUM_GEN_FUNCTIONS(inline, ns_name, enum_seq) 	\
 	} 																\
 	typedef ns_name::type BOOST_PP_CAT(ns_name, _t); 				\
