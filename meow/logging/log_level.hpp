@@ -13,7 +13,7 @@ namespace meow { namespace logging {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	// ninja'd from syslog levels
-	MEOW_DEFINE_SMART_ENUM(
+	MEOW_DEFINE_SMART_ENUM_WITH_NONE(
 			log_level,
 
 			/* turned off, writing nothing */
@@ -63,9 +63,6 @@ namespace meow { namespace logging {
 
 			/* Messages for debugging purposes. */
 			((debug, 		"debug"))
-
-			/* turned on, writing everything */
-			((on, 			"on"))
 
 		);
 
