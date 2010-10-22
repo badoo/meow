@@ -132,6 +132,8 @@ namespace cmdline_detail {
 
 		for (OptinfoT const *i = opts, *i_end = opts + opts_size; i != i_end; ++i)
 		{
+			if (!i->name)
+				continue;
 			sys_option_t const lopt = { i->name, static_cast<int>(i->argmode), 0, id_offset + (i - opts) };
 			lopts.push_back(lopt);
 		}
@@ -174,6 +176,12 @@ namespace cmdline_detail {
 			opt_trampoline_t opt(opt_i, handler);
 			opts_.push_back(opt);
 			return *this;
+		}
+
+		template<class HandlerF>
+		self_t& short_option(char opt_char, argmode_t am, HandlerF const& handler)
+		{
+			return this->option(cmdline_detail::make_mixed_option(NULL, opt_char, am), handler);
 		}
 
 		template<class HandlerF>
