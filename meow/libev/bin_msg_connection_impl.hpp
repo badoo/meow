@@ -267,9 +267,9 @@ namespace meow { namespace libev {
 			iomachine_t::w_activate(this);
 		}
 
-		virtual void send_spliced_chain(buffer_chain_t& chain)
+		virtual void send_chain(buffer_chain_t& chain)
 		{
-			wchain_.splice_after(wchain_.end(), chain);
+			wchain_.append_chain(chain);
 			iomachine_t::w_activate(this);
 		}
 

@@ -8,6 +8,7 @@
 
 #include <boost/noncopyable.hpp>
 #include <boost/intrusive/slist.hpp>
+#include <boost/type_traits/is_base_and_derived.hpp>
 
 #include <meow/move_ptr/static_move_ptr.hpp>
 
@@ -15,48 +16,120 @@
 namespace meow {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	namespace ptr_chain_detail_
+	template<class T>
+	struct ptr_chain_traits_default
 	{
-		namespace bi = boost::intrusive;
+		typedef T value_t;
+		typedef boost::static_move_ptr<value_t> value_move_ptr;
 
-		typedef bi::slist_base_hook<> hook_t;
-
-		template<class T>
-		struct ptr_chain_list_gen
-		{
-			typedef bi::slist<
-						  T
-						, bi::base_hook<hook_t>
-						, bi::constant_time_size<true>
-						, bi::cache_last<true>
-						>
-						type;
-		};
-
-	} // namespace ptr_chain_detail_
+		static bool const constant_time_size = true;
+		static bool const linear = false;
+	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	template<class T, class PtrT = boost::static_move_ptr<T> >
+	typedef boost::intrusive::slist_base_hook<>	ptr_chain_hook_t;
+
+	template<bool v>
+	struct ptr_chain_intrusive
+	{
+		static bool const value = v;
+	};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+	template<
+		  class Traits
+		, class IsIntrusive = ptr_chain_intrusive<false>
+		, class Hook = ptr_chain_hook_t
+	>
 	struct ptr_chain_t : private boost::noncopyable
 	{
-		typedef ptr_chain_t 	self_t;
-		typedef T 				value_t;
-		typedef PtrT 			value_move_ptr;
+		typedef ptr_chain_t 				self_t;
+		typedef Hook 						hook_t;
+		typedef typename Traits::value_t 	value_t;
+
+		typedef typename Traits::value_move_ptr value_move_ptr;
 
 	private:
 
-		struct item_t : public ptr_chain_detail_::hook_t
-		{
-			value_move_ptr value;
+		template<class V, class Tag> struct self_traits_t;
 
-			item_t(value_move_ptr& v)
-				: value(move(v))
+		template<class V>
+		struct self_traits_t<V, ptr_chain_intrusive<false> >
+		{
+			struct item_t : public hook_t
 			{
+				value_move_ptr value;
+
+				item_t(value_move_ptr v) : value(move(v)) {}
+			};
+
+			static value_t* value_pointer(item_t const& i)
+			{
+				return get_pointer(i.value);
+			}
+
+			static value_move_ptr value_move(item_t& i)
+			{
+				return move(i.value);
+			}
+
+			template<class L>
+			static void list_pop_empty_front(L& l)
+			{
+				item_t *item = &l.front();
+				l.pop_front();
+				delete item;
+			}
+
+			static item_t* item_from_value(value_move_ptr v)
+			{
+				return new item_t(move(v));
 			}
 		};
-		typedef typename ptr_chain_detail_::ptr_chain_list_gen<item_t>::type list_t;
-		typedef boost::static_move_ptr<item_t> item_move_ptr;
+
+		template<class V>
+		struct self_traits_t<V, ptr_chain_intrusive<true> >
+		{
+			BOOST_STATIC_ASSERT((boost::is_base_and_derived<hook_t, value_t>::value));
+			typedef value_t item_t;
+
+			static value_t* value_pointer(item_t const& i)
+			{
+				return const_cast<value_t*>(&i);
+			}
+
+			static value_move_ptr value_move(item_t& i)
+			{
+				return value_move_ptr(&i);
+			}
+
+			template<class L>
+			static void list_pop_empty_front(L& l)
+			{
+				l.pop_front();
+			}
+
+			static item_t* item_from_value(value_move_ptr v)
+			{
+				return v.release();
+			}
+		};
+
+		typedef self_traits_t<value_t, IsIntrusive> self_traits;
+		typedef typename self_traits::item_t item_t;
+
+		typedef boost::intrusive::slist<
+					  item_t
+					, boost::intrusive::base_hook<hook_t>
+					, boost::intrusive::cache_last<true>
+					, boost::intrusive::constant_time_size<Traits::constant_time_size>
+					, boost::intrusive::linear<Traits::linear>
+					>
+					list_t;
+	private:
+		list_t l_;
 
 	public:
 
@@ -66,17 +139,6 @@ namespace meow {
 		}
 
 	public:
-
-		typedef typename list_t::iterator 			iterator;
-		typedef typename list_t::const_iterator 	const_iterator;
-
-		iterator       begin()       { return l_.begin(); }
-		const_iterator begin() const { return l_.begin(); }
-
-		iterator       end()       { return l_.end(); }
-		const_iterator end() const { return l_.end(); }
-
-	public:
 	
 		bool empty() const { return l_.empty(); }
 		size_t size() const { return l_.size(); }
@@ -84,35 +146,32 @@ namespace meow {
 		value_t* front() const
 		{
 			BOOST_ASSERT(!this->empty());
-			return get_pointer(l_.front().value);
+			return self_traits::value_pointer(l_.front());
 		}
 
 		value_move_ptr grab_front()
 		{
 			BOOST_ASSERT(!this->empty());
 
-			value_move_ptr result = move(l_.front().value);
-			this->pop_front();
+			value_move_ptr result = self_traits::value_move(l_.front());
+			self_traits::list_pop_empty_front(l_);
 			return move(result);
 		}
 
 		void pop_front()
 		{
-			BOOST_ASSERT(!this->empty());
-			item_move_ptr item_delete_wrapper(&l_.front());
-			l_.pop_front();
+			this->grab_front();
 		}
 
 		void push_back(value_move_ptr v)
 		{
-			item_move_ptr item(new item_t(v));
+			item_t *item = self_traits::item_from_value(move(v));
 			l_.push_back(*item);
-			item.release();
 		}
 
-		void splice_after(const_iterator i, self_t& other)
+		void append_chain(self_t& other)
 		{
-			l_.splice_after(i, other.l_);
+			l_.splice_after(l_.end(), other.l_);
 		}
 
 		void clear()
@@ -120,9 +179,6 @@ namespace meow {
 			while (!this->empty())
 				this->pop_front();
 		}
-
-	private:
-		list_t l_;
 	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////

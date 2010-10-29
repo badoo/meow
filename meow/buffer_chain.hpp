@@ -13,7 +13,21 @@
 namespace meow {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	typedef ptr_chain_t<buffer_t> buffer_chain_t;
+	struct ptr_chain_traits_buffer
+	{
+		typedef buffer_t value_t;
+		typedef boost::static_move_ptr<value_t> value_move_ptr;
+
+		static bool const constant_time_size = false;
+		static bool const linear = true;
+	};
+
+	typedef ptr_chain_t<
+				  ptr_chain_traits_buffer
+				, ptr_chain_intrusive<false>
+				, ptr_chain_hook_t
+				>
+				buffer_chain_t;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 } // namespace meow {
