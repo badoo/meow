@@ -98,7 +98,7 @@ namespace meow { namespace libev {
 					return buffer_ref(b->begin(), sizeof(header_t));
 
 				case read_state::body:
-					return buffer_ref(b->last, Traits::read_header_get_body_length(ctx->r_header));
+					return b->free_part();
 			};
 
 			BOOST_ASSERT(!"can't be reached");
