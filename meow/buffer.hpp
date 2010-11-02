@@ -95,52 +95,19 @@ namespace meow {
 		void advance_first(size_t offset) { first += offset; invariant_check(); }
 		void advance_last(size_t offset) { last += offset; invariant_check(); }
 
-	private:
-
-		void adjust_pointers_to_new_begin(char_t *new_begin, size_t new_sz)
-		{
-			this->first = new_begin + (this->first - this->begin_);
-			this->last = new_begin + (this->last - this->begin_);
-			this->begin_ = new_begin;
-			this->end_ = this->begin_ + new_sz;
-
-			this->invariant_check();
-		}
-
-		static size_t get_new_buffer_size(size_t new_sz)
-		{
-			static size_t const mem_quant = 4 * 1024; // pagesize
-
-			// let's hope it won't 'smartly' optimize div + mul
-			size_t sz = (new_sz / mem_quant) * mem_quant;
-
-			if (sz < new_sz)
-				sz += mem_quant;
-
-			return sz;
-		}
-
 	public:
 
 		void resize_to(size_t new_sz)
 		{
-			char_t *new_begin = NULL;
+			char_t *new_begin = self_t::do_realloc(this->begin_, new_sz);
+			BOOST_ASSERT(NULL != new_begin);
 
-			if (__builtin_expect(new_sz > this->size(), 1))
-			{
-				new_sz = get_new_buffer_size(new_sz);
+			this->first = new_begin + (this->first - this->begin_);
+			this->last = new_begin + (this->last - this->begin_);
+			this->begin_ = new_begin;
+			this->end_ = new_begin + new_sz;
 
-				new_begin = self_t::do_realloc(this->begin_, new_sz);
-				if (NULL == new_begin)
-					throw std::bad_alloc();
-			}
-			else
-			{
-				new_begin = self_t::do_realloc(this->begin_, new_sz);
-				BOOST_ASSERT(NULL != new_begin);
-			}
-
-			adjust_pointers_to_new_begin(new_begin, new_sz);
+			this->invariant_check();
 		}
 
 	private:

@@ -95,10 +95,10 @@ namespace meow { namespace libev {
 			switch (ctx->r_state)
 			{
 				case read_state::header:
-					return buffer_ref(b->begin(), b->begin() + sizeof(header_t));
+					return buffer_ref(b->begin(), sizeof(header_t));
 
 				case read_state::body:
-					return b->free_part();
+					return buffer_ref(b->last, Traits::read_header_get_body_length(ctx->r_header));
 			};
 
 			BOOST_ASSERT(!"can't be reached");
