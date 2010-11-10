@@ -48,6 +48,21 @@ namespace meow {
 		string_ref(char_type* begin, char_type* end) : p_(begin), n_(end - begin) {}
 		string_ref(string_type const& str) : p_(str.data()), n_(str.size()) {} // assume string data is contiguous
 
+		self& assign(char_type *p, size_type n)
+		{
+			p_ = p;
+			n_ = n;
+			return *this;
+		}
+
+		self& assign(char_type *b, char_type *e)
+		{
+			BOOST_ASSERT(b <= e);
+			p_ = b;
+			n_ = (e - b);
+			return *this;
+		}
+
 		iterator begin() const { return p_; }
 		iterator end() const { return p_ + n_; }
 
