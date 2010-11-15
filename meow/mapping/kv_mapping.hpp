@@ -107,7 +107,7 @@ namespace meow { namespace mapping {
 
 	public: // setters
 
-		self_t& on_name(char const *name, handler_t const& h)
+		self_t& on_name(str_ref name, handler_t const& h)
 		{
 			MapT::map_add(name, this->insert_handler(h));
 			return *this;

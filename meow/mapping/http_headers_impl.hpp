@@ -9,6 +9,7 @@
 #include <cctype> 	// isdigit et. al.
 #include <cstring> 	// memchr
 
+#include <boost/bind.hpp>
 #include <boost/assert.hpp>
 #include <boost/static_assert.hpp>
 
@@ -25,21 +26,21 @@ namespace meow { namespace mapping {
 	{
 		typedef http_header_mapping_t 				self_t;
 		typedef typename self_t::base_t 			base_t;
-		typedef typename base_t::handler_t 			handler_t;
-		typedef typename base_t::header_handler_t 	header_handler_t;
 
 	public: // setters for setting up the mapping
 
 		template<class Function>
 		self_t& on_header(str_ref name, Function const& function)
 		{
-			return base_t::on_name(name, function);
+			base_t::on_name(name, function);
+			return *this;
 		}
 
 		template<class Function>
 		self_t& on_any_header(Function const& function)
 		{
-			return base_t::on_any_name(function);
+			base_t::on_any_name(function);
+			return *this;
 		}
 
 		template<class ContainerT>
@@ -186,7 +187,8 @@ namespace detail {
 		static size_t const prefix_len = sizeof("HTTP/x.x") - 1;
 
 		// check full length right at start
-		if (__builtin_expect((hend - head) < prefix_len, 0))
+		BOOST_ASSERT(head < hend);
+		if (__builtin_expect(size_t(hend - head) < prefix_len, 0))
 			return false;
 
 		if (__builtin_expect(0 != std::memcmp(head, prefix.data(), prefix.size()), 0))
@@ -294,8 +296,8 @@ namespace detail {
 	template<class CharT, class MappingT, class ContextT>
 	inline bool map_http_request(CharT *& head, CharT * const hend, MappingT const& m, ContextT *ctx)
 	{
-		return map_http_request_line(head, hend, ctx)
-			&& map_http_headers(head, hend, m, ctx)
+		return map_http_request_line(head, hend, *ctx)
+			&& map_http_headers(head, hend, boost::bind(kv_mapping_executor_t(), &m, ctx, _1, _2))
 			;
 	}
 
@@ -309,8 +311,8 @@ namespace detail {
 	template<class CharT, class MappingT, class ContextT>
 	inline bool map_http_response(CharT *& head, CharT * const hend, MappingT const& m, ContextT *ctx)
 	{
-		return map_http_response_line(head, hend, ctx)
-			&& map_http_headers(head, hend, m, ctx)
+		return map_http_response_line(head, hend, *ctx)
+			&& map_http_headers(head, hend, boost::bind(kv_mapping_executor_t(), &m, ctx, _1, _2))
 			;
 	}
 
