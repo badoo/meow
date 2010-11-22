@@ -95,7 +95,8 @@ namespace meow { namespace libev {
 			switch (ctx->r_state)
 			{
 				case read_state::header:
-					return buffer_ref(b->begin(), sizeof(header_t));
+					BOOST_ASSERT(b->used_size() < sizeof(header_t));
+					return buffer_ref(b->last, b->first + sizeof(header_t));
 
 				case read_state::body:
 					return b->free_part();
