@@ -6,6 +6,7 @@
 #ifndef MEOW_MAPPING__KV_MAPPING_HPP_
 #define MEOW_MAPPING__KV_MAPPING_HPP_
 
+#include <list>
 #include <vector>
 #include <utility> // for std::pair
 
@@ -93,7 +94,7 @@ namespace meow { namespace mapping {
 		typedef boost::function<void(ContextT&, str_ref, str_ref)> 	header_handler_t;
 
 	private:
-		std::vector<handler_t> 			handlers_;
+		std::list<handler_t> 			handlers_;
 		std::vector<header_handler_t> 	unknown_v_;
 		std::vector<header_handler_t> 	any_v_;
 
@@ -109,7 +110,7 @@ namespace meow { namespace mapping {
 
 		self_t& on_name(str_ref name, handler_t const& h)
 		{
-			MapT::map_add(name, this->insert_handler(h));
+			this->MapT::map_add(name, this->insert_handler(h));
 			return *this;
 		}
 
@@ -134,7 +135,7 @@ namespace meow { namespace mapping {
 
 		void call_handler(ContextT& ctx, str_ref name, str_ref value) const
 		{
-			handler_t const *called_handler = (handler_t*)MapT::map_find(name);
+			handler_t const *called_handler = (handler_t*)this->MapT::map_find(name);
 
 			if (NULL != called_handler)
 				return (*called_handler)(ctx, value);
