@@ -6,83 +6,44 @@
 #ifndef MEOW_MAPPING__HTTP_HEADERS_IMPL_HPP_
 #define MEOW_MAPPING__HTTP_HEADERS_IMPL_HPP_
 
-#include <map>
-#include <vector>
+#include <cctype> 	// isdigit et. al.
+#include <cstring> 	// memchr
 
-#include <boost/assert.hpp>
 #include <boost/bind.hpp>
-#include <boost/function.hpp>
-#include <boost/noncopyable.hpp>
-#include <boost/ref.hpp>
+#include <boost/assert.hpp>
+#include <boost/static_assert.hpp>
 
-#include <boost/spirit/include/qi_core.hpp>
-#include <boost/spirit/include/qi_char.hpp>
-#include <boost/spirit/include/qi_eol.hpp>
-#include <boost/spirit/include/qi_int.hpp>
-#include <boost/spirit/include/qi_grammar.hpp>
-#include <boost/spirit/include/qi_omit.hpp>
-#include <boost/spirit/include/qi_parse.hpp>
-#include <boost/spirit/include/qi_raw.hpp>
-#include <boost/spirit/include/qi_rule.hpp>
-
-#include <boost/fusion/include/adapt_struct.hpp>
-
-#include "http_headers.hpp"
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-// this must be in global namespace
-
-	BOOST_FUSION_ADAPT_STRUCT(
-			  meow::mapping::http_version_t
-			, (unsigned int, major)
-			  (unsigned int, minor)
-			);
-
-	BOOST_FUSION_ADAPT_STRUCT(
-			  meow::mapping::http_request_line_t
-			, (meow::str_ref, 					method)
-			  (meow::str_ref, 					uri)
-			  (meow::mapping::http_version_t, 	version)
-			);
-
-	BOOST_FUSION_ADAPT_STRUCT(
-			  meow::mapping::http_response_line_t
-			, (meow::mapping::http_version_t, 	version)
-			  (meow::mapping::http_status_t, 	status)
-			  (meow::str_ref, 					message)
-			);
-
-	BOOST_FUSION_ADAPT_STRUCT(
-			  meow::mapping::http_header_kvref_t
-			, (meow::str_ref, name)
-			  (meow::str_ref, value)
-			);
+#include <meow/mapping/actor.hpp>
+#include <meow/mapping/http_headers.hpp>
+#include <meow/mapping/kv_mapping.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace mapping {
 ////////////////////////////////////////////////////////////////////////////////////////////////
-
-	namespace qi = boost::spirit::qi;
-
-////////////////////////////////////////////////////////////////////////////////////////////////
 // mapping object, that defines how headers are mapped into the structure
 
-template<class ContextT>
-	struct http_header_mapping_t : private boost::noncopyable
+	template<
+		  class ContextT
+		, class MapT = kv_mapping_map_spirit_parse_t
+	>
+	struct http_header_mapping_t : public kv_mapping_t<ContextT, MapT>
 	{
-		typedef http_header_mapping_t self_t;
-		typedef boost::function<void(ContextT&, str_ref)> handler_t;
-		typedef boost::function<void(ContextT&, http_header_kvref_t)> header_handler_t;
-
-		typedef std::map<str_ref, handler_t> 	map_t;
-		typedef std::vector<header_handler_t> 	hhv_t;
+		typedef http_header_mapping_t 				self_t;
+		typedef kv_mapping_t<ContextT, MapT> 		base_t;
 
 	public: // setters for setting up the mapping
 
 		template<class Function>
 		self_t& on_header(str_ref name, Function const& function)
 		{
-			map_[name] = function;
+			base_t::on_name(name, function);
+			return *this;
+		}
+
+		template<class Function>
+		self_t& on_any_header(Function const& function)
+		{
+			base_t::on_any_name(function);
 			return *this;
 		}
 
@@ -92,245 +53,278 @@ template<class ContextT>
 			this->on_any_header(seq_append(cont));
 			return *this;
 		}
-
-		template<class Function>
-		self_t& on_any_header(Function const& function)
-		{
-			any_.push_back(function);
-			return *this;
-		}
-
-	public:
-
-		void call_handlers(ContextT *ctx, http_header_kvref_t const& kv) const
-		{
-			BOOST_ASSERT(ctx);
-
-	//		printf("%s; %.*s = %.*s\n", __func__, kv.name.c_length(), kv.name.data(), kv.value.c_length(), kv.value.data());
-
-			handler_t const *handler_f = this->get_handler(kv.name);
-			if (handler_f)
-				(*handler_f)(*ctx, kv.value);
-
-			for (typename hhv_t::const_iterator i = any_.begin(), i_end = any_.end(); i != i_end; ++i)
-				(*i)(*ctx, kv);
-		}
-
-	private:
-
-		handler_t const* get_handler(str_ref key) const
-		{
-			typename map_t::const_iterator i = map_.find(key);
-			return (map_.end() == i)
-				? NULL
-				: &((*i).second)
-				;
-		}
-
-	private:
-		hhv_t 		any_;
-		map_t 		map_;
 	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace detail {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	template<class Iterator>
-	struct http_grammar_base_t
+	// AnToXa: 
+	// no idea, but having this function instead of directly calling isdigit()
+	//  speeds stuff up by around 10% on my core2duo 2.8gz
+	inline bool my_isdigit(unsigned char const c)
 	{
-		qi::rule<Iterator, http_version_t()> 	r_version;
-		qi::rule<Iterator, char()> 				r_separator;
-		qi::rule<Iterator, char()> 				r_token;
+		return std::isdigit(c);//(c ^ 0x30) < 10;
+	}
 
-		http_grammar_base_t()
-		{
-			using namespace qi;
-
-			// HTTP version string: HTTP/<number>.<number>
-			r_version %= lit("HTTP/") >> int_ >> omit['.'] >> int_;
-
-			// HTTP separators taken from: http://www.w3.org/Protocols/rfc2616/rfc2616-sec2.html#sec2
-			// "(" | ")" | "<" | ">" | "@"
-			// | "," | ";" | ":" | "\" | <">
-			// | "/" | "[" | "]" | "?" | "="
-			// | "{" | "}" | SP | HT
-			r_separator = char_(" \t()<>@,;:\\\"/[]?={}\r\n");
-
-			// HTTP token, anything but a control or separator
-			r_token = char_ - r_separator - cntrl;
-		}
-	};
-
-	////////////////////////////////////////////////////////////////////////////////////////////////
-
-	template<class Iterator>
-	struct http_request_line_grammar_t 
-		: public qi::grammar<Iterator, http_request_line_t()>
-		, public http_grammar_base_t<Iterator>
+	inline bool my_isspace(unsigned char const c)
 	{
-		qi::rule<Iterator, http_request_line_t()> r;
+		return std::isspace(c);
+	}
 
-		http_request_line_grammar_t()
-			: http_request_line_grammar_t::base_type(r)
-		{
-			using namespace qi;
-
-			r %=   omit[*space] >> raw[+this->r_token] 				// method
-				>> omit[+space] >> raw[+(char_ - cntrl - space)] 	// uri
-				>> omit[+space] >> this->r_version 					// version
-				>> eol;
-		}
-	};
-
-	template<class Iterator>
-	struct http_response_line_grammar_t
-		: public qi::grammar<Iterator, http_response_line_t()>
-		, public http_grammar_base_t<Iterator>
+	template<size_t max_len, class CharT, class T>
+	inline CharT* read_number(CharT *head, CharT *hend, T& v)
 	{
-		qi::rule<Iterator, http_response_line_t()> r;
+		BOOST_STATIC_ASSERT(max_len >= 1);
 
-		http_response_line_grammar_t()
-			: http_response_line_grammar_t::base_type(r)
+		if (__builtin_expect(hend < head + max_len, 0))
+			hend = head + max_len;
+
+		if (__builtin_expect(my_isdigit(*head), 1))
 		{
-			using namespace qi;
+			v = *head++ - '0';
 
-			r %=   this->r_version 						// version
-				>> omit[+space] >> int_ 				// response code
-				>> omit[+space] >> raw[*(char_ - eol)] 	// message
-				>> eol;
+			for (; head != hend && my_isdigit(*head); ++head)
+			{
+				v *= 10;
+				v += *head - '0';
+			}
+
+			return head;
 		}
-	};
-
-	template<class Iterator, class ContextT>
-	struct http_headers_grammar_t
-		: public qi::grammar<Iterator, void()>
-		, public http_grammar_base_t<Iterator>
-	{
-		typedef http_headers_grammar_t 			self_t;
-		typedef ContextT 						context_t;
-		typedef http_header_mapping_t<ContextT> mapping_t;
-
-		context_t 			*ctx_;
-		mapping_t const 	*map_;
-
-		qi::rule<Iterator, http_header_kvref_t()> r_line;
-		qi::rule<Iterator, void()> r;
-
-		http_headers_grammar_t()
-			: http_headers_grammar_t::base_type(r)
-			, ctx_(NULL)
-			, map_(NULL)
+		else
 		{
-			using namespace qi;
-			using boost::cref;
-			using boost::ref;
-
-			r_line  %= (raw[+this->r_token] >> omit[':' >> *space]
-					>> raw[*(char_ - eol)])
-					>> eol;
-
-			r %= +(r_line[boost::bind(&mapping_t::call_handlers, cref(map_), ref(ctx_), ::_1)]);
+			v = 0;
+			return hend;
 		}
-	};
+	}
+
+#define READ_DIGIT_OR_RETURN_FALSE(c, val) 	\
+	do {									\
+		unsigned char d = (c) ^ 0x30; 		\
+		if (d < 10) 						\
+			val = d; 						\
+		else 								\
+			return false; 					\
+	} while(0)								\
+/**/
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 } // namespace detail {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	// first line parsers
-	template<class Iterator>
-	bool map_http_request_line(Iterator& begin, Iterator const end, http_request_line_t& ctx)
+	template<class CharT>
+	inline bool map_http_request_line(CharT *& head, CharT * const hend, http_request_line_t& result)
 	{
-		static detail::http_request_line_grammar_t<Iterator> grammar_;
-		return qi::parse(begin, end, grammar_, ctx);
+		// requet has the form
+		// VERB<+space><random_crap_uri><+space>HTTP/<number>.<number>\r\n
+
+		BOOST_STATIC_ASSERT(1 == sizeof(CharT));
+
+		// find first space to get the VERB
+		CharT *vend = (CharT*)std::memchr(head, ' ', hend - head);
+		if (__builtin_expect(NULL == vend, 0))
+			return false;
+
+		result.method.assign(head, vend);
+		head = vend + 1;
+
+		// skip spaces if any, optimize for just 1 space
+		while (head != hend && detail::my_isspace(*head)) ++head;
+		if (__builtin_expect(head == hend, 0)) { return false; }
+
+		// now check for HTTP/n.n at the end
+		//  everything in between will be url
+
+		//  first: check for proper offsets here
+		static str_ref const vprefix = ref_lit(" HTTP/");
+		static size_t const vstr_len = sizeof(" HTTP/x.x") - 1;
+		if (__builtin_expect((hend - head) < (vstr_len + 2 /*\r\n*/), 0))
+			return false;
+
+		// second: find \r\n
+		CharT *lf = (CharT*)std::memchr(head, '\n', (hend - head));
+		if (__builtin_expect(NULL != lf, 1))
+		{
+			if (__builtin_expect('\r' != *(lf - 1), 0))
+				return false;
+
+			++lf;
+		}
+
+		// third: parse on from here
+		CharT *vstr = lf - vstr_len - 2 /* \r\n */;
+		if (0 != std::memcmp(vstr, vprefix.data(), vprefix.size()))
+			return false;
+
+		// major ver
+		READ_DIGIT_OR_RETURN_FALSE(*(lf - 5), result.version.major);
+
+		// sep
+		if (__builtin_expect('.' != *(lf - 4), 0))
+			return false;
+
+		// minor ver
+		READ_DIGIT_OR_RETURN_FALSE(*(lf - 3), result.version.minor);
+
+		// uri finally, skip spaces at the end
+		while (detail::my_isspace(*--vstr));
+		result.uri.assign(head, vstr + 1);
+
+		head = lf;
+		return true;
 	}
 
-	template<class Iterator>
-	bool map_http_response_line(Iterator& begin, Iterator const end, http_response_line_t& ctx)
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+	template<class CharT>
+	inline bool map_http_response_line(CharT *& head, CharT * const hend, http_response_line_t& result)
 	{
-		static detail::http_response_line_grammar_t<Iterator> grammar_;
-		return qi::parse(begin, end, grammar_, ctx);
+		// requet has the form
+		// HTTP/<number>.<number><+space><number><+space><random_message>\r\n
+
+		BOOST_STATIC_ASSERT(1 == sizeof(CharT));
+
+		// prefix
+		static str_ref const prefix = ref_lit("HTTP/");
+		static size_t const prefix_len = sizeof("HTTP/x.x") - 1;
+
+		// check full length right at start
+		BOOST_ASSERT(head < hend);
+		if (__builtin_expect(size_t(hend - head) < prefix_len, 0))
+			return false;
+
+		if (__builtin_expect(0 != std::memcmp(head, prefix.data(), prefix.size()), 0))
+			return false;
+
+		head += prefix_len;
+
+		// read major version number
+		READ_DIGIT_OR_RETURN_FALSE(*(head - 3), result.version.major);
+
+		// ver separator
+		if (__builtin_expect('.' != *(head - 2), 0))
+			return false;
+
+		// read minor version number
+		READ_DIGIT_OR_RETURN_FALSE(*(head - 1), result.version.minor);
+
+		// skip spaces
+		while (head != hend && detail::my_isspace(*head)) ++head;
+		if (__builtin_expect(head == hend, 0)) { return false; }
+
+		// response code
+		head = detail::read_number<4>(head, hend, result.status);
+		if (__builtin_expect(head == hend, 0)) { return false; }
+
+		// skip spaces
+		while (head != hend && detail::my_isspace(*head)) ++head;
+		if (__builtin_expect(head == hend, 0)) { return false; }
+
+		// find where the line ends
+		if (__builtin_expect((hend - head) < 2, 0))
+			return false;
+
+		CharT *lf = (CharT*)std::memchr(head, '\n', (hend - head));
+		if (__builtin_expect(NULL == lf, 0))
+		{
+			result.message.assign(head, hend);
+			head = hend;
+			return true;
+		}
+
+		if (__builtin_expect('\r' != *--lf, 0))
+			return false;
+
+		result.message.assign(head, lf);
+		head = lf + 2;
+		return true;
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // header parsers
 
-	template<class Iterator, class ContextT>
-	bool map_http_headers(
-			  Iterator& begin
-			, Iterator const& end
-			, http_header_mapping_t<ContextT> const& map
-			, ContextT& ctx
-			)
+	template<class CharT, class Function>
+	inline bool map_http_headers(CharT *& head, CharT * const hend, Function const& header_fn)
 	{
-		static detail::http_headers_grammar_t<Iterator, ContextT> grammar_;
-		grammar_.map_ = &map;
-		grammar_.ctx_ = &ctx;
+		BOOST_STATIC_ASSERT(1 == sizeof(CharT));
 
-		return qi::parse(begin, end, grammar_, ctx);
+		while (head != hend)
+		{
+			CharT const *col = (CharT*)memchr(head, ':', hend - head);
+			// not found: either error or end of headers
+			if (__builtin_expect(NULL == col, 0))
+				break;
+
+			// got header name
+			str_ref const name = str_ref(head, col);
+
+			head = col + 1;
+
+			// skip whitespace
+			while (head != hend && detail::my_isspace(*head)) ++head;
+
+			// value is everything to \r\n
+			if (__builtin_expect((hend - head) < 2, 0))
+				return false;
+
+			CharT const *lf = (CharT*)std::memchr(head, '\n', hend - head);
+			if (__builtin_expect(NULL != lf, 1))
+			{
+				if (__builtin_expect('\r' != *--lf, 0))
+					return false;
+			}
+
+			str_ref const value = str_ref(head, lf);
+			header_fn(name, value);
+
+			head = lf + 2;
+		}
+
+		return true;
 	}
 
-	template<class StringT, class ContextT>
-	bool map_http_headers(
-			  StringT const& headers
-			, http_header_mapping_t<ContextT> const& map
-			, ContextT& ctx
-			)
+#undef READ_DIGIT_OR_RETURN_FALSE
+
+	template<class StringT, class Function>
+	inline bool map_http_headers(StringT const& headers, Function const& header_fn)
 	{
 		typename StringT::iterator b = headers.begin();
-		return map_http_headers(b, headers.end(), map, ctx);
+		return map_http_headers(b, headers.end(), header_fn);
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // full request/response parsers
 
-	template<class Iterator, class ContextT>
-	bool map_http_request(
-			  Iterator& begin
-			, Iterator const& end
-			, http_header_mapping_t<ContextT> const& map
-			, ContextT& ctx
-			)
+	template<class CharT, class MappingT, class ContextT>
+	inline bool map_http_request(CharT *& head, CharT * const hend, MappingT const& m, ContextT *ctx)
 	{
-		return map_http_request_line(begin, end, ctx)
-			&& map_http_headers(begin, end, map, ctx)
+		return map_http_request_line(head, hend, *ctx)
+			&& map_http_headers(head, hend, boost::bind(kv_mapping_executor_t(), &m, ctx, _1, _2))
 			;
 	}
 
-	template<class StringT, class ContextT>
-	bool map_http_request(
-			  StringT const& str
-			, http_header_mapping_t<ContextT> const& map
-			, ContextT& ctx
-			)
+	template<class StringT, class MappingT, class ContextT>
+	inline bool map_http_request(StringT const& str, MappingT const& m, ContextT *ctx)
 	{
-		typename StringT::iterator begin = str.begin();
-		return map_http_request(begin, str.end(), map, ctx);
+		typename StringT::iterator b = str.begin();
+		return map_http_request(b, str.end(), m, ctx);
 	}
 
-	template<class Iterator, class ContextT>
-	bool map_http_response(
-			  Iterator& begin
-			, Iterator const& end
-			, http_header_mapping_t<ContextT> const& map
-			, ContextT& ctx
-			)
+	template<class CharT, class MappingT, class ContextT>
+	inline bool map_http_response(CharT *& head, CharT * const hend, MappingT const& m, ContextT *ctx)
 	{
-		return map_http_response_line(begin, end, ctx)
-			&& map_http_headers(begin, end, map, ctx)
+		return map_http_response_line(head, hend, *ctx)
+			&& map_http_headers(head, hend, boost::bind(kv_mapping_executor_t(), &m, ctx, _1, _2))
 			;
 	}
 
-	template<class StringT, class ContextT>
-	bool map_http_response(
-			  StringT const& str
-			, http_header_mapping_t<ContextT> const& map
-			, ContextT& ctx
-			)
+	template<class StringT, class MappingT, class ContextT>
+	inline bool map_http_response(StringT const& str, MappingT const& m, ContextT *ctx)
 	{
-		typename StringT::iterator begin = str.begin();
-		return map_http_response(begin, str.end(), map, ctx);
+		typename StringT::iterator b = str.begin();
+		return map_http_response(b, str.end(), m, ctx);
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
