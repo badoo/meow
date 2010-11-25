@@ -171,7 +171,7 @@ namespace meow {
 
 		void append_chain(self_t& other)
 		{
-			l_.splice_after(l.previous(l_.end()), other.l_);
+			l_.splice_after(l_.previous(l_.end()), other.l_);
 		}
 
 		void clear()
