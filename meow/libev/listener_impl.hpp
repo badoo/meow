@@ -44,7 +44,7 @@ namespace meow { namespace libev { namespace detail {
 
 	private:
 
-		virtual int const fd() const { return event()->fd; }
+		virtual int fd() const { return event()->fd; }
 		virtual evio_t const* event() const { return &evt_; }
 		virtual evloop_t* loop() const { return loop_; }
 
