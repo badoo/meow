@@ -6,6 +6,8 @@
 #ifndef MEOW_FORMAT__FORMAT_FUNCTIONS_HPP_
 #define MEOW_FORMAT__FORMAT_FUNCTIONS_HPP_
 
+#include <alloca.h>
+
 #include <boost/preprocessor/cat.hpp>
 #include <boost/preprocessor/repetition/repeat.hpp>
 #include <boost/preprocessor/repetition/repeat_from_to.hpp>
@@ -47,7 +49,7 @@ namespace meow { namespace format {
 
 #define FMT_STRING_STAGE_FUNCTION_BODY(n) 										\
 	size_t const max_slices = get_max_slices_for_format(fmt); 					\
-	str_ref slices[max_slices]; /* VLA, yo */ 									\
+	str_ref *slices = (str_ref*)alloca(max_slices * sizeof(str_ref));			\
  																				\
 	static size_t const n_arg_slices = n; 										\
 	str_ref arg_slices[n_arg_slices]; 											\
