@@ -61,108 +61,292 @@ namespace meow { namespace libev {
 
 #if 0 && IO_MACHINE_THIS_IS_AN_EXAMPLE_TRAITS_DEFINITIONS_YOU_CAN_USE
 
-	struct iomachine_base_traits_def
+	template<class ContextT>
+	struct iomachine_example_traits
 	{
-		typedef /* implementation-defined */ context_t;
+		typedef ContextT context_t;
 
-		// get a pointer to event loop
-		static evloop_t* ev_loop(context_t *ctx) {}
+		struct base
+		{
+			// get a pointer to event loop
+			static evloop_t* ev_loop(context_t *ctx) {}
 
-		// get changeable event object to use for io
-		static io_context_t* io_context_ptr(context_t *ctx) {}
+			// get changeable event object to use for io
+			static io_context_t* io_context_ptr(context_t *ctx) {}
 
-		// get context from the io, mirroring io_context_ptr()
-		static context_t* context_from_io(io_context_t *io_ctx) {}
+			// get context from the io, mirroring io_context_ptr()
+			static context_t* context_from_io(io_context_t *io_ctx) {}
+		};
 
-		// get io ops mask, if we want to read only, write only or both
-		static int io_allowed_ops(context_t *ctx) {}
+		struct read
+		{
+			// must return a buffer_ref pointing to memory area we can read into
+			//  empty buffer_ref returned == cleanup and disallow reads till next iteration
+			static buffer_ref get_buffer(context_t *ctx) {}
 
-		// ask if the log messages are enabled now
-		static bool log_is_allowed(context_t *ctx) {}
+			// consume the read buffer,
+			//  second param is the reference to filled part of the buffer
+			//  that we got from read_get_buffer() call
+			static rd_consume_status_t consume_buffer(context_t *ctx, buffer_ref read_part, read_status_t r_status) {}
+		};
 
-		// log a message from the engine
-		static void log_message(context_t *ctx, line_mode_t lmode, char *fmt, ...) {}
-	};
+		struct write
+		{
+			// get next buffer to write
+			// empty buffer_ref returned == cleanup and disallow reads till next iteration
+			static buffer_ref get_buffer(context_t *ctx) {}
 
-	struct iomachine_read_traits_def
-	{
-		// must return a buffer_ref pointing to memory area we can read into
-		//  empty buffer_ref returned == cleanup and disallow reads till next iteration
-		static buffer_ref read_get_buffer(context_t *ctx) {}
+			// write complete
+			//  called after writing as much a possible from the buffer we got from write_get_buffer()
+			static wr_complete_status_t write_complete(context_t *ctx, buffer_ref written_part, write_status_t w_status) {}
+		};
 
-		// consume the read buffer,
-		//  second param is the reference to filled part of the buffer
-		//  that we got from read_get_buffer() call
-		static rd_consume_status_t read_consume_buffer(context_t *ctx, buffer_ref read_part, read_status_t r_status) {}
-	};
+		struct allowed_ops // optional
+		{
+			// get io ops mask, if we want to read only, write only or both
+			// DEFAULT IF UNSET: (EV_READ | EV_WRITE | EV_CUSTOM)
+			static int allowed_ops(context_t *ctx) {}
+		};
 
-	struct iomachine_write_traits_def
-	{
-		// get next buffer to write
-		// empty buffer_ref returned == cleanup and disallow reads till next iteration
-		static buffer_ref write_get_buffer(context_t *ctx) {}
+		struct custom_op // optional
+		{
+			// does the context need a custom operation executed now
+			//  (used from inside event loop to check for custom op being set from inside it)
+			static bool requires_custom_op(context_t *ctx) {}
 
-		// write complete
-		//  called after writing as much a possible from the buffer we got from write_get_buffer()
-		static wr_complete_status_t write_complete(context_t *ctx, buffer_ref written_part, write_status_t w_status) {}
-	};
+			// execute a custom operation we woke up on
+			static custom_op_status_t custom_operation(context_t *ctx) {}
+		};
 
-	struct iomachine_custom_operation_traits_def
-	{
-		// does the context need a custom operation executed now
-		//  (used from inside event loop to check for custom op being set from inside it)
-		static bool requires_custom_op(context_t *ctx) {}
+		struct log_writer // optional
+		{
+			// ask if the log messages are enabled now
+			static bool is_allowed(context_t *ctx) {}
 
-		// execute a custom operation we woke up on
-		static custom_op_status_t custom_operation(context_t *ctx) {}
+			// log a message from the engine
+			static void write(context_t *ctx, line_mode_t lmode, char *fmt, ...) {}
+		};
+
+		struct activity_tracker // optional
+		{
+			// idle tracking init, called when context is prepared
+			static void init(context_t *ctx) {}
+
+			// idle tracking free resources, called when context is released
+			static void deinit(context_t *ctx) {}
+
+			// idle tracking activity notification,
+			//  called every time exiting run_loop()
+			//  if read_consume_buffer() OR write_complete() were called
+			static void on_activity(context_t *ctx, int revents) {}
+		};
 	};
 
 	//
-	// example io_machine_t<> full templated definition
+	// example io_machine_t<> definition
 	//
 	typedef io_machine_t<
 			  client_connection_t
-			, generic_traits_base_t
-			, client_traits_read_t
-			, generic_traits_write_t
-			, generic_traits_custom_close_t
+			, generic_connection_simplest_traits<client_connection_t>
 		> client_iomachine_t;
 
 #endif // IO_MACHINE_THIS_IS_AN_EXAMPLE_TRAITS_DEFINITIONS_YOU_CAN_USE
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	#define LOG_MESSAGE_WRAPPER(ctx, lmode, args...) 		\
-		do { if (BaseTraits::log_is_allowed(ctx)) { 		\
-			BaseTraits::log_message(ctx, lmode, args); 		\
-		} } while(0) 										\
-	/**/
+#define DEFINE_THUNK(nested_name) 											\
+	MEOW_DEFINE_NESTED_TYPE_CHECKER(check_impl_available, nested_name); 	\
+	template<bool enabled, class Tr> struct type_thunk_t; 					\
+	template<class Tr> struct type_thunk_t<true, Tr> { 						\
+		typedef typename Tr::activity_tracker type; 						\
+	};																		\
+	template<class Tr> struct type_thunk_t<false, Tr> {						\
+		typedef Tr type;													\
+	}; 																		\
+	typedef thunk_t< 														\
+				  check_impl_available<Traits>::value 						\
+				, typename type_thunk<check_impl_available<Traits>::value, Traits>::type 	\
+				> thunk;													\
+/**/
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+	template<class ContextT, class Traits>
+	struct iomachine_allowed_ops_wrap_t
+	{
+		template<bool enabled, class Tr>
+		struct thunk_t;
+
+		template<class Tr> struct thunk_t<true, Tr>
+		{
+			static int get(ContextT *ctx) { return Traits::get(ctx); }
+		};
+
+		template<class Tr> struct thunk_t<false, Tr>
+		{
+			static int get(ContextT *) { return EV_READ | EV_WRITE | EV_CUSTOM; }
+		};
+
+		DEFINE_THUNK(allowed_ops);
+
+		static int get(ContextT *ctx) { return thunk::get(ctx); }
+	};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+	template<class ContextT, class Traits>
+	struct iomachine_custom_op_wrap_t
+	{
+		template<bool enabled, class Tr>
+		struct thunk_t;
+
+		template<class Tr> struct thunk_t<true, Tr>
+		{
+			static bool requires_custom_op(ContextT *ctx) { return Traits::requires_custom_op(ctx); }
+			static custom_op_status_t custom_operation(ContextT *ctx) { return Traits::custom_operation(ctx); }
+		};
+
+		template<class Tr> struct thunk_t<false, Tr>
+		{
+			static bool requires_custom_op(ContextT *) { return false; }
+			static custom_op_status_t custom_operation(ContextT *) { return custom_op_status::more; }
+		};
+
+		DEFINE_THUNK(custom_op);
+
+		static bool requires_custom_op(ContextT *ctx) { return thunk::requires_custom_op(ctx); }
+		static custom_op_status_t custom_operation(ContextT *ctx) { return thunk::custom_operation(ctx); }
+	};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+	template<class ContextT, class Traits>
+	struct iomachine_log_writer_wrap_t
+	{
+		template<bool enabled, class Tr>
+		struct thunk_t;
+
+		template<class Tr> struct thunk_t<true, Tr>
+		{
+			static bool is_allowed(ContextT *ctx) { return Traits::log_writer::is_allowed(ctx); }
+
+			#define DEFINE_IOMACHINE_LOG_WRITER_FMT_FUNCTION_TRUE(z, n, d) 					\
+				template<class F FMT_TEMPLATE_PARAMS(n)> 									\
+				static void write( 															\
+						  ContextT *ctx 													\
+						, line_mode_t lmode 												\
+						, F const& fmt 														\
+						  FMT_DEF_PARAMS(n)) 												\
+				{ 																			\
+					Traits::log_writer::write( 												\
+										  ctx 												\
+										, lmode 											\
+										, format::fmt_tmp<512>(fmt FMT_CALL_SITE_ARGS(n)) 	\
+										); 													\
+				} 																			\
+			/**/
+			BOOST_PP_REPEAT(32, DEFINE_IOMACHINE_LOG_WRITER_FMT_FUNCTION_TRUE, _);
+		};
+
+		template<class Tr> struct thunk_t<false, Tr>
+		{
+			static bool is_allowed(ContextT *ctx) { return false; }
+
+			#define DEFINE_IOMACHINE_LOG_WRITER_FMT_FUNCTION_FALSE(z, n, d) 				\
+				template<class F FMT_TEMPLATE_PARAMS(n)> 									\
+				static void write( 															\
+						  ContextT *ctx 													\
+						, line_mode_t lmode 												\
+						, F const& fmt 														\
+						  FMT_DEF_PARAMS(n)) 												\
+				{ 																			\
+				} 																			\
+			/**/
+			BOOST_PP_REPEAT(32, DEFINE_IOMACHINE_LOG_WRITER_FMT_FUNCTION_FALSE, _);
+		};
+
+		DEFINE_THUNK(log_writer);
+
+		static bool is_allowed(ContextT *ctx) { return thunk::is_allowed(ctx); }
+
+		#define DEFINE_IOMACHINE_LOG_WRITER_FMT_FUNCTION_FALSE(z, n, d) 				\
+			template<class F FMT_TEMPLATE_PARAMS(n)> 									\
+			static void write( 															\
+					  ContextT *ctx 													\
+					, line_mode_t lmode 												\
+					, F const& fmt 														\
+					  FMT_DEF_PARAMS(n)) 												\
+			{ 																			\
+				thunk::write(ctx, lmode, fmt FMT_CALL_SITE_ARGS(n)); 					\
+			} 																			\
+		/**/
+		BOOST_PP_REPEAT(32, DEFINE_IOMACHINE_LOG_WRITER_FMT_FUNCTION_FALSE, _);
+	};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+	template<class ContextT, class Traits>
+	struct iomachine_activity_tracker_wrap_t
+	{
+		template<bool enabled, class Tr>
+		struct thunk_t;
+
+		template<class Tr> struct thunk_t<true, Tr>
+		{
+			static void init(ContextT *ctx) { Tr::init(ctx); }
+			static void deinit(ContextT *ctx) { Tr::deinit(ctx); }
+			static void on_activity(ContextT *ctx) { Tr::on_activity(ctx); }
+		};
+
+		template<class Tr> struct thunk_t<false, Tr>
+		{
+			static void init(ContextT *ctx) {}
+			static void deinit(ContextT *ctx) {}
+			static void on_activity(ContextT *ctx) {}
+		};
+
+		DEFINE_THUNK(activity_tracker);
+
+		static void init(ContextT *ctx) { thunk::init(ctx); }
+		static void deinit(ContextT *ctx) { thunk::deinit(ctx); }
+		static void on_activity(ContextT *ctx) { thunk::on_activity(ctx); }
+	};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+#undef DEFINE_THUNK
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	template<
-		  class ContextT 		// the context we'll be operating on
-		, class BaseTraits 		// base traits, giving us global information, like evloop
-		, class ReadTraits 		// read buffer alloc and consume
-		, class WriteTraits 	// write buffer generation and post sent handling
-		, class CustomOpTraits 	// custom activation handler
+		  class ContextT
+		, class Traits
 	>
 	struct io_machine_t : private boost::noncopyable
 	{
 		typedef io_machine_t 	self_t;
 		typedef ContextT 		context_t;
 
+		typedef typename Traits::base 	tr_base;
+		typedef typename Traits::read 	tr_read;
+		typedef typename Traits::write 	tr_write;
+
+		typedef iomachine_allowed_ops_wrap_t<ContextT, Traits> 			tr_allowed_ops;
+		typedef iomachine_custom_op_wrap_t<ContextT, Traits> 			tr_custom_op;
+		typedef iomachine_log_writer_wrap_t<ContextT, Traits> 			tr_log;
+		typedef iomachine_activity_tracker_wrap_t<ContextT, Traits> 	tr_activity;
+
 	private: // libev ops
 
 		static void libev_cb(evloop_t *loop, evio_t *ev, int revents)
 		{
-			context_t *ctx = BaseTraits::context_from_io(io_context_t::cast_from_event(ev));
+			context_t *ctx = tr_base::context_from_io(io_context_t::cast_from_event(ev));
 			self_t::cb(ctx, revents);
 		}
 
 		static void cb(context_t *ctx, int revents)
 		{
-//			BaseTraits::log_message(ctx, line_mode::single, "{0}; ctx: {1}, revents: 0x{2}", __func__, ctx, meow::format::as_hex(revents));
+//			tr_log::write(ctx, line_mode::single, "{0}; ctx: {1}, revents: 0x{2}", __func__, ctx, meow::format::as_hex(revents));
 			self_t::run_loop(ctx, revents);
 		}
 
@@ -191,9 +375,9 @@ namespace meow { namespace libev {
 				if (curr_offset == buf_len)
 					return read_result_t(read_status::full, curr_offset);
 
-				if (BaseTraits::log_is_allowed(ctx))
+				if (tr_log::is_allowed(ctx))
 				{
-					BaseTraits::log_message(ctx, line_mode::prefix, "::read({0}, {1} + {2}, {3} = {4} - {5}) = "
+					tr_log::write(ctx, line_mode::prefix, "::read({0}, {1} + {2}, {3} = {4} - {5}) = "
 							, fd, buf, curr_offset
 							, buf_len - curr_offset, buf_len, curr_offset
 						);
@@ -201,12 +385,12 @@ namespace meow { namespace libev {
 
 				ssize_t n = ::read(fd, (char*)buf + curr_offset, buf_len - curr_offset);
 
-				if (BaseTraits::log_is_allowed(ctx))
+				if (tr_log::is_allowed(ctx))
 				{
 					if (-1 == n)
-						BaseTraits::log_message(ctx, line_mode::suffix, "{0}, errno: {1} : {2}", n, errno, strerror(errno));
+						tr_log::write(ctx, line_mode::suffix, "{0}, errno: {1} : {2}", n, errno, strerror(errno));
 					else
-						BaseTraits::log_message(ctx, line_mode::suffix, "{0}", n);
+						tr_log::write(ctx, line_mode::suffix, "{0}", n);
 				}
 
 				if (-1 == n)
@@ -250,9 +434,9 @@ namespace meow { namespace libev {
 				if (curr_offset == buf_len)
 					return write_result_t(write_status::empty, curr_offset);
 
-				if (BaseTraits::log_is_allowed(ctx))
+				if (tr_log::is_allowed(ctx))
 				{
-					BaseTraits::log_message(ctx, line_mode::prefix, "::write({0}, {1} + {2}, {3} = {4} - {5}) = "
+					tr_log::write(ctx, line_mode::prefix, "::write({0}, {1} + {2}, {3} = {4} - {5}) = "
 							, fd, buf, curr_offset
 							, buf_len - curr_offset, buf_len, curr_offset
 						);
@@ -260,12 +444,12 @@ namespace meow { namespace libev {
 
 				ssize_t n = ::write(fd, (char*)buf + curr_offset, buf_len - curr_offset);
 
-				if (BaseTraits::log_is_allowed(ctx))
+				if (tr_log::is_allowed(ctx))
 				{
 					if (-1 == n)
-						BaseTraits::log_message(ctx, line_mode::suffix, "{0}, errno: {1} : {2}", n, errno, strerror(errno));
+						tr_log::write(ctx, line_mode::suffix, "{0}, errno: {1} : {2}", n, errno, strerror(errno));
 					else
-						BaseTraits::log_message(ctx, line_mode::suffix, "{0}", n);
+						tr_log::write(ctx, line_mode::suffix, "{0}", n);
 				}
 
 				if (-1 == n)
@@ -297,20 +481,24 @@ namespace meow { namespace libev {
 
 		static void prepare_context(context_t *ctx)
 		{
-			io_context_t *io_ctx = BaseTraits::io_context_ptr(ctx);
+			io_context_t *io_ctx = tr_base::io_context_ptr(ctx);
 			ev_io_init(io_ctx->event(), &self_t::libev_cb, io_ctx->fd(), EV_NONE);
+
+			tr_activity::init(ctx);
 		}
 
 		static void release_context(context_t *ctx)
 		{
-			io_context_t *io_ctx = BaseTraits::io_context_ptr(ctx);
-			ev_io_stop(BaseTraits::ev_loop(ctx), io_ctx->event());
+			tr_activity::deinit(ctx);
+
+			io_context_t *io_ctx = tr_base::io_context_ptr(ctx);
+			ev_io_stop(tr_base::ev_loop(ctx), io_ctx->event());
 			ev_io_set(io_ctx->event(), io_ctx->fd(), EV_NONE);
 		}
 
 		static void activate_context(context_t *ctx, int io_requested_ops)
 		{
-			ev_feed_event(BaseTraits::ev_loop(ctx), BaseTraits::io_context_ptr(ctx)->event(), io_requested_ops);
+			ev_feed_event(tr_base::ev_loop(ctx), tr_base::io_context_ptr(ctx)->event(), io_requested_ops);
 		}
 
 	public:
@@ -333,7 +521,7 @@ namespace meow { namespace libev {
 		static void run_loop(context_t *ctx, int const io_requested_ops = EV_READ | EV_WRITE)
 		{
 			// operations we're allowed to execute in this run
-			int const io_allowed_ops = BaseTraits::io_allowed_ops(ctx);
+			int const io_allowed_ops = tr_allowed_ops::get(ctx);
 
 			// the operations to be executed this run
 			int io_executed_ops = (io_allowed_ops & io_requested_ops);
@@ -345,11 +533,27 @@ namespace meow { namespace libev {
 
 			// we need this everywhere and it's cached for an iteration
 			//  might be a wrong thing to do tho, time will tell
-			io_context_t *io_ctx = BaseTraits::io_context_ptr(ctx);
+			io_context_t *io_ctx = tr_base::io_context_ptr(ctx);
 
-			if (BaseTraits::log_is_allowed(ctx))
+			// idle tracker activity guard
+			struct idle_tracking_guard_t
 			{
-				BaseTraits::log_message(ctx, line_mode::single, "{0}; fd: {1}; aop: 0x{2}, rop: 0x{3}, eop: 0x{4}"
+				int revents;
+				context_t *ctx;
+
+				void set_activity(int events) { revents |= events; }
+
+				~idle_tracking_guard_t()
+				{
+					if (revents)
+						tr_activity::on_activity(ctx);
+				}
+			}
+			idle_guard_ = { EV_NONE, NULL };
+
+			if (tr_log::is_allowed(ctx))
+			{
+				tr_log::write(ctx, line_mode::single, "{0}; fd: {1}; aop: 0x{2}, rop: 0x{3}, eop: 0x{4}"
 						, __func__, io_ctx->fd()
 						, meow::format::as_hex(io_allowed_ops)
 						, meow::format::as_hex(io_requested_ops)
@@ -359,9 +563,9 @@ namespace meow { namespace libev {
 
 			for (int io_current_ops = io_executed_ops; EV_NONE != io_current_ops; /**/)
 			{
-				if (BaseTraits::log_is_allowed(ctx))
+				if (tr_log::is_allowed(ctx))
 				{
-					BaseTraits::log_message(ctx, line_mode::single, "{0}; io_current_ops = 0x{1}, ev_ops: 0x{2}"
+					tr_log::write(ctx, line_mode::single, "{0}; io_current_ops = 0x{1}, ev_ops: 0x{2}"
 							, __func__
 							, meow::format::as_hex(io_current_ops)
 							, meow::format::as_hex(io_ctx->event()->events)
@@ -370,7 +574,7 @@ namespace meow { namespace libev {
 
 				if (bitmask_test(io_current_ops, EV_CUSTOM))
 				{
-					custom_op_status_t c_status = CustomOpTraits::custom_operation(ctx);
+					custom_op_status_t c_status = tr_custom_op::custom_operation(ctx);
 					bitmask_clear(io_current_ops, EV_CUSTOM);
 
 					switch (c_status)
@@ -389,9 +593,9 @@ namespace meow { namespace libev {
 					//  when connection is idle
 					if (!self_t::fd_has_data_or_error(io_ctx))
 					{
-						if (BaseTraits::log_is_allowed(ctx))
+						if (tr_log::is_allowed(ctx))
 						{
-							BaseTraits::log_message(ctx, line_mode::single
+							tr_log::write(ctx, line_mode::single
 									, "{0}; fd_has_data_or_error(): no available data on socket"
 									, __func__
 									);
@@ -402,15 +606,15 @@ namespace meow { namespace libev {
 					}
 
 					// now get a buffer
-					meow::buffer_ref buf_to = ReadTraits::read_get_buffer(ctx);
+					meow::buffer_ref buf_to = tr_read::get_buffer(ctx);
 
 					// don't read anymore till re-entering this function
 					if (buf_to.empty())
 					{
-						if (BaseTraits::log_is_allowed(ctx))
+						if (tr_log::is_allowed(ctx))
 						{
-							BaseTraits::log_message(ctx, line_mode::single
-									, "{0}; empty buffer from ReadTraits::read_get_buffer()"
+							tr_log::write(ctx, line_mode::single
+									, "{0}; empty buffer from tr_read::get_buffer()"
 									, __func__
 									);
 						}
@@ -433,7 +637,10 @@ namespace meow { namespace libev {
 					//  it's intrested in data + if connection is still alive,
 					//   and it it isn't - it might care about why
 					meow::buffer_ref filled_buf(buf_to.begin(), r.filled_len);
-					rd_consume_status_t c_status = ReadTraits::read_consume_buffer(ctx, filled_buf, r.status);
+					rd_consume_status_t c_status = tr_read::consume_buffer(ctx, filled_buf, r.status);
+
+					// signal idle activity as soon before possible returns
+					idle_guard_.set_activity(ctx);
 
 					switch (c_status)
 					{
@@ -449,7 +656,7 @@ namespace meow { namespace libev {
 					}
 				}
 
-				if (CustomOpTraits::requires_custom_op(ctx))
+				if (tr_custom_op::requires_custom_op(ctx))
 				{
 					bitmask_set(io_current_ops, EV_CUSTOM);
 					continue;
@@ -457,14 +664,14 @@ namespace meow { namespace libev {
 
 				while (bitmask_test(io_current_ops, EV_WRITE))
 				{
-					meow::buffer_ref buf = WriteTraits::write_get_buffer(ctx);
+					meow::buffer_ref buf = tr_write::get_buffer(ctx);
 
 					if (buf.empty())
 					{
-						if (BaseTraits::log_is_allowed(ctx))
+						if (tr_log::is_allowed(ctx))
 						{
-							BaseTraits::log_message(ctx, line_mode::single
-									, "{0}; empty buffer from WriteTraits::write_get_buffer()"
+							tr_log::write(ctx, line_mode::single
+									, "{0}; empty buffer from tr_write::get_buffer()"
 									, __func__
 									);
 						}
@@ -481,7 +688,10 @@ namespace meow { namespace libev {
 					}
 
 					meow::buffer_ref written_buf(buf.begin(), r.bytes_written);
-					wr_complete_status_t c_status = WriteTraits::write_complete(ctx, written_buf, r.status);
+					wr_complete_status_t c_status = tr_write::write_complete(ctx, written_buf, r.status);
+
+					// signal idle activity as soon before possible returns
+					idle_guard_.set_activity(ctx);
 
 					switch (c_status)
 					{
@@ -497,7 +707,7 @@ namespace meow { namespace libev {
 					}
 				}
 
-				if (CustomOpTraits::requires_custom_op(ctx))
+				if (tr_custom_op::requires_custom_op(ctx))
 				{
 					bitmask_set(io_current_ops, EV_CUSTOM);
 					continue;
@@ -516,9 +726,9 @@ namespace meow { namespace libev {
 			bitmask_clear(new_wait_ops, io_executed_ops); 	// clear out masked space
 			bitmask_set(new_wait_ops, io_wait_ops); 		// set the new event bits
 
-			if (BaseTraits::log_is_allowed(ctx))
+			if (tr_log::is_allowed(ctx))
 			{
-				BaseTraits::log_message(
+				tr_log::write(
 								  ctx, line_mode::single
 								, "{0}; fd: {1}; loop end; curr_ev_ops: 0x{2}, new_wait_ops = 0x{3}"
 								, __func__
@@ -530,7 +740,7 @@ namespace meow { namespace libev {
 
 			if (io_ctx->event()->events != new_wait_ops)
 			{
-				evloop_t *loop = BaseTraits::ev_loop(ctx);
+				evloop_t *loop = tr_base::ev_loop(ctx);
 
 				ev_io_stop(loop, io_ctx->event());
 

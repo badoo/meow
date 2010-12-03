@@ -8,6 +8,7 @@
 
 #include <meow/bitfield_union.hpp>
 #include <meow/unix/fcntl.hpp>
+#include <meow/utility/nested_type_checker.hpp>
 
 #include "io_context.hpp"
 #include "io_machine.hpp"
@@ -56,6 +57,9 @@ namespace meow { namespace libev {
 		static size_t read_header_get_body_length(header_t const&)
 		{
 		}
+
+		// logging functions, see io_machine.hpp traits example
+		// idle tracking functions, see io_machine.hpp traits example
 	};
 
 #endif
@@ -172,6 +176,105 @@ namespace meow { namespace libev {
 	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
+#if 0
+	template<class Traits, class ContextT>
+	struct bin_msg_base_traits_logging_base_t
+	{
+		// logging is directly translated to the user, if the traits allow
+		template<bool enabled, class Tr> struct log_thunk_t;
+
+		template<class Tr> struct log_thunk_t<true, Tr>
+		{
+			static bool is_allowed(ContextT *ctx)
+			{
+				return Tr::log_writer::is_allowed(ctx);
+			}
+
+		#define DEFINE_BINMSG_CONNECTION_TRAITS_FMT_FUNCTION_TRUE(z, n, d) 				\
+			template<class F FMT_TEMPLATE_PARAMS(n)> 									\
+			static void write( 													\
+					  ContextT *ctx 													\
+					, line_mode_t lmode 												\
+					, F const& fmt 														\
+					  FMT_DEF_PARAMS(n)) 												\
+			{ 																			\
+				Tr::log_writer::write(ctx, lmode, format::fmt_tmp<512>(fmt FMT_CALL_SITE_ARGS(n))); 	\
+			} 																			\
+		/**/
+			BOOST_PP_REPEAT(32, DEFINE_BINMSG_CONNECTION_TRAITS_FMT_FUNCTION_TRUE, _);
+		};
+
+		template<class Tr> struct log_thunk_t<false, Tr>
+		{
+			static bool is_allowed(ContextT *ctx) { return false; }
+
+		#define DEFINE_BINMSG_CONNECTION_TRAITS_FMT_FUNCTION_FALSE(z, n, d) 			\
+			template<class F FMT_TEMPLATE_PARAMS(n)> 									\
+			static void write( 															\
+					  ContextT *ctx 													\
+					, line_mode_t lmode 												\
+					, F const& fmt 														\
+					  FMT_DEF_PARAMS(n)) 												\
+			{ 																			\
+			} 																			\
+		/**/
+			BOOST_PP_REPEAT(32, DEFINE_BINMSG_CONNECTION_TRAITS_FMT_FUNCTION_FALSE, _);
+		};
+
+		MEOW_DEFINE_NESTED_TYPE_CHECKER(check_has_subtype__log_writer, log_writer);
+		typedef log_thunk_t<check_has_subtype__log_writer<Traits>::value, Traits> log_thunk;
+
+		static bool log_is_allowed(ContextT *ctx)
+		{
+			return log_thunk::is_allowed(ctx);
+		}
+
+		#define DEFINE_BINMSG_CONNECTION_TRAITS_FMT_FUNCTION(z, n, d) 					\
+			template<class F FMT_TEMPLATE_PARAMS(n)> 									\
+			static void log_message( 													\
+					  ContextT *ctx 													\
+					, line_mode_t lmode 												\
+					, F const& fmt 														\
+					  FMT_DEF_PARAMS(n)) 												\
+			{ 																			\
+				log_thunk::write(ctx, lmode, fmt FMT_CALL_SITE_ARGS(n)); 				\
+			} 																			\
+		/**/
+
+		BOOST_PP_REPEAT(32, DEFINE_BINMSG_CONNECTION_TRAITS_FMT_FUNCTION, _);
+	};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+	template<class Traits, class ContextT>
+	struct bin_msg_base_traits_idle_base_t
+	{
+		template<bool enabled, class Tr>
+		struct idle_thunk_t;
+
+		template<class Tr> struct idle_thunk_t<true, Tr>
+		{
+			static void init(ContextT *ctx) { Tr::idle_tracker::init(ctx); }
+			static void deinit(ContextT *ctx) { Tr::idle_tracker::deinit(ctx); }
+			static void on_activity(ContextT *ctx) { Tr::idle_tracker::on_activity(ctx); }
+		};
+
+		template<class Tr> struct idle_thunk_t<false, Tr>
+		{
+			static void init(ContextT *ctx) {}
+			static void deinit(ContextT *ctx) {}
+			static void on_activity(ContextT *ctx) {}
+		};
+
+		MEOW_DEFINE_NESTED_TYPE_CHECKER(check_has_subtype__idle_tracker, idle_tracker);
+		typedef idle_thunk_t<check_has_subtype__idle_tracker<Traits>::value, Traits> idle_thunk;
+
+		static void idle_tracking_init(ContextT *ctx) { idle_thunk::init(ctx); }
+		static void idle_tracking_deinit(ContextT *ctx) { idle_thunk::deinit(ctx); }
+		static void idle_tracking_on_activity(ContextT *ctx) { idle_thunk::on_activity(ctx); }
+	};
+#endif
+////////////////////////////////////////////////////////////////////////////////////////////////
 
 	template<
 		  class Traits
@@ -182,7 +285,13 @@ namespace meow { namespace libev {
 		, public bin_msg_connection_traits_read<Traits>::context_t
 	{
 		typedef bin_msg_connection_impl_t 				self_t;
-		typedef generic_connection_traits_base<self_t> 	base_traits_t;
+/*
+		struct base_traits_t 
+			: public generic_connection_traits_base<self_t>
+			, public bin_msg_base_traits_logging_base_t<Traits, self_t>
+			, public bin_msg_base_traits_idle_base_t<Traits, self_t>
+		{
+		};
 
 		typedef bin_msg_connection_traits_read<Traits> 	reader_traits_t;
 		typedef typename reader_traits_t::header_t 		reader_header_t;
@@ -195,6 +304,13 @@ namespace meow { namespace libev {
 					, generic_connection_traits_write<base_traits_t>
 					, generic_connection_traits_custom_op
 				> iomachine_t;
+*/
+		struct traits_t
+		{
+			typedef generic_connection_traits_base<self_t> base;
+			typedef bin_msg_connection_traits_read<Traits> read;
+			typedef generic_connection_traits_write<self_t> write;
+		};
 
 		typedef typename base_t::events_t events_t;
 
@@ -250,9 +366,6 @@ namespace meow { namespace libev {
 		{
 			return ev_->on_read_error(this, error_msg);
 		}
-
-		bool cb_log_is_allowed() { return Traits::log_is_allowed(this); }
-		void cb_log_debug(line_mode_t lmode, str_ref msg) { Traits::log_message(this, lmode, msg); }
 
 	public:
 

@@ -135,7 +135,14 @@ namespace meow { namespace libev {
 	{
 		typedef mmc_connection_impl_t 			self_t;
 		typedef typename Interface::events_t 	events_t;
-		typedef generic_connection_traits_base<self_t> base_traits_t;
+//		typedef generic_connection_traits_base<self_t> base_traits_t;
+
+		struct base_traits_t 
+			: public generic_connection_traits_base<self_t>
+			, public generic_connection_logging_traits<self_t>
+			, public generic_connection_idle_tracking_disabled_traits<self_t>
+		{
+		};
 
 		typedef libev::io_machine_t<
 					  self_t
