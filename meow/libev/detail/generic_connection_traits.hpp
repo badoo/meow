@@ -78,8 +78,6 @@ namespace meow { namespace libev {
 
 	template<class ContextT>
 	struct generic_connection_traits_base
-//		: public generic_connection_idle_tracking_disabled_traits<ContextT>
-//		, public generic_connection_logging_traits<ContextT>
 	{
 		typedef ContextT context_t;
 
@@ -109,7 +107,7 @@ namespace meow { namespace libev {
 	{
 
 		template<class ContextT>
-		static buffer_ref write_get_buffer(ContextT *ctx)
+		static buffer_ref get_buffer(ContextT *ctx)
 		{
 			buffer_chain_t& wchain = ctx->wchain_;
 

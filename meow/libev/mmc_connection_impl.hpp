@@ -8,6 +8,7 @@
 
 #include <meow/bitfield_union.hpp>
 #include <meow/unix/fcntl.hpp>
+#include <meow/utility/nested_name_alias.hpp>
 
 #include "io_machine.hpp"
 #include "detail/generic_connection_traits.hpp"
@@ -64,13 +65,13 @@ namespace meow { namespace libev {
 	public:
 
 		template<class ContextT>
-		static buffer_ref read_get_buffer(ContextT *ctx)
+		static buffer_ref get_buffer(ContextT *ctx)
 		{
 			return ctx->r_buf->free_part();
 		}
 
 		template<class ContextT>
-		static rd_consume_status_t read_consume_buffer(ContextT *ctx, buffer_ref read_part, read_status_t r_status)
+		static rd_consume_status_t consume_buffer(ContextT *ctx, buffer_ref read_part, read_status_t r_status)
 		{
 			// now we might have our connection dead already
 			if (read_status::error == r_status)
@@ -135,22 +136,21 @@ namespace meow { namespace libev {
 	{
 		typedef mmc_connection_impl_t 			self_t;
 		typedef typename Interface::events_t 	events_t;
-//		typedef generic_connection_traits_base<self_t> base_traits_t;
 
-		struct base_traits_t 
-			: public generic_connection_traits_base<self_t>
-			, public generic_connection_logging_traits<self_t>
-			, public generic_connection_idle_tracking_disabled_traits<self_t>
+		struct traits_t
 		{
+			typedef generic_connection_traits_base<self_t> 		base;
+			typedef mmc_connection_traits_read<Traits> 			read;
+			typedef generic_connection_traits_write<self_t> 	write;
+
+			typedef generic_connection_traits_custom_op 		custom_op;
+
+			MEOW_DEFINE_NESTED_NAME_ALIAS_OR_VOID(allowed_ops);
+			MEOW_DEFINE_NESTED_NAME_ALIAS_OR_VOID(log_writer);
+			MEOW_DEFINE_NESTED_NAME_ALIAS_OR_VOID(activity_tracker);
 		};
 
-		typedef libev::io_machine_t<
-					  self_t
-					, base_traits_t
-					, mmc_connection_traits_read<Traits>
-					, generic_connection_traits_write<base_traits_t>
-					, generic_connection_traits_custom_op
-				> iomachine_t;
+		typedef libev::io_machine_t<self_t, traits_t> iomachine_t;
 
 	public: // traits need access to this stuff
 

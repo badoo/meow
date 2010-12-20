@@ -16,7 +16,10 @@
 #include <meow/smart_enum.hpp>
 #include <meow/utility/bitmask.hpp>
 #include <meow/utility/line_mode.hpp>
+#include <meow/utility/nested_type_checker.hpp>
 
+#include <meow/format/format.hpp>
+#include <meow/format/format_tmp.hpp>
 #include <meow/format/inserter/integral.hpp>
 #include <meow/format/inserter/pointer.hpp>
 
@@ -153,20 +156,23 @@ namespace meow { namespace libev {
 #endif // IO_MACHINE_THIS_IS_AN_EXAMPLE_TRAITS_DEFINITIONS_YOU_CAN_USE
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
+// this thing checks for presence of subtype nested_name in the template param Tr
+// and, assuming the presence of thunk_t<bool,type> available around
+// typedefs it with proper template args as thunk
 
 #define DEFINE_THUNK(nested_name) 											\
 	MEOW_DEFINE_NESTED_TYPE_CHECKER(check_impl_available, nested_name); 	\
 	template<bool enabled, class Tr> struct type_thunk_t; 					\
 	template<class Tr> struct type_thunk_t<true, Tr> { 						\
-		typedef typename Tr::activity_tracker type; 						\
+		typedef typename Tr::nested_name type; 								\
+		enum { is_enabled = !boost::is_same<void, type>::value };			\
 	};																		\
 	template<class Tr> struct type_thunk_t<false, Tr> {						\
 		typedef Tr type;													\
+		enum { is_enabled = false };										\
 	}; 																		\
-	typedef thunk_t< 														\
-				  check_impl_available<Traits>::value 						\
-				, typename type_thunk<check_impl_available<Traits>::value, Traits>::type 	\
-				> thunk;													\
+	typedef type_thunk_t<check_impl_available<Traits>::value, Traits> tth_t;	\
+	typedef thunk_t<tth_t::is_enabled, typename tth_t::type> thunk;			\
 /**/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -202,8 +208,8 @@ namespace meow { namespace libev {
 
 		template<class Tr> struct thunk_t<true, Tr>
 		{
-			static bool requires_custom_op(ContextT *ctx) { return Traits::requires_custom_op(ctx); }
-			static custom_op_status_t custom_operation(ContextT *ctx) { return Traits::custom_operation(ctx); }
+			static bool requires_custom_op(ContextT *ctx) { return Tr::requires_custom_op(ctx); }
+			static custom_op_status_t custom_operation(ContextT *ctx) { return Tr::custom_operation(ctx); }
 		};
 
 		template<class Tr> struct thunk_t<false, Tr>
@@ -238,11 +244,11 @@ namespace meow { namespace libev {
 						, F const& fmt 														\
 						  FMT_DEF_PARAMS(n)) 												\
 				{ 																			\
-					Traits::log_writer::write( 												\
-										  ctx 												\
-										, lmode 											\
-										, format::fmt_tmp<512>(fmt FMT_CALL_SITE_ARGS(n)) 	\
-										); 													\
+					Tr::write( 																\
+							  ctx 															\
+							, lmode 														\
+							, format::fmt_tmp<512>(fmt FMT_CALL_SITE_ARGS(n)) 				\
+							); 																\
 				} 																			\
 			/**/
 			BOOST_PP_REPEAT(32, DEFINE_IOMACHINE_LOG_WRITER_FMT_FUNCTION_TRUE, _);
@@ -269,7 +275,7 @@ namespace meow { namespace libev {
 
 		static bool is_allowed(ContextT *ctx) { return thunk::is_allowed(ctx); }
 
-		#define DEFINE_IOMACHINE_LOG_WRITER_FMT_FUNCTION_FALSE(z, n, d) 				\
+		#define DEFINE_IOMACHINE_LOG_WRITER_FMT_FUNCTION(z, n, d) 				\
 			template<class F FMT_TEMPLATE_PARAMS(n)> 									\
 			static void write( 															\
 					  ContextT *ctx 													\
@@ -280,7 +286,7 @@ namespace meow { namespace libev {
 				thunk::write(ctx, lmode, fmt FMT_CALL_SITE_ARGS(n)); 					\
 			} 																			\
 		/**/
-		BOOST_PP_REPEAT(32, DEFINE_IOMACHINE_LOG_WRITER_FMT_FUNCTION_FALSE, _);
+		BOOST_PP_REPEAT(32, DEFINE_IOMACHINE_LOG_WRITER_FMT_FUNCTION, _);
 	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -549,7 +555,7 @@ namespace meow { namespace libev {
 						tr_activity::on_activity(ctx);
 				}
 			}
-			idle_guard_ = { EV_NONE, NULL };
+			idle_guard_ = { EV_NONE, ctx };
 
 			if (tr_log::is_allowed(ctx))
 			{
@@ -640,7 +646,7 @@ namespace meow { namespace libev {
 					rd_consume_status_t c_status = tr_read::consume_buffer(ctx, filled_buf, r.status);
 
 					// signal idle activity as soon before possible returns
-					idle_guard_.set_activity(ctx);
+					idle_guard_.set_activity(EV_READ);
 
 					switch (c_status)
 					{
@@ -691,7 +697,7 @@ namespace meow { namespace libev {
 					wr_complete_status_t c_status = tr_write::write_complete(ctx, written_buf, r.status);
 
 					// signal idle activity as soon before possible returns
-					idle_guard_.set_activity(ctx);
+					idle_guard_.set_activity(EV_WRITE);
 
 					switch (c_status)
 					{
@@ -728,8 +734,7 @@ namespace meow { namespace libev {
 
 			if (tr_log::is_allowed(ctx))
 			{
-				tr_log::write(
-								  ctx, line_mode::single
+				tr_log::write(    ctx, line_mode::single
 								, "{0}; fd: {1}; loop end; curr_ev_ops: 0x{2}, new_wait_ops = 0x{3}"
 								, __func__
 								, io_ctx->fd()

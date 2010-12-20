@@ -89,7 +89,7 @@ namespace meow { namespace libev {
 	public:
 
 		template<class ContextT>
-		static buffer_ref read_get_buffer(ContextT *ctx)
+		static buffer_ref get_buffer(ContextT *ctx)
 		{
 			buffer_move_ptr& b = ctx->r_buf;
 
@@ -110,7 +110,7 @@ namespace meow { namespace libev {
 		}
 
 		template<class ContextT>
-		static rd_consume_status_t read_consume_buffer(ContextT *ctx, buffer_ref read_part, read_status_t r_status)
+		static rd_consume_status_t consume_buffer(ContextT *ctx, buffer_ref read_part, read_status_t r_status)
 		{
 			// now we might have our connection dead already
 			if (read_status::error == r_status)
@@ -284,7 +284,8 @@ namespace meow { namespace libev {
 		: public Interface
 		, public bin_msg_connection_traits_read<Traits>::context_t
 	{
-		typedef bin_msg_connection_impl_t 				self_t;
+		typedef bin_msg_connection_impl_t 		self_t;
+		typedef typename Interface::events_t 	events_t;
 /*
 		struct base_traits_t 
 			: public generic_connection_traits_base<self_t>
@@ -305,14 +306,22 @@ namespace meow { namespace libev {
 					, generic_connection_traits_custom_op
 				> iomachine_t;
 */
+
+		typedef bin_msg_connection_traits_read<Traits> 	reader_traits_t;
+		typedef typename reader_traits_t::header_t 		reader_header_t;
+
 		struct traits_t
 		{
-			typedef generic_connection_traits_base<self_t> base;
-			typedef bin_msg_connection_traits_read<Traits> read;
-			typedef generic_connection_traits_write<self_t> write;
+			typedef generic_connection_traits_base<self_t> 		base;
+			typedef reader_traits_t 							read;
+			typedef generic_connection_traits_write<self_t> 	write;
+
+			typedef void custom_op;
+			typedef void log_writer;
+			typedef void activity_tracker;
 		};
 
-		typedef typename base_t::events_t events_t;
+		typedef libev::io_machine_t<self_t, traits_t> iomachine_t;
 
 	public: // traits need access to this stuff
 
