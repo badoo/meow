@@ -169,7 +169,7 @@ namespace detail {
 		READ_DIGIT_OR_RETURN_FALSE(*(lf - 3), result.version.minor);
 
 		// uri finally, skip spaces at the end
-		while (detail::my_isspace(*--vstr));
+		while (detail::my_isspace(*--vstr)) ;
 		result.uri.assign(head, vstr + 1);
 
 		head = lf;
