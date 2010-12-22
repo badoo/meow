@@ -72,7 +72,8 @@ namespace meow {
 
 		// copy construction from temporary, see the lvalue const catcher above
 		movable_handle(movable_handle const& other) 
-			: handle_(const_cast<self_type&>(other).release())
+			: movable_handle::move_base_t()
+			, handle_(const_cast<self_type&>(other).release())
 		{
 		}
 

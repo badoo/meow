@@ -33,6 +33,8 @@ namespace movable {
 	template<class T>
 	struct move_enabled
 	{
+		typedef move_enabled move_base_t;
+
 		operator constant<T>() const { return constant<T>(static_cast<T const&>(*this)); }
 		operator temporary<T>() { return temporary<T>(static_cast<T&>(*this)); }
 
