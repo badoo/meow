@@ -185,7 +185,7 @@ namespace meow { namespace libev {
 
 		template<class Tr> struct thunk_t<true, Tr>
 		{
-			static int get(ContextT *ctx) { return Traits::get(ctx); }
+			static int get(ContextT *ctx) { return Tr::get(ctx); }
 		};
 
 		template<class Tr> struct thunk_t<false, Tr>
@@ -301,21 +301,21 @@ namespace meow { namespace libev {
 		{
 			static void init(ContextT *ctx) { Tr::init(ctx); }
 			static void deinit(ContextT *ctx) { Tr::deinit(ctx); }
-			static void on_activity(ContextT *ctx) { Tr::on_activity(ctx); }
+			static void on_activity(ContextT *ctx, int revents) { Tr::on_activity(ctx, revents); }
 		};
 
 		template<class Tr> struct thunk_t<false, Tr>
 		{
 			static void init(ContextT *ctx) {}
 			static void deinit(ContextT *ctx) {}
-			static void on_activity(ContextT *ctx) {}
+			static void on_activity(ContextT *ctx, int revents) {}
 		};
 
 		DEFINE_THUNK(activity_tracker);
 
 		static void init(ContextT *ctx) { thunk::init(ctx); }
 		static void deinit(ContextT *ctx) { thunk::deinit(ctx); }
-		static void on_activity(ContextT *ctx) { thunk::on_activity(ctx); }
+		static void on_activity(ContextT *ctx, int revents) { thunk::on_activity(ctx, revents); }
 	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -552,7 +552,7 @@ namespace meow { namespace libev {
 				~idle_tracking_guard_t()
 				{
 					if (revents)
-						tr_activity::on_activity(ctx);
+						tr_activity::on_activity(ctx, revents);
 				}
 			}
 			idle_guard_ = { EV_NONE, ctx };

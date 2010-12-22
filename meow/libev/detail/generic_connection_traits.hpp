@@ -16,65 +16,12 @@
 
 #include <meow/libev/libev.hpp>
 #include <meow/libev/io_context.hpp>
+#include <meow/libev/io_machine.hpp> 	// read/write statuses
 #include <meow/libev/io_close_report.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace libev {
 ////////////////////////////////////////////////////////////////////////////////////////////////
-
-	// simple stuff, idle is unimplemented -> disabled
-	template<class ContextT>
-	struct generic_connection_idle_tracking_disabled_traits
-	{
-		static void idle_tracking_init(ContextT *ctx) {}
-		static void idle_tracking_deinit(ContextT *ctx) {}
-		static void idle_tracking_on_activity(ContextT *ctx) {}
-	};
-
-	template<class ContextT>
-	struct generic_connection_logging_disabled_traits
-	{
-		static bool log_is_allowed(ContextT *ctx)
-		{
-			return false;
-		}
-
-		#define DEFINE_CONNECTION_TRAITS_FMT_FUNCTION_EMPTY(z, n, d) 					\
-			template<class F FMT_TEMPLATE_PARAMS(n)> 									\
-			static void log_message( 													\
-					  ContextT *ctx 													\
-					, line_mode_t lmode 												\
-					, F const& fmt 														\
-					  FMT_DEF_PARAMS(n)) 												\
-			{ 																			\
-			} 																			\
-		/**/
-
-		BOOST_PP_REPEAT(32, DEFINE_CONNECTION_TRAITS_FMT_FUNCTION_EMPTY, _);
-	};
-
-	template<class ContextT>
-	struct generic_connection_logging_traits
-	{
-		static bool log_is_allowed(ContextT *ctx)
-		{
-			return ctx->cb_log_is_allowed();
-		}
-
-		#define DEFINE_CONNECTION_TRAITS_FMT_FUNCTION(z, n, d) 							\
-			template<class F FMT_TEMPLATE_PARAMS(n)> 									\
-			static void log_message( 													\
-					  ContextT *ctx 													\
-					, line_mode_t lmode 												\
-					, F const& fmt 														\
-					  FMT_DEF_PARAMS(n)) 												\
-			{ 																			\
-				ctx->cb_log_debug(lmode, format::fmt_tmp<512>(fmt FMT_CALL_SITE_ARGS(n))); 	\
-			} 																			\
-		/**/
-
-		BOOST_PP_REPEAT(32, DEFINE_CONNECTION_TRAITS_FMT_FUNCTION, _);
-	};
 
 	template<class ContextT>
 	struct generic_connection_traits_base
@@ -149,7 +96,7 @@ namespace meow { namespace libev {
 
 			if (wchain.empty())
 			{
-				if (ctx->cb_is_closing_after_write())
+				if (ctx->close_flags()->after_write)
 				{
 					ctx->cb_write_closed(io_close_report(io_close_reason::write_close));
 					return wr_complete_status::closed;
@@ -166,13 +113,13 @@ namespace meow { namespace libev {
 		template<class ContextT>
 		static bool requires_custom_op(ContextT *ctx)
 		{
-			return ctx->cb_is_closing_immediately();
+			return ctx->close_flags()->immediately;
 		}
 
 		template<class ContextT>
 		static custom_op_status_t custom_operation(ContextT *ctx)
 		{
-			BOOST_ASSERT(ctx->cb_is_closing_immediately());
+			BOOST_ASSERT(ctx->close_flags()->immediately);
 			ctx->cb_custom_closed(io_close_report(io_close_reason::custom_close));
 			ctx->close_->immediately = false;
 
