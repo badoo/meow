@@ -55,6 +55,38 @@ namespace meow { namespace format {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
+	inline bool my_isdigit(unsigned char const c)
+	{
+		return std::isdigit(c);//(c ^ 0x30) < 10;
+	}
+
+	template<size_t max_len, class CharT, class T>
+	inline CharT* read_number(CharT *head, CharT *hend, T& v)
+	{
+		BOOST_STATIC_ASSERT(max_len >= 1);
+
+		if (__builtin_expect(hend < head + max_len, 0))
+			hend = head + max_len;
+
+		if (__builtin_expect(my_isdigit(*head), 1))
+		{
+			v = *head++ - '0';
+
+			for (; head != hend && my_isdigit(*head); ++head)
+			{
+				v *= 10;
+				v += *head - '0';
+			}
+
+			return head;
+		}
+		else
+		{
+			v = 0;
+			return hend;
+		}
+	}
+
 	inline format_info_t parse_format_expression(
 			  str_ref fmt
 			, str_ref *slices
@@ -68,74 +100,42 @@ namespace meow { namespace format {
 
 		format_info_t result = {};
 
-		typedef str_ref::iterator iterator_t;
+		char const *head = fmt.begin();
+		char const *hend = fmt.end();
 
-		iterator_t curr = fmt.begin();
-		iterator_t slice_start = curr;
-
-		enum state_t { s_normal, s_argument };
-		state_t state = s_normal;
-
-		for (/**/; /**/; ++curr)
+		while (head != hend)
 		{
-			if (curr == fmt.end())
+			char const *abegin = (char const*)std::memchr(head, open_c, hend - head);
+			if (NULL == abegin)
 			{
-				str_ref const slice_s = str_ref(slice_start, curr);
-				push_slice(result, slice_s, slices, n_slices);
+				push_slice(result, str_ref(head, hend), slices, n_slices);
 				break;
 			}
 
-			switch (state)
+			if (open_c == *++abegin) // this is not an arg
 			{
-				case s_normal:
-					if (open_c == *curr)
-					{
-						iterator_t look_ahead = iter_next(curr);
+				push_slice(result, str_ref(head, abegin), slices, n_slices);
+				head = abegin + 1;
+				continue;
+			}
+			else // this is an arg
+			{
+				push_slice(result, str_ref(head, abegin - 1), slices, n_slices);
+				head = abegin;
 
-						if (look_ahead == fmt.end())
-							throw bad_format_string_t(fmt);
+				unsigned int arg_n;
+				head = read_number<3>(head, hend, arg_n);
 
-						if (open_c == *look_ahead)
-						{
-							++curr;
-						}
-						else
-						{
-							state = s_argument;
-						}
+				if (head == hend || close_c != *head++)
+					throw bad_format_string_t(fmt);
 
-						push_slice(result, str_ref(slice_start, curr), slices, n_slices);
-						slice_start = iter_next(curr);
-					}
-					break;
+				if (arg_n >= n_arg_slices)
+					throw bad_argref_number_t(arg_n);
 
-				case s_argument:
-					if (close_c == *curr)
-					{
-						str_ref const arg_s = str_ref(slice_start, curr);
-						long const arg_n = str_ref_to_number(arg_s);
-
-						if (LONG_MAX == arg_n)
-							throw bad_argref_string_t(arg_s);
-
-						if ((0 > arg_n) || (size_t(arg_n) >= n_arg_slices))
-							throw bad_argref_number_t(arg_n);
-
-						push_slice(result, str_ref(arg_slices[arg_n]), slices, n_slices);
-
-						slice_start = curr + 1;
-						state = s_normal;
-					}
-					break;
+				push_slice(result, arg_slices[arg_n], slices, n_slices);
 			}
 		}
-	/*
-		for (size_t i = 0; i < result.n_slices; ++i)
-			printf("slice[%zu] = '%.*s'\n", i, slices[i].c_length(), slices[i].data());
 
-		for (size_t i = 0; i < n_arg_slices; ++i)
-			printf("arg_slice[%zu] = '%.*s'\n", i, arg_slices[i].c_length(), arg_slices[i].data());
-	*/
 		return result;
 	}
 
