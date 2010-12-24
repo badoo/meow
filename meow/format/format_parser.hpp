@@ -16,32 +16,13 @@
 namespace meow { namespace format {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	template<class I>
-	inline I iter_prior(I i) { return --i; }
-
-	template<class I>
-	inline I iter_next(I i) { return ++i; }
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-
-	// return LONG_MAX if conversion failed
-	// actual number if it succedes
-	inline long str_ref_to_number(str_ref const& s)
-	{
-		char *endp = (char*)s.data();
-		long result = ::strtol(s.begin(), &endp, 10);
-		return (endp == s.end()) ? result : LONG_MAX;
-	}
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-
 	struct format_info_t
 	{
 		size_t total_length;
 		size_t n_slices;
 	};
 
-	inline void push_slice(format_info_t& fi, str_ref new_slice, str_ref *slices, size_t n_slices)
+	inline void push_slice(format_info_t& fi, str_ref const& new_slice, str_ref *slices, size_t n_slices)
 	{
 	//	printf("%s; new_slice: '%.*s'\n", __func__, new_slice.c_length(), new_slice.data());
 
@@ -61,7 +42,7 @@ namespace meow { namespace format {
 	}
 
 	inline format_info_t parse_format_expression(
-			  str_ref fmt
+			  str_ref const& fmt
 			, str_ref *slices
 			, size_t n_slices
 			, str_ref *arg_slices
@@ -108,8 +89,11 @@ namespace meow { namespace format {
 					}
 				}
 
-				if (head == hend || close_c != *head++)
+				if (head == hend)
 					throw bad_format_string_t(fmt);
+
+				if (close_c != *head++)
+					throw bad_argref_string_t(fmt);
 
 				if (arg_n >= n_arg_slices)
 					throw bad_argref_number_t(arg_n);
