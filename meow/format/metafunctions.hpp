@@ -16,13 +16,13 @@ namespace meow { namespace format {
 	template<class T, class Enabler = void>
 	struct string_access
 	{
-		static T const& call(T const& v) { return v; }
+		inline static T const& call(T const& v) { return v; }
 	};
 
 	template<class T, class Enabler = void>
 	struct type_tunnel
 	{
-		static T const& call(T const& v) { return v; }
+		inline static T const& call(T const& v) { return v; }
 	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -33,7 +33,7 @@ namespace meow { namespace format {
 	struct sink_write
 	{
 		template<class CharT>
-		static void call(T& sink, size_t total_len, string_ref<CharT> const *slices, size_t n_slices)
+		inline static void call(T& sink, size_t total_len, string_ref<CharT> const *slices, size_t n_slices)
 		{
 			sink.write(total_len, slices, n_slices);
 		}
