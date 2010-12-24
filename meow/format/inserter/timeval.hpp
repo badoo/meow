@@ -27,11 +27,13 @@ namespace meow { namespace format {
 		enum { buffer_size = sizeof("-1234567890.123456") };
 		typedef meow::tmp_buffer<buffer_size> buffer_t;
 
-		static str_ref call(struct timeval const& tv, buffer_t const& buf = buffer_t())
+		inline static str_ref call(struct timeval const& tv, buffer_t const& buf = buffer_t())
 		{
-			size_t n = ::snprintf(buf.get(), buf.size(), "%ld.%.6d", tv.tv_sec, static_cast<int>(tv.tv_usec));
-			BOOST_ASSERT(n <= (buffer_size - 1));
-			return buf.get();
+			char *b = buf.begin();
+			char *p = buf.end();
+			p = detail::integer_to_string(b, p - b, static_cast<int>(tv.tv_usec)); *--p = '.';
+			p = detail::integer_to_string(b, p - b, tv.tv_sec);
+			return str_ref(p, buf.end());
 		}
 	};
 
