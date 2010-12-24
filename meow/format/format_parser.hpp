@@ -60,33 +60,6 @@ namespace meow { namespace format {
 		return std::isdigit(c);//(c ^ 0x30) < 10;
 	}
 
-	template<size_t max_len, class CharT, class T>
-	inline CharT* read_number(CharT *head, CharT *hend, T& v)
-	{
-		BOOST_STATIC_ASSERT(max_len >= 1);
-
-		if (__builtin_expect(hend < head + max_len, 0))
-			hend = head + max_len;
-
-		if (__builtin_expect(my_isdigit(*head), 1))
-		{
-			v = *head++ - '0';
-
-			for (; head != hend && my_isdigit(*head); ++head)
-			{
-				v *= 10;
-				v += *head - '0';
-			}
-
-			return head;
-		}
-		else
-		{
-			v = 0;
-			return hend;
-		}
-	}
-
 	inline format_info_t parse_format_expression(
 			  str_ref fmt
 			, str_ref *slices
@@ -123,8 +96,17 @@ namespace meow { namespace format {
 				push_slice(result, str_ref(head, abegin - 1), slices, n_slices);
 				head = abegin;
 
-				unsigned int arg_n;
-				head = read_number<3>(head, hend, arg_n);
+				unsigned int arg_n = 0;
+				if (__builtin_expect(my_isdigit(*head), 1))
+				{
+					arg_n = *head++ - '0';
+
+					for (; head != hend && my_isdigit(*head); ++head)
+					{
+						arg_n *= 10;
+						arg_n += *head - '0';
+					}
+				}
 
 				if (head == hend || close_c != *head++)
 					throw bad_format_string_t(fmt);
