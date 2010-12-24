@@ -31,7 +31,7 @@ namespace meow { namespace format { namespace detail {
 	// - the caller must supply sufficient length
 	// returns: the pointer to first symbol of the result
 	template<class RadixI, class CharT, class T>
-	CharT* integer_to_string_ex(
+	inline CharT* integer_to_string_ex(
 			  CharT *buf
 			, size_t const buf_sz
 			, T value
@@ -49,7 +49,7 @@ namespace meow { namespace format { namespace detail {
 	}
 
 	template<class RadixI, class CharT, class T>
-	CharT* integer_to_string_ex(
+	inline CharT* integer_to_string_ex(
 			  CharT *buf
 			, size_t const buf_sz
 			, T value
@@ -75,7 +75,7 @@ namespace meow { namespace format { namespace detail {
 	}
 
 	template<class CharT, class T>
-	CharT* integer_to_string(CharT *buf, size_t const buf_sz, T value)
+	inline CharT* integer_to_string(CharT *buf, size_t const buf_sz, T value)
 	{
 		typedef radix_info_t<10> radix_t;
 		return integer_to_string_ex<radix_t>(buf, buf_sz, value);
