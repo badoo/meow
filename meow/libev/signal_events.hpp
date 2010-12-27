@@ -9,6 +9,7 @@
 #include <boost/function.hpp>
 #include <boost/noncopyable.hpp>
 
+#include <meow/libev/libev_fwd.hpp>
 #include <meow/move_ptr/static_move_ptr.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -27,6 +28,8 @@ namespace meow { namespace libev {
 		typedef boost::function<void(self_t*, int)>	callback_t;
 
 	public:
+
+		virtual evloop_t* loop() const = 0;
 
 		virtual void handle(int signo, callback_t const&) = 0; // overwrites old handler
 		virtual void ignore(int signo) = 0;

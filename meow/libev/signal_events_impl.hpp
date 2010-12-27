@@ -55,6 +55,11 @@ namespace meow { namespace libev {
 
 	public:
 
+		virtual evloop_t* loop() const
+		{
+			return loop_;
+		}
+
 		virtual void handle(int signo, callback_t const& cb)
 		{
 			item_t *item = item_get(signo);
