@@ -6,8 +6,7 @@
 #ifndef MEOW_FORMAT_FORMAT_PARSER_HPP_
 #define MEOW_FORMAT_FORMAT_PARSER_HPP_
 
-#include <climits> // strtol depends on this according to the man page
-#include <cstdlib> // for strtol
+#include <cstring> // std::memchr
 
 #include <meow/str_ref.hpp>
 #include <meow/format/exceptions.hpp>
