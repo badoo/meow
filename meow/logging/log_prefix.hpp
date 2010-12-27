@@ -62,16 +62,16 @@ namespace meow { namespace logging {
 
 			sink::char_buffer_sink_t sink(buf.begin(), buf.size());
 			if (pf_ & prefix_field::datetime)
-				fmt(sink, "[{0}]", format::as_log_ts(os_unix::gettimeofday_ex()));
+				write(sink, "[", format::as_log_ts(os_unix::gettimeofday_ex()), "]");
 
 			if (pf_ & prefix_field::log_name)
-				fmt(sink, "[{0}]", log_name_);
+				write(sink, "[", log_name_, "]");
 
 			if (pf_ & prefix_field::log_level)
-				fmt(sink, "[{0}]", enum_as_str_ref(lvl));
+				write(sink, "[", enum_as_str_ref(lvl), "]");
 
 			if (prefix_field::_null != pf_)
-				fmt(sink, " ");
+				write(sink, " ");
 
 			return str_ref(buf.begin(), sink.size());
 		}
