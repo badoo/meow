@@ -49,8 +49,8 @@ namespace meow { namespace format {
 			, size_t n_arg_slices
 		)
 	{
-		char const open_c = '{';
-		char const close_c = '}';
+		static char const open_c = '{';
+		static char const close_c = '}';
 
 		format_info_t result = {};
 
@@ -89,13 +89,13 @@ namespace meow { namespace format {
 					}
 				}
 
-				if (head == hend)
+				if (__builtin_expect(head == hend, 0))
 					throw bad_format_string_t(fmt);
 
-				if (close_c != *head++)
+				if (__builtin_expect(close_c != *head++, 0))
 					throw bad_argref_string_t(fmt);
 
-				if (arg_n >= n_arg_slices)
+				if (__builtin_expect(arg_n >= n_arg_slices, 0))
 					throw bad_argref_number_t(arg_n);
 
 				push_slice(result, arg_slices[arg_n], slices, n_slices);
