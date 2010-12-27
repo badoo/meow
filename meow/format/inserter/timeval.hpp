@@ -24,7 +24,7 @@ namespace meow { namespace format {
 	template<>
 	struct type_tunnel<timeval>
 	{
-		enum { buffer_size = sizeof("-1234567890.123456") };
+		enum { buffer_size = sizeof("-12345678901234567890.123456") };
 		typedef meow::tmp_buffer<buffer_size> buffer_t;
 
 		inline static str_ref call(struct timeval const& tv, buffer_t const& buf = buffer_t())
@@ -97,7 +97,7 @@ namespace meow { namespace format {
 	template<>
 	struct type_tunnel<timestamp_as_rel_t>
 	{
-		enum { buffer_size = sizeof("xxxxdays xx:xx:xx") };
+		enum { buffer_size = sizeof("xxxxxdays xx:xx:xx") };
 		typedef meow::tmp_buffer<buffer_size> buffer_t;
 
 		static str_ref call(timestamp_as_rel_t const& t, buffer_t const& buf = buffer_t())
@@ -110,7 +110,7 @@ namespace meow { namespace format {
 			unsigned mins = (t.ts % seconds_in_hour) / 60;
 			unsigned secs = (t.ts % seconds_in_hour) % 60;
 
-			ssize_t n = ::snprintf(buf.get(), buf.size(), "%04udays %02u:%02u:%02u", days % 10000, hours, mins, secs);
+			ssize_t n = ::snprintf(buf.get(), buf.size(), "%05udays %02u:%02u:%02u", days % 100000, hours, mins, secs);
 
 			BOOST_ASSERT(n == (buffer_size - 1));
 			return buf.get();
