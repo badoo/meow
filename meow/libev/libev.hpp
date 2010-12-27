@@ -54,6 +54,17 @@ namespace meow { namespace libev {
 		ev_loop(get_handle(loop), flags);
 	}
 
+	template<class L>
+	inline void break_loop(L& loop, unsigned int flags = 0)
+	{
+		ev_unloop(get_handle(loop), flags);
+	}
+
+	inline void break_loop(evloop_t *loop, unsigned int flags = 0)
+	{
+		ev_unloop(get_handle(loop), flags);
+	}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 }} // namespace meow { namespace libev {
 ////////////////////////////////////////////////////////////////////////////////////////////////
