@@ -75,7 +75,7 @@ namespace meow { namespace format {
 		{
 			typedef detail::radix_info_t<radix> rinfo_t;
 			char *b = detail::integer_to_string_ex<rinfo_t>(buf.get(), buf.size(), v);
-			return str_ref(b, buf.end() - 1); // don't include the terminating-zero at end
+			return str_ref(b, buf.end());
 		}
 	};
 
@@ -91,7 +91,7 @@ namespace meow { namespace format {
 				)
 		{
 			char *b = detail::integer_to_string_ex<RI>(buf.get(), buf.size(), v.value);
-			return str_ref(b, buf.get() + buf.size() - 1); // don't include the terminating-zero at end
+			return str_ref(b, buf.get() + buf.size());
 		}
 	};
 
@@ -112,7 +112,7 @@ namespace meow { namespace format {
 		{
 			typedef detail::radix_info_t<radix> rinfo_t;
 			char *b = detail::integer_to_string_ex<rinfo_t>(buf.get(), buf.size(), (int)v);
-			return str_ref(b, buf.end() - 1); // don't include the terminating-zero at end
+			return str_ref(b, buf.end());
 		}
 	};
 

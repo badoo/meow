@@ -25,7 +25,7 @@ namespace meow { namespace format { namespace detail {
 		enum { radix = 2 };
 
 		template<class CharT>
-		static CharT get_character(CharT, ssize_t const val)
+		inline static CharT get_character(CharT, ssize_t const val)
 		{
 			static CharT const chars_[] = {
 				'1', '0', '1'
@@ -44,7 +44,7 @@ namespace meow { namespace format { namespace detail {
 		enum { radix = 10 };
 
 		template<class CharT>
-		static CharT get_character(CharT, ssize_t const val)
+		inline static CharT get_character(CharT, ssize_t const val)
 		{
 			static CharT const chars_[] = {
 					   '9', '8', '7', '6', '5', '4', '3', '2', '1'
@@ -64,7 +64,7 @@ namespace meow { namespace format { namespace detail {
 		enum { radix = 16 };
 
 		template<class CharT>
-		static CharT get_character(CharT, ssize_t const val)
+		inline static CharT get_character(CharT, ssize_t const val)
 		{
 			static CharT const chars_[] = {
 					   'f', 'e', 'd', 'c', 'b', 'a', '9', '8', '7', '6', '5', '4', '3', '2', '1'
@@ -86,7 +86,7 @@ namespace meow { namespace format { namespace detail {
 		enum { radix = 16 };
 
 		template<class CharT>
-		static CharT get_character(CharT, ssize_t const val)
+		inline static CharT get_character(CharT, ssize_t const val)
 		{
 			static CharT const chars_[] = {
 					   'F', 'E', 'D', 'C', 'B', 'A', '9', '8', '7', '6', '5', '4', '3', '2', '1'

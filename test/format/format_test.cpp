@@ -13,6 +13,7 @@
 #include <meow/format/inserter/integral.hpp>
 #include <meow/format/inserter/pointer.hpp>
 #include <meow/format/inserter/hex_string.hpp>
+#include <meow/format/inserter/timeval.hpp>
 
 #include <meow/format/format.hpp>
 #include <meow/format/format_tmp.hpp>
@@ -84,6 +85,12 @@ int main()
 	// fmt_tmp and fmt_str
 	ff::fmt(sink, "fmt_tmp test, inner format: \"{0}\"\n", ff::fmt_tmp<256>("inner format whatever {0}, {1}", 10, -125.67890));
 	ff::fmt(sink, "fmt_str test, inner format: \"{0}\"\n", ff::fmt_str("inner format whatever {0}, {1}", 10, -125.67890));
+
+	// timeval
+	{
+		struct timeval tv = { 1234567890, 123456 };
+		ff::fmt(sink, "{0}\n", tv);
+	}
 
 	return 0;
 }
