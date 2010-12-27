@@ -31,7 +31,7 @@ namespace meow { namespace format {
 		{
 			char *b = buf.begin();
 			char *p = buf.end();
-			p = detail::integer_to_string(b, p - b, static_cast<int>(tv.tv_usec)); *--p = '.';
+			p = detail::integer_to_string(b, p - b, tv.tv_usec); *--p = '.';
 			p = detail::integer_to_string(b, p - b, tv.tv_sec);
 			return str_ref(p, buf.end());
 		}
