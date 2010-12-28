@@ -80,10 +80,10 @@ namespace ipv4 {
 } // namespace ipv4 {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include <cstdio> // snprintf
 #include <meow/str_ref.hpp>
 #include <meow/tmp_buffer.hpp>
 #include <meow/format/metafunctions.hpp>
+#include <meow/format/detail/integer_to_string.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace format {
@@ -115,8 +115,15 @@ namespace meow { namespace format {
 			#endif
 
 			uint8_t const* b = reinterpret_cast<uint8_t const*>(&a.addr);
-			ssize_t n = ::snprintf(buf.get(), buf.size(), "%hhu.%hhu.%hhu.%hhu:%hu", b[_0], b[_1], b[_2], b[_3], a.port);
-			return str_ref(buf.begin(), n);
+
+			char *begin = buf.begin();
+			char *p = buf.end();
+			p = detail::integer_to_string(begin, p - begin, a.port); *--p = ':';
+			p = detail::integer_to_string(begin, p - begin, b[_3]); *--p = '.';
+			p = detail::integer_to_string(begin, p - begin, b[_2]); *--p = '.';
+			p = detail::integer_to_string(begin, p - begin, b[_1]); *--p = '.';
+			p = detail::integer_to_string(begin, p - begin, b[_0]);
+			return str_ref(p, buf.end());
 		}
 	};
 
@@ -135,8 +142,14 @@ namespace meow { namespace format {
 			#endif
 
 			uint8_t const* b = reinterpret_cast<uint8_t const*>(&a.addr.addr);
-			ssize_t n = ::snprintf(buf.get(), buf.size(), "%hhu.%hhu.%hhu.%hhu", b[_0], b[_1], b[_2], b[_3]);
-			return str_ref(buf.begin(), n);
+
+			char *begin = buf.begin();
+			char *p = buf.end();
+			p = detail::integer_to_string(begin, p - begin, b[_3]); *--p = '.';
+			p = detail::integer_to_string(begin, p - begin, b[_2]); *--p = '.';
+			p = detail::integer_to_string(begin, p - begin, b[_1]); *--p = '.';
+			p = detail::integer_to_string(begin, p - begin, b[_0]);
+			return str_ref(p, buf.end());
 		}
 	};
 

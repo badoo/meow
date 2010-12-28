@@ -12,6 +12,7 @@
 	struct ev_io;
 	struct ev_idle;
 	struct ev_timer;
+	struct ev_signal;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace libev {
@@ -21,6 +22,7 @@ namespace meow { namespace libev {
 	typedef struct ::ev_io 		evio_t;
 	typedef struct ::ev_idle 	evidle_t;
 	typedef struct ::ev_timer 	evtimer_t;
+	typedef struct ::ev_signal 	evsignal_t;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 }} // namespace meow { namespace libev {

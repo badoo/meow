@@ -53,7 +53,7 @@ namespace meow { namespace format {
 			char *b = detail::integer_to_string_ex<rinfo_t>(buf.get(), buf.size(), uintptr_t(v));
 			*--b = 'x';
 			*--b = '0';
-			return str_ref(b, buf.end() - 1);
+			return str_ref(b, buf.end());
 		}
 	};
 

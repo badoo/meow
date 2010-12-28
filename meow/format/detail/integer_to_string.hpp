@@ -27,20 +27,18 @@ namespace meow { namespace format { namespace detail {
 	while(value); 				\
 /**/
 
-	// - will null-terminate the result
+	// - will NOT null-terminate the result
 	// - the caller must supply sufficient length
 	// returns: the pointer to first symbol of the result
 	template<class RadixI, class CharT, class T>
-	CharT* integer_to_string_ex(
+	inline CharT* integer_to_string_ex(
 			  CharT *buf
 			, size_t const buf_sz
 			, T value
 			, typename boost::enable_if<boost::is_unsigned<T> >::type* = 0
 			)
 	{
-		CharT *p = buf + buf_sz - 1; // last char
-
-		*p = 0x0; // null terminate
+		CharT *p = buf + buf_sz; // PRE last char
 
 		MEOW_INT_TO_STRING_LOOP;
 
@@ -49,16 +47,14 @@ namespace meow { namespace format { namespace detail {
 	}
 
 	template<class RadixI, class CharT, class T>
-	CharT* integer_to_string_ex(
+	inline CharT* integer_to_string_ex(
 			  CharT *buf
 			, size_t const buf_sz
 			, T value
 			, typename boost::enable_if<boost::is_signed<T> >::type* = 0
 			)
 	{
-		CharT *p = buf + buf_sz - 1; // last char
-
-		*p = 0x0; // null terminate
+		CharT *p = buf + buf_sz;
 
 		if (value < 0)
 		{
@@ -74,8 +70,12 @@ namespace meow { namespace format { namespace detail {
 		return p;
 	}
 
+#undef MEOW_INT_TO_STRING_LOOP
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
 	template<class CharT, class T>
-	CharT* integer_to_string(CharT *buf, size_t const buf_sz, T value)
+	inline CharT* integer_to_string(CharT *buf, size_t const buf_sz, T value)
 	{
 		typedef radix_info_t<10> radix_t;
 		return integer_to_string_ex<radix_t>(buf, buf_sz, value);
