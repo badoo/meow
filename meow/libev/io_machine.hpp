@@ -635,7 +635,7 @@ namespace meow { namespace libev {
 						if (tr_log::is_allowed(ctx))
 						{
 							tr_log::write(ctx, line_mode::single
-									, "{0}; fd_has_data_or_error(): no available data on socket"
+									, "{0}; tr_read_precheck::has_data_or_error(): no available data on socket"
 									, __func__
 									);
 						}
@@ -670,11 +670,14 @@ namespace meow { namespace libev {
 					{
 						bitmask_clear(io_current_ops, EV_READ); // we don't want to read anymore, we got EAGAIN
 						bitmask_set(io_wait_ops, EV_READ); // we want to wait for a read to be available again
+
+						// we read nothing and are going to just wait for more
+						// -> just say bye
+						if (!r.filled_len)
+							break;
 					}
 
-					// TODO: consume should be getting different status
-					//  it's intrested in data + if connection is still alive,
-					//   and it it isn't - it might care about why
+					// can consume buffer now, it's not empty as well
 					meow::buffer_ref filled_buf(buf_to.begin(), r.filled_len);
 					rd_consume_status_t c_status = tr_read::consume_buffer(ctx, filled_buf, r.status);
 

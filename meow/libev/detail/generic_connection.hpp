@@ -339,11 +339,6 @@ namespace meow { namespace libev {
 		};
 	};
 
-	MEOW_DEFINE_SMART_ENUM(read_state, 
-							((header, "header"))
-							((body, "body"))
-							);
-
 	template<class Traits>
 	struct bin_msg_connection_repack_traits : public Traits
 	{
@@ -351,6 +346,11 @@ namespace meow { namespace libev {
 		{
 			typedef typename Traits::bin_msg_read tr;
 			typedef typename tr::header_t 	header_t;
+
+			MEOW_DEFINE_SMART_ENUM_STRUCT_T(read_state, 
+											((header, "header"))
+											((body, "body"))
+											);
 
 			struct context_t
 			{
@@ -426,20 +426,7 @@ namespace meow { namespace libev {
 						b->resize_to(b->size() + tr::header_get_body_length(ctx->r_header));
 						ctx->r_state = read_state::body;
 
-						/*
-						format::fmt(stdout
-								, "{0}; b: {{ size: {1}, used: {2}, free: {3} }\n"
-								, __func__
-								, b->size(), b->used_size(), b->free_size()
-								);
-						*/
-
-						/* don't need a loop here to fetch extra messages
-							as we're reading only sizeof(header) bytes first at start
-						*/
-
-						// break;
-						/* fall through */
+						break; // got no body in the buffer yet anyway
 
 					case read_state::body:
 						// do we have full body in the buffer?
