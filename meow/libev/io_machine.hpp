@@ -127,8 +127,9 @@ namespace meow { namespace libev {
 			// returns true if there is
 			// used to avoid allocating read buffers before there is actually data available
 			// poor man's accept-filter-ish functionality
-			// return true, if unsure or lazy
-			// DEFAULT: do a poll({fd, POLLIN}, timeout = 0)
+			// NOTICE:  use iomachine_read_precheck_do_poll_t if you want to do the checking
+			// 				with poll({fd, POLLIN, 0}, 1, timeout = 0)
+			// DEFAULT: return true
 			static bool has_data_or_error(context_t *ctx, io_context_t *io_ctx) {}
 		};
 
@@ -250,17 +251,24 @@ namespace meow { namespace libev {
 
 		template<class Tr> struct thunk_t<false, Tr>
 		{
-			static bool has_data_or_error(ContextT *ctx, io_context_t *io_ctx)
-			{
-				struct pollfd pfd[] = { { io_ctx->fd(), POLLIN | POLLPRI, 0 } };
-				// poll with 0 timeout will just return if there is anything to read right now
-				return poll(pfd, 1, 0);
-			}
+			static bool has_data_or_error(ContextT *ctx, io_context_t *io_ctx) { return true; }
 		};
 
 		DEFINE_THUNK(read_precheck);
 
 		static bool has_data_or_error(ContextT *ctx, io_context_t *io_ctx) { return thunk::has_data_or_error(ctx, io_ctx); }
+	};
+
+	// the implementation to use in app code if the precheck is desirable
+	struct iomachine_read_precheck_do_poll_t
+	{
+		template<class ContextT>
+		static bool has_data_or_error(ContextT *ctx, io_context_t *io_ctx)
+		{
+			struct pollfd pfd[] = { { io_ctx->fd(), POLLIN | POLLPRI, 0 } };
+			// poll with 0 timeout will just return if there is anything to read right now
+			return poll(pfd, 1, 0);
+		}
 	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////

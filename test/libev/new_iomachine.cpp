@@ -95,6 +95,8 @@ struct my_traits
 		}
 	};
 
+	typedef iomachine_read_precheck_do_poll_t read_precheck;
+/*
 	struct read_precheck
 	{
 		template<class ContextT>
@@ -103,7 +105,7 @@ struct my_traits
 			return true;
 		}
 	};
-
+*/
 /*
 	struct allowed_ops
 	{
