@@ -121,6 +121,17 @@ namespace meow { namespace libev {
 			static custom_op_status_t custom_operation(context_t *ctx) {}
 		};
 
+		struct read_precheck // optional
+		{
+			// checks if there is an error or data that can be read from the socket
+			// returns true if there is
+			// used to avoid allocating read buffers before there is actually data available
+			// poor man's accept-filter-ish functionality
+			// return true, if unsure or lazy
+			// DEFAULT: do a poll({fd, POLLIN}, timeout = 0)
+			static bool has_data_or_error(context_t *ctx, io_context_t *io_ctx) {}
+		};
+
 		struct log_writer // optional
 		{
 			// ask if the log messages are enabled now
@@ -222,6 +233,34 @@ namespace meow { namespace libev {
 
 		static bool requires_custom_op(ContextT *ctx) { return thunk::requires_custom_op(ctx); }
 		static custom_op_status_t custom_operation(ContextT *ctx) { return thunk::custom_operation(ctx); }
+	};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+	template<class ContextT, class Traits>
+	struct iomachine_read_precheck_wrap_t
+	{
+		template<bool enabled, class Tr>
+		struct thunk_t;
+
+		template<class Tr> struct thunk_t<true, Tr>
+		{
+			static bool has_data_or_error(ContextT *ctx, io_context_t *io_ctx) { return Tr::has_data_or_error(ctx, io_ctx); }
+		};
+
+		template<class Tr> struct thunk_t<false, Tr>
+		{
+			static bool has_data_or_error(ContextT *ctx, io_context_t *io_ctx)
+			{
+				struct pollfd pfd[] = { { io_ctx->fd(), POLLIN | POLLPRI, 0 } };
+				// poll with 0 timeout will just return if there is anything to read right now
+				return poll(pfd, 1, 0);
+			}
+		};
+
+		DEFINE_THUNK(read_precheck);
+
+		static bool has_data_or_error(ContextT *ctx, io_context_t *io_ctx) { return thunk::has_data_or_error(ctx, io_ctx); }
 	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -339,6 +378,7 @@ namespace meow { namespace libev {
 
 		typedef iomachine_allowed_ops_wrap_t<ContextT, Traits> 			tr_allowed_ops;
 		typedef iomachine_custom_op_wrap_t<ContextT, Traits> 			tr_custom_op;
+		typedef iomachine_read_precheck_wrap_t<ContextT, Traits>		tr_read_precheck;
 		typedef iomachine_log_writer_wrap_t<ContextT, Traits> 			tr_log;
 		typedef iomachine_activity_tracker_wrap_t<ContextT, Traits> 	tr_activity;
 
@@ -476,13 +516,6 @@ namespace meow { namespace libev {
 			}
 		}
 
-		static bool fd_has_data_or_error(io_context_t *io_ctx)
-		{
-			struct pollfd pfd[] = { { io_ctx->fd(), POLLIN, 0 } };
-			// poll with 0 timeout will just return if there is anything to read right now
-			return poll(pfd, 1, 0);
-		}
-
 	public:
 
 		static void prepare_context(context_t *ctx)
@@ -597,7 +630,7 @@ namespace meow { namespace libev {
 					// peek if there is any data available at all
 					//  so that we don't allocate huge buffers needlessly
 					//  when connection is idle
-					if (!self_t::fd_has_data_or_error(io_ctx))
+					if (!tr_read_precheck::has_data_or_error(ctx, io_ctx))
 					{
 						if (tr_log::is_allowed(ctx))
 						{

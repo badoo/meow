@@ -43,7 +43,19 @@ namespace meow { namespace libev {
 
 	public: // io
 
-		virtual void activate() = 0;
+		virtual void r_loop() = 0;
+		virtual void w_loop() = 0;
+		virtual void rw_loop() = 0;
+
+		virtual void activate(int revents) = 0;
+		virtual void r_activate() = 0;
+		virtual void w_activate() = 0;
+		virtual void rw_activate() = 0;
+		virtual void custom_activate() = 0;
+
+		virtual void queue_buf(buffer_move_ptr) = 0;
+		virtual void queue_chain(buffer_chain_t&) = 0;
+
 		virtual void send(buffer_move_ptr) = 0;
 		virtual void send_chain(buffer_chain_t&) = 0;
 
@@ -77,6 +89,7 @@ namespace meow { namespace libev {
 			typedef generic_connection_traits_custom_op 		custom_op;
 
 			MEOW_DEFINE_NESTED_NAME_ALIAS_OR_VOID(Traits, allowed_ops);
+			MEOW_DEFINE_NESTED_NAME_ALIAS_OR_VOID(Traits, read_precheck);
 			MEOW_DEFINE_NESTED_NAME_ALIAS_OR_VOID(Traits, log_writer);
 			MEOW_DEFINE_NESTED_NAME_ALIAS_OR_VOID(Traits, activity_tracker);
 		};
@@ -122,20 +135,41 @@ namespace meow { namespace libev {
 
 		virtual int fd() const { return io_.fd(); }
 		virtual evloop_t* loop() const { return loop_; }
-		virtual void activate() { iomachine_t::rw_loop(this); }
 
 	public:
 
-		virtual void send(buffer_move_ptr buf)
+		virtual void r_loop() { iomachine_t::r_loop(this); }
+		virtual void w_loop() { iomachine_t::w_loop(this); }
+		virtual void rw_loop() { iomachine_t::rw_loop(this); }
+
+		virtual void activate(int revents) { iomachine_t::activate_context(this, revents); }
+		virtual void r_activate() { iomachine_t::r_activate(this); }
+		virtual void w_activate() { iomachine_t::w_activate(this); }
+		virtual void rw_activate() { iomachine_t::rw_activate(this); }
+		virtual void custom_activate() { iomachine_t::custom_activate(this); }
+
+	public:
+
+		virtual void queue_buf(buffer_move_ptr buf)
 		{
 			wchain_.push_back(move(buf));
-			iomachine_t::w_activate(this);
+		}
+
+		virtual void queue_chain(buffer_chain_t& chain)
+		{
+			wchain_.append_chain(chain);
+		}
+
+		virtual void send(buffer_move_ptr buf)
+		{
+			this->queue_buf(move(buf));
+			this->w_activate();
 		}
 
 		virtual void send_chain(buffer_chain_t& chain)
 		{
-			wchain_.append_chain(chain);
-			iomachine_t::w_activate(this);
+			this->queue_chain(chain);
+			this->w_activate();
 		}
 
 	public: // closing
@@ -146,13 +180,13 @@ namespace meow { namespace libev {
 		virtual void close_after_write()
 		{
 			close_->after_write = 1;
-			iomachine_t::w_activate(this);
+			this->w_activate();
 		}
 
 		virtual void close_immediately()
 		{
 			close_->immediately = 1;
-			iomachine_t::custom_activate(this);
+			this->custom_activate();
 		}
 	};
 

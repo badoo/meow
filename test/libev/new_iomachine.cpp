@@ -1,3 +1,12 @@
+////////////////////////////////////////////////////////////////////////////////////////////////
+// vim: set filetype=cpp autoindent noexpandtab tabstop=4 shiftwidth=4 foldmethod=marker :
+// (c) 2010 Anton Povarov <anton.povarov@gmail.com>
+////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// cd meow/test/format/
+// g++ -O0 -g3 -I ~/_Dev/meow/ -I ~/_Dev/_libs/boost/1.41.0 -I /opt/local/include -o new_iomachine new_iomachine.cpp -L/opt/local/lib -lev
+//
+
 #include <meow/format/format.hpp>
 #include <meow/format/sink/FILE.hpp>
 #include <meow/buffer.hpp>
@@ -85,6 +94,16 @@ struct my_traits
 			return h.data_length;
 		}
 	};
+
+	struct read_precheck
+	{
+		template<class ContextT>
+		static bool has_data_or_error(ContextT*, io_context_t *io_ctx)
+		{
+			return true;
+		}
+	};
+
 /*
 	struct allowed_ops
 	{
@@ -133,13 +152,13 @@ int main()
 	{
 //		my_events_t *ev = new my_events_t;
 //		mmc_connection_t *c = new mmc_connection_impl_t<my_traits>(get_handle(def_loop), fileno(stdin), ev);
-//		c->activate();
+//		c->rw_loop();
 	}
 
 	{
 		bin_events_t *ev = new bin_events_t;
 		bin_connection_t *c = new bin_msg_connection_impl_t<my_traits>(get_handle(def_loop), fileno(stdin), ev);
-		c->activate();
+		c->rw_loop();
 	}
 
 	libev::run_loop(def_loop);
