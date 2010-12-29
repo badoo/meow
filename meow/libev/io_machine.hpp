@@ -562,6 +562,24 @@ namespace meow { namespace libev {
 
 	private:
 
+		// idle tracker activity guard
+		//  can't make it local to the function, linker is complaining about weak symbols like a girl
+		struct idle_tracking_guard_t
+		{
+			int revents;
+			context_t *ctx;
+
+			inline void set_activity(int events) { revents |= events; }
+
+			inline ~idle_tracking_guard_t()
+			{
+				if (revents)
+					tr_activity::on_activity(ctx, revents);
+			}
+		};
+
+	private:
+
 		// TODO: this is read-priority one
 		//  can make many of these easily, but will need some duplicated code
 		//  (or macros)
@@ -582,21 +600,7 @@ namespace meow { namespace libev {
 			//  might be a wrong thing to do tho, time will tell
 			io_context_t *io_ctx = tr_base::io_context_ptr(ctx);
 
-			// idle tracker activity guard
-			struct idle_tracking_guard_t
-			{
-				int revents;
-				context_t *ctx;
-
-				void set_activity(int events) { revents |= events; }
-
-				~idle_tracking_guard_t()
-				{
-					if (revents)
-						tr_activity::on_activity(ctx, revents);
-				}
-			}
-			idle_guard_ = { EV_NONE, ctx };
+			idle_tracking_guard_t idle_guard_ = { EV_NONE, ctx };
 
 			if (tr_log::is_allowed(ctx))
 			{
