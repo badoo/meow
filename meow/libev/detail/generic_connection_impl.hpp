@@ -48,9 +48,9 @@ namespace meow { namespace libev {
 		// traits need access to this stuff
 		//  not all of it, but to avoid padding between members, we just have them in one place
 
-		events_t 		*ev_;
 		evloop_t 		*loop_;
 		io_context_t 	io_;
+		events_t 		*ev_;
 
 		buffer_chain_t 	wchain_;
 		close_flags_t 	close_;
