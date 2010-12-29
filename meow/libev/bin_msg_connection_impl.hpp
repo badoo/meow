@@ -166,7 +166,7 @@ namespace meow { namespace libev {
 		};
 	};
 
-	DEFINE_CONNECTION_WRAPPER(
+	MEOW_LIBEV_DEFINE_CONNECTION_WRAPPER(
 						  bin_msg_connection_impl_t
 						, bin_msg_connection_repack_traits
 						, bin_msg_connection_t<typename Traits::bin_msg_read::header_t>

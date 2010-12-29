@@ -18,14 +18,18 @@
 namespace meow { namespace libev {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	template<class Interface, class Traits>
+	template<
+		  class Interface
+		, class Traits
+		, class Events = typename Interface::events_t
+		>
 	struct generic_connection_impl_t
 		: public Interface
 		, public Traits::read::context_t
 	{
 		typedef generic_connection_impl_t 		self_t;
 		typedef generic_connection_impl_t 		base_t;
-		typedef typename Interface::events_t 	events_t;
+		typedef Events							events_t;
 
 		struct traits_t
 		{
@@ -141,14 +145,18 @@ namespace meow { namespace libev {
 //
 // defines a connection wrapper like mmc_connection_t
 // example: 
-//  DEFINE_CONNECTION_WRAPPER(mmc_connection_impl_t, mmc_connection_repack_traits, mmc_connection_t);
+//  MEOW_LIBEV_DEFINE_CONNECTION_WRAPPER(mmc_connection_impl_t, mmc_connection_repack_traits, mmc_connection_t);
 //
-#define DEFINE_CONNECTION_WRAPPER(name, traits, def_interface) 				\
-	template<class Traits, class InterfaceT = def_interface >				\
+#define MEOW_LIBEV_DEFINE_CONNECTION_WRAPPER(name, traits, base_interface) 	\
+	template<class Traits, class InterfaceT = base_interface >				\
 	struct name 															\
-		: public generic_connection_impl_t<InterfaceT, traits<Traits> >		\
+		: public generic_connection_impl_t<									\
+					  InterfaceT											\
+					, traits<Traits>										\
+					, typename base_interface::events_t						\
+					>														\
 	{																		\
-		name(evloop_t *loop, int fd, typename InterfaceT::events_t *ev)		\
+		name(evloop_t *loop, int fd, typename base_interface::events_t *ev)	\
 			: name::base_t(loop, fd, ev)									\
 		{																	\
 		}																	\
@@ -157,7 +165,7 @@ namespace meow { namespace libev {
 
 // used from inside connection traits to call callback through connection->events
 #define MEOW_LIBEV_GENERIC_CONNECTION_CTX_CALLBACK(ctx, cb_name, args...) \
-	do { ctx->ev()->cb_name(ctx, args); } while(0)
+	ctx->ev()->cb_name(ctx, args)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 }} // namespace meow { namespace libev {
