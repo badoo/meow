@@ -124,6 +124,10 @@ namespace meow { namespace libev {
 			this->w_activate();
 		}
 
+	public:
+
+		virtual buffer_chain_t& wchain_ref() { return wchain_; }
+
 	public: // closing
 
 		virtual bool is_closing() const { return 0 != close_; }

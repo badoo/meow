@@ -54,6 +54,10 @@ namespace meow { namespace libev {
 		virtual void send(buffer_move_ptr) = 0;
 		virtual void send_chain(buffer_chain_t&) = 0;
 
+	public: // access to semi-private information for the brave
+
+		virtual buffer_chain_t& wchain_ref() = 0;
+
 	public: // closing
 
 		virtual bool 			is_closing() const = 0;
