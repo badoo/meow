@@ -9,8 +9,9 @@
 
 #include <meow/format/format.hpp>
 #include <meow/format/sink/FILE.hpp>
-#include <meow/buffer.hpp>
-#include <meow/libev/detail/generic_connection.hpp>
+
+#include <meow/libev/mmc_connection_impl.hpp>
+#include <meow/libev/bin_msg_connection_impl.hpp>
 
 namespace ff = meow::format;
 namespace libev = meow::libev;
