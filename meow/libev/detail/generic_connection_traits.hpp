@@ -16,6 +16,7 @@
 
 #include <meow/libev/libev.hpp>
 #include <meow/libev/io_context.hpp>
+#include <meow/libev/io_machine.hpp> 	// read/write statuses
 #include <meow/libev/io_close_report.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -46,25 +47,6 @@ namespace meow { namespace libev {
 		{
 			return EV_READ | EV_WRITE | EV_CUSTOM;
 		}
-
-		static bool log_is_allowed(context_t *ctx)
-		{
-			return ctx->cb_log_is_allowed();
-		}
-
-		#define DEFINE_CONNECTION_TRAITS_FMT_FUNCTION(z, n, d) 							\
-			template<class F FMT_TEMPLATE_PARAMS(n)> 									\
-			static void log_message( 													\
-					  context_t *ctx 													\
-					, line_mode_t lmode 												\
-					, F const& fmt 														\
-					  FMT_DEF_PARAMS(n)) 												\
-			{ 																			\
-				ctx->cb_log_debug(lmode, format::fmt_tmp<512>(fmt FMT_CALL_SITE_ARGS(n))); 	\
-			} 																			\
-		/**/
-
-		BOOST_PP_REPEAT(32, DEFINE_CONNECTION_TRAITS_FMT_FUNCTION, _);
 	};
 
 	template<class BaseTraits>
@@ -72,7 +54,7 @@ namespace meow { namespace libev {
 	{
 
 		template<class ContextT>
-		static buffer_ref write_get_buffer(ContextT *ctx)
+		static buffer_ref get_buffer(ContextT *ctx)
 		{
 			buffer_chain_t& wchain = ctx->wchain_;
 
@@ -114,7 +96,7 @@ namespace meow { namespace libev {
 
 			if (wchain.empty())
 			{
-				if (ctx->cb_is_closing_after_write())
+				if (ctx->close_flags()->after_write)
 				{
 					ctx->cb_write_closed(io_close_report(io_close_reason::write_close));
 					return wr_complete_status::closed;
@@ -131,13 +113,13 @@ namespace meow { namespace libev {
 		template<class ContextT>
 		static bool requires_custom_op(ContextT *ctx)
 		{
-			return ctx->cb_is_closing_immediately();
+			return ctx->close_flags()->immediately;
 		}
 
 		template<class ContextT>
 		static custom_op_status_t custom_operation(ContextT *ctx)
 		{
-			BOOST_ASSERT(ctx->cb_is_closing_immediately());
+			BOOST_ASSERT(ctx->close_flags()->immediately);
 			ctx->cb_custom_closed(io_close_report(io_close_reason::custom_close));
 			ctx->close_->immediately = false;
 
