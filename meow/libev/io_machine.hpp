@@ -539,7 +539,10 @@ namespace meow { namespace libev {
 			tr_activity::deinit(ctx);
 
 			io_context_t *io_ctx = tr_base::io_context_ptr(ctx);
-			ev_io_stop(tr_base::ev_loop(ctx), io_ctx->event());
+
+			if (ev_is_active(io_ctx->event()))
+				ev_io_stop(tr_base::ev_loop(ctx), io_ctx->event());
+
 			ev_io_set(io_ctx->event(), io_ctx->fd(), EV_NONE);
 		}
 
