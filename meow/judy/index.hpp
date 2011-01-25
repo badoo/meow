@@ -9,8 +9,12 @@
 #include <boost/assert.hpp>
 #include <boost/static_assert.hpp>
 #include <boost/noncopyable.hpp>
+#include <boost/utility/enable_if.hpp>
+
+#include <boost/bind.hpp>
 
 #include <meow/movable_handle.hpp>
+#include <meow/utility/nested_type_checker.hpp>
 
 #include "judy.hpp"
 #include "judy_select.hpp"
@@ -79,6 +83,27 @@ namespace judy {
 		void clear()
 		{
 			j_ops::free_array(j_);
+		}
+
+		// @ descr: calls function(k, value*) for each item in the index
+		struct call_proxy_t
+		{
+			typedef void result_type;
+
+			template<class Function>
+			result_type operator()(Function const& f, key_t const& k, void *v) const
+			{
+				return f(k, *static_cast<value_t*>(v));
+			}
+		};
+
+		MEOW_DEFINE_NESTED_TYPE_CHECKER(check_iteration, iteration);
+
+		template<class Function>
+		void for_each(Function const& function)
+		{
+			BOOST_STATIC_ASSERT(check_iteration<j_ops>::value && "j_ops must have iteration enabled");
+			j_ops::iteration::for_each(j_, boost::bind(call_proxy_t(), boost::cref(function), _1, _2));
 		}
 
 	private:

@@ -117,6 +117,28 @@ namespace judy {
 		// @return: number of bytes freed
 		static int free_array(judy_t& j) { int n; JLFA(n, j); return n; }
 		static int free_array(handle_t& j) { return free_array(get_handle(j)); }
+
+		struct iteration
+		{
+			template<class J> static void* first(J& j, key_t const k) { void *v; JLF(v, get_handle(j), k); return v; }
+			template<class J> static void* last(J& j, key_t const k) { void *v; JLL(v, get_handle(j), k); return v; }
+			template<class J> static void* next(J& j, key_t const k) { void *v; JLN(v, get_handle(j), k); return v; }
+			template<class J> static void* prev(J& j, key_t const k) { void *v; JLP(v, get_handle(j), k); return v; }
+
+			template<class J, class Function>
+			static void for_each(J& j, Function const& function)
+			{
+				key_t k = 0;
+				void *v = NULL;
+
+				JLF(v, get_handle(j), k);
+				while (NULL != v)
+				{
+					function(k, v);
+					JLN(v, get_handle(j), k);
+				}
+			}
+		};
 	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
