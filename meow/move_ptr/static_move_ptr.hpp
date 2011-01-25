@@ -210,6 +210,13 @@ private:
 template<class T, class D>
 T* get_pointer(static_move_ptr<T, D> const& p) { return p.get(); }
 
+template<typename T>
+static_move_ptr<T> move_raw(T *x)
+{
+	static_move_ptr<T> p(x);
+	return move(p);
+}
+
 } // End namespace boost.
 
 #if defined(BOOST_MSVC)
