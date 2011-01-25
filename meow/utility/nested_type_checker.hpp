@@ -34,6 +34,20 @@ Usage Example 2:
 	}
 */
 
+#define MEOW_DEFINE_NESTED_TYPE_CHECKER(checker_name, type_name)			\
+	template<class T>														\
+	struct checker_name														\
+	{																		\
+		struct yes_type {};													\
+		struct no_type { yes_type dummy[2]; };								\
+																			\
+		template<class U> static yes_type test(typename U::type_name *);	\
+		template<class U> static no_type test(...);							\
+																			\
+		enum { value = (sizeof(test<T>(0)) == sizeof(yes_type)) };			\
+	};																		\
+/* ENDMACRO: MEOW_DEFINE_NESTED_TYPE_CHECKER */
+
 #define MEOW_DEFINE_NESTED_MEMBER_CHECKER(checker_name, member) 			\
 template<class T>															\
 struct checker_name															\
@@ -45,10 +59,6 @@ struct checker_name															\
 	enum { value = (sizeof(no_t) != sizeof(test<T>(NULL))) };				\
 };																			\
 /* ENDMACRO: MEOW_DEFINE_NESTED_MEMBER_CHECKER */
-
-#define MEOW_DEFINE_NESTED_TYPE_CHECKER(checker_name, type_name)			\
-	MEOW_DEFINE_NESTED_MEMBER_CHECKER(checker_name, type_name)				\
-/**/
 
 // the c++0x support enabled, use decltype for expression validation stuffs
 //  compile with -std=c++0x to enable it
