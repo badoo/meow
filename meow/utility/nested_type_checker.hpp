@@ -34,19 +34,39 @@ Usage Example 2:
 	}
 */
 
+#define MEOW_DEFINE_NESTED_MEMBER_CHECKER(checker_name, member) 			\
+template<class T>															\
+struct checker_name															\
+{																			\
+	struct no_t {};															\
+	template<size_t n> struct wrap_t { no_t dummy[n]; };					\
+	template<class U> static wrap_t<sizeof(&U::member)> test(void*);		\
+	template<class U> static no_t test(...);								\
+	enum { value = (sizeof(no_t) != sizeof(test<T>(NULL))) };				\
+};																			\
+/* ENDMACRO: MEOW_DEFINE_NESTED_MEMBER_CHECKER */
+
 #define MEOW_DEFINE_NESTED_TYPE_CHECKER(checker_name, type_name)			\
-	template<class T>														\
-	struct checker_name														\
-	{																		\
-		struct yes_type {};													\
-		struct no_type { yes_type dummy[2]; };								\
-																			\
-		template<class U> static yes_type test(typename U::type_name *);	\
-		template<class U> static no_type test(...);							\
-																			\
-		enum { value = (sizeof(test<T>(0)) == sizeof(yes_type)) };			\
-	};																		\
-/* ENDMACRO: MEOW_DEFINE_NESTED_TYPE_CHECKER */
+	MEOW_DEFINE_NESTED_MEMBER_CHECKER(checker_name, type_name)				\
+/**/
+
+// the c++0x support enabled, use decltype for expression validation stuffs
+//  compile with -std=c++0x to enable it
+#if defined(__GXX_EXPERIMENTAL_CXX0X__)
+
+#define MEOW_CXXOX_DEFINE_U_EXPRESSION_CHECKER(checker_name, U_expr)		\
+template<class T>															\
+struct checker_name															\
+{																			\
+	struct no_t {};															\
+	template<class U> static decltype(U_expr)* test(void*);					\
+	template<class U> static no_t test(...);								\
+	typedef decltype(test<T>(NULL)) checked_t;								\
+	enum { value = (sizeof(no_t) != sizeof(checked_t)) };					\
+};																			\
+/**/
+
+#endif
 
 #endif // MEOW_UTILITY__NESTED_TYPE_CHECKER_HPP_
 
