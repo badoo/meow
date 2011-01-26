@@ -6,6 +6,7 @@
 #ifndef MEOW_LIBEV__CONNECTION_SEND_FMT_HPP_
 #define MEOW_LIBEV__CONNECTION_SEND_FMT_HPP_
 
+#include <meow/format/format_functions.hpp>
 #include <meow/format/sink/buffer.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
