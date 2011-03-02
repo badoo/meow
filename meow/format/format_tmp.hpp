@@ -16,44 +16,49 @@
 namespace meow { namespace format {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define MEOW_FORMAT_DEFINE_FMT_TMP_SKEL(n, decl_spec, fn_name) \
+#define MEOW_FORMAT_DEFINE_FMT_TMP(z, n, d) 					\
 template<size_t N, class F FMT_TEMPLATE_PARAMS(n)> 				\
-decl_spec str_ref fn_name( 										\
+inline str_ref fmt_tmp( 										\
 		F const& fmt_str 										\
 		FMT_DEF_PARAMS(n) 										\
 		, tmp_buffer<N> const& buf = tmp_buffer<N>()) 			\
 { 																\
 	sink::char_buffer_sink_t sink(buf.get(), buf.size()); 		\
 	fmt(sink, fmt_str FMT_CALL_SITE_ARGS(n)); 					\
-	return str_ref(buf.get(), sink.size()); 					\
+	return sink.used_part(); 									\
 } 																\
 /**/
-
-#define MEOW_FORMAT_DEFINE_FMT_TMP(z, n, d) 					\
-	MEOW_FORMAT_DEFINE_FMT_TMP_SKEL(n, inline, fmt_tmp)
 
 BOOST_PP_REPEAT_FROM_TO(0, 32, MEOW_FORMAT_DEFINE_FMT_TMP, _);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define MEOW_FORMAT_DEFINE_FMT_STR_SKEL(n, decl_spec, fn_name) \
+#define MEOW_FORMAT_DEFINE_FMT_STR(z, n, d) 					\
 template<class F FMT_TEMPLATE_PARAMS(n)> 						\
-decl_spec std::string fn_name( 									\
+inline std::string fmt_str( 									\
 		F const& fmt_str 										\
 		FMT_DEF_PARAMS(n) 										\
 		) 														\
 { 																\
 	std::string result; 										\
-	fmt(result, fmt_str FMT_CALL_SITE_ARGS(n)); 				\
-	return result; 												\
+	return fmt(result, fmt_str FMT_CALL_SITE_ARGS(n)); 			\
 } 																\
 /**/
 
-#define MEOW_FORMAT_DEFINE_FMT_STR(z, n, d) 					\
-	MEOW_FORMAT_DEFINE_FMT_STR_SKEL(n, inline, fmt_str) 		\
+BOOST_PP_REPEAT_FROM_TO(0, 32, MEOW_FORMAT_DEFINE_FMT_STR, _);
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+#define MEOW_DEFINE_WRITE_STR_FN(z, n, d)								\
+	template<FMT_TEMPLATE_PARAMS_W(n)>									\
+	inline std::string write_str(FMT_DEF_PARAMS_W(n)) 					\
+	{																	\
+		std::string result;												\
+		return write(result FMT_CALL_SITE_ARGS(n));						\
+	}																	\
 /**/
 
-BOOST_PP_REPEAT_FROM_TO(0, 32, MEOW_FORMAT_DEFINE_FMT_STR, _);
+	BOOST_PP_REPEAT_FROM_TO(1, 32, MEOW_DEFINE_WRITE_STR_FN, _);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 }} // namespace meow { namespace format {
