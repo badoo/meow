@@ -11,6 +11,8 @@
 #include <boost/preprocessor/cat.hpp>
 #include <boost/preprocessor/repetition/repeat.hpp>
 #include <boost/preprocessor/repetition/repeat_from_to.hpp>
+#include <boost/preprocessor/repetition/enum_params.hpp>
+#include <boost/preprocessor/repetition/enum_binary_params.hpp>
 #include <boost/preprocessor/repetition/enum_trailing.hpp>
 #include <boost/preprocessor/repetition/enum_trailing_params.hpp>
 #include <boost/preprocessor/repetition/enum_trailing_binary_params.hpp>
@@ -27,7 +29,9 @@ namespace meow { namespace format {
 #define FMT_NUMBERED_CALL(name, n) BOOST_PP_CAT(BOOST_PP_CAT(name, _), n)
 
 #define FMT_TEMPLATE_PARAMS(n) BOOST_PP_ENUM_TRAILING_PARAMS(n, class A)
+#define FMT_TEMPLATE_PARAMS_W(n) BOOST_PP_ENUM_PARAMS(n, class A)
 #define FMT_DEF_PARAMS(n) BOOST_PP_ENUM_TRAILING_BINARY_PARAMS(n, A, const& a)
+#define FMT_DEF_PARAMS_W(n) BOOST_PP_ENUM_BINARY_PARAMS(n, A, const& a)
 #define FMT_CALL_PARAMS(n) BOOST_PP_ENUM_TRAILING_BINARY_PARAMS(n, A, const& a)
 #define FMT_CALL_SITE_ARGS(n) BOOST_PP_ENUM_TRAILING_PARAMS(n, a)
 
