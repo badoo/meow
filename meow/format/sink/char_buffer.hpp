@@ -37,11 +37,18 @@ namespace meow { namespace format { namespace sink {
 		{
 		}
 
+		char_buffer_sink_impl_t(string_ref<CharT> const& buf)
+			: buf_(buf.data())
+			, buf_sz_(buf.size())
+			, offset_(0)
+		{
+		}
+
 		size_t size() const { return offset_; }
 		size_t capacity() const { return buf_sz_; }
 
 		buffer_ref used_part() const { return buffer_ref(buf_, size()); }
-		buffer_ref free_part() const { return buffer_ref(buf_ + size(), buf + capacity()); }
+		buffer_ref free_part() const { return buffer_ref(buf_ + size(), buf_ + capacity()); }
 
 		void write(size_t total_len, string_slice_t const *slices, size_t n_slices)
 		{

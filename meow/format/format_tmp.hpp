@@ -25,7 +25,7 @@ inline str_ref fmt_tmp( 										\
 { 																\
 	sink::char_buffer_sink_t sink(buf.get(), buf.size()); 		\
 	fmt(sink, fmt_str FMT_CALL_SITE_ARGS(n)); 					\
-	return str_ref(buf.get(), sink.size()); 					\
+	return sink.used_part(); 									\
 } 																\
 /**/
 
