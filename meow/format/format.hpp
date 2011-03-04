@@ -10,6 +10,7 @@
 #include "format_parser.hpp"
 #include "format_functions.hpp"
 
+#include "inserter/nullchar.hpp"
 #include "inserter/integral.hpp"
 #include "inserter/floating_point.hpp"
 #include "inserter/pointer.hpp"
