@@ -18,18 +18,16 @@ namespace meow { namespace format {
 	template<>
 	struct string_access<nullchar_t>
 	{
-		static char const data_ = 0;
-
 		static str_ref call(nullchar_t const&)
 		{
-			return str_ref(&data_, 1);
+			return ref_lit("\0");
 		}
 	};
 
 	// anonymous namespace to avoid linker errors
 	namespace
 	{
-		static nullchar_t const nullchar;
+		static nullchar_t const nullchar = nullchar_t();
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
