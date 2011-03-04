@@ -12,8 +12,7 @@
 
 // formating exception text
 #include <meow/format/format.hpp>
-#include <meow/format/format_tmp.hpp>
-#include <meow/format/sink/std_string.hpp>
+#include <meow/format/format_to_string.hpp>
 
 #include "tree.hpp"
 #include "path.hpp"

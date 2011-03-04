@@ -17,6 +17,7 @@
 
 #include <meow/format/format.hpp>
 #include <meow/format/format_tmp.hpp>
+#include <meow/format/format_to_string.hpp>
 
 namespace ff = meow::format;
 using ff::fmt;
