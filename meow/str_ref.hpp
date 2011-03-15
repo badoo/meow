@@ -34,7 +34,9 @@ namespace meow {
 		typedef std::reverse_iterator<iterator>			reverse_iterator;
 		typedef std::reverse_iterator<const_iterator>	const_reverse_iterator;
 
-		typedef std::char_traits<typename boost::remove_const<char_type>::type> traits_type;
+		typedef typename boost::remove_const<char_type>::type char_type_nc;
+
+		typedef std::char_traits<char_type_nc> traits_type;
 		typedef std::basic_string<typename traits_type::char_type, traits_type> string_type;
 
 	private:
@@ -104,7 +106,7 @@ namespace meow {
 				return a.n_ < b.n_;
 		}
 
-		char_type operator[](size_t offset) const
+		char_type_nc operator[](size_t offset) const
 		{
 			BOOST_ASSERT(offset < length());
 			return p_[offset];
