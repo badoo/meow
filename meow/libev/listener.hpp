@@ -24,10 +24,9 @@ namespace meow { namespace libev {
 		virtual ~listener_t() {}
 
 		virtual int 			fd() const = 0;
-		virtual evio_t const* 	event() const = 0;
 		virtual evloop_t* 		loop() const = 0;
 
-		virtual void 			start(ipv4::address_t const&) = 0;
+		virtual void 			start(ipv4::address_t const&, int backlog = -1) = 0;
 		virtual void 			shutdown() = 0;
 	};
 

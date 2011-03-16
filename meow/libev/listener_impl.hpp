@@ -11,12 +11,11 @@
 #include <meow/api_call_error.hpp>
 #include <meow/utility/offsetof.hpp>
 
-#include <meow/libev/libev.hpp>
-
 #include <meow/unix/fd_handle.hpp>
 #include <meow/unix/fcntl.hpp>
 #include <meow/unix/socket.hpp>
 
+#include "io_context.hpp"
 #include "listener.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -34,7 +33,7 @@ namespace meow { namespace libev { namespace detail {
 		listener_static_impl_t(libev::evloop_t *loop)
 			: loop_(loop)
 		{
-			ev_init(&evt_, &libev_cb);
+			ev_init(io_ctx_.event(), &libev_cb);
 		}
 
 		~listener_static_impl_t()
@@ -44,16 +43,15 @@ namespace meow { namespace libev { namespace detail {
 
 	private:
 
-		virtual int fd() const { return event()->fd; }
-		virtual evio_t const* event() const { return &evt_; }
+		virtual int fd() const { return io_ctx_.fd(); }
 		virtual evloop_t* loop() const { return loop_; }
 
-		virtual void start(ipv4::address_t const& addr)
+		virtual void start(ipv4::address_t const& addr, int backlog)
 		{
-			if (ev_is_active(&evt_))
+			if (ev_is_active(io_ctx_.event()))
 				this->do_shutdown();
 
-			this->do_start(addr);
+			this->do_start(addr, backlog);
 		}
 
 		virtual void shutdown()
@@ -63,32 +61,31 @@ namespace meow { namespace libev { namespace detail {
 
 	private:
 
-		void do_start(ipv4::address_t const& addr)
+		void do_start(ipv4::address_t const& addr, int backlog)
 		{
 			os_unix::fd_handle_t s(os_unix::socket_ex(PF_INET, SOCK_STREAM, 0));
 			os_unix::setsockopt_ex(get_handle(s), SOL_SOCKET, SO_REUSEADDR, int(~0));
 			os_unix::bind_ex(get_handle(s), (sockaddr*)addr.sockaddr_tmp(), addr.addrlen());
-			os_unix::listen_ex(get_handle(s), -1);
+			os_unix::listen_ex(get_handle(s), backlog);
 			os_unix::nonblocking(get_handle(s));
 
-			ev_io_set(&evt_, get_handle(s), EV_READ);
-			ev_io_start(loop_, &evt_);
+			ev_io_set(io_ctx_.event(), get_handle(s), EV_READ);
+			ev_io_start(loop_, io_ctx_.event());
 
 			s.release();
 		}
 
 		void do_shutdown()
 		{
-			ev_io_stop(loop_, &evt_);
-			close(evt_.fd);
-			loop_ = NULL;
+			ev_io_stop(loop_, io_ctx_.event());
+			io_ctx_.reset_fd();
 		}
 
 	private:
 
 		static void libev_cb(libev::evloop_t*, libev::evio_t *ev, int revents)
 		{
-			self_t *self = MEOW_SELF_FROM_MEMBER(self_t, evt_, ev);
+			self_t *self = MEOW_SELF_FROM_MEMBER(self_t, io_ctx_, io_context_t::cast_from_event(ev));
 			self->cb(revents);
 		}
 
@@ -99,7 +96,7 @@ namespace meow { namespace libev { namespace detail {
 
 				while (true)
 				{
-					int new_sock = ::accept(evt_.fd, NULL, NULL);
+					int new_sock = ::accept(fd(), NULL, NULL);
 					if (-1 == new_sock)
 					{
 						if (EAGAIN == errno)
@@ -114,8 +111,8 @@ namespace meow { namespace libev { namespace detail {
 		}
 
 	private:
-		libev::evio_t 	evt_;
-		libev::evloop_t *loop_;
+		libev::io_context_t 	io_ctx_;
+		libev::evloop_t 		*loop_;
 	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
