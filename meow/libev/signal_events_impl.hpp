@@ -111,7 +111,9 @@ namespace meow { namespace libev {
 
 		virtual ~signal_events_impl_t()
 		{
-			this->reset();
+			// this object is supposed to exist for the whole lifetime of the program
+			//  so this reset call is just polluting my strace output
+			// this->reset();
 		}
 	};
 
