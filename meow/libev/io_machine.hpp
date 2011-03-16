@@ -536,14 +536,24 @@ namespace meow { namespace libev {
 
 		static void release_context(context_t *ctx)
 		{
-			tr_activity::deinit(ctx);
-
 			io_context_t *io_ctx = tr_base::io_context_ptr(ctx);
 			evio_t *ev = io_ctx->event();
 
-			if (ev_is_active(ev))
-				ev_io_stop(tr_base::ev_loop(ctx), ev);
+			// stop actvity cb
+			tr_activity::deinit(ctx);
 
+			// there can be a situation
+			//  where the watcher (withing the connection) has not been started,
+			//  but has ev_feed_event() (via activate_context()) called on it
+			// So because the object using this iomachine assumes it can free the event
+			//  after calling release_context(), it will do so.
+			//  but since there is a pending still -> it will be executed by libev
+			//  and access freed memory.
+			//
+			//  this call will stop the watcher regardless of being active and clear all pending events too
+			ev_io_stop(tr_base::ev_loop(ctx), ev);
+
+			// just for good measure
 			ev_io_set(ev, io_ctx->fd(), EV_NONE);
 		}
 
