@@ -10,6 +10,8 @@
 #include <boost/intrusive/slist.hpp>
 #include <boost/type_traits/is_base_and_derived.hpp>
 
+#include <boost/iterator/iterator_facade.hpp>
+
 #include <meow/move_ptr/static_move_ptr.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -130,6 +132,43 @@ namespace meow {
 					list_t;
 	private:
 		list_t l_;
+
+	public: // iterators
+
+		template<class I>
+		struct my_iterator : public boost::iterator_facade<
+							 						  my_iterator<I>
+													, value_t
+													, typename boost::iterator_traversal<I>::type
+													, value_t*
+													>
+		{
+			typedef I list_iterator_t;
+			list_iterator_t i_;
+
+			my_iterator() : i_() {}
+			my_iterator(list_iterator_t i) : i_(i) {}
+
+		private:
+
+			friend class boost::iterator_core_access;
+
+			void increment() { ++i_; }
+
+			value_t* dereference() const { return self_traits::value_pointer(*i_); }
+
+			template<class J>
+			bool equal(J const& other) const { return (i_ == other.i_); }
+		};
+
+		typedef my_iterator<typename list_t::iterator> 			iterator;
+		typedef my_iterator<typename list_t::const_iterator> 	const_iterator;
+
+		iterator       begin()       { return iterator(l_.begin()); }
+		const_iterator begin() const { return const_iterator(l_.begin()); }
+
+		iterator       end()       { return iterator(l_.end()); }
+		const_iterator end() const { return const_iterator(l_.end()); }
 
 	public:
 
