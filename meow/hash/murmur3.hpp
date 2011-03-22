@@ -16,12 +16,17 @@
 // x86 versions
 // uint32_t MurmurHash3_x86_32(k, len, seed) // has own implementation
 // uint64_t MurmurHash3_x86_64(k, len, seed) // uses MurmurHash3_x86_128() and slices the result
-// void MurmurHash3_x86_128(k, len, seed, void* out) // own implementation
+// void MurmurHash3_x86_128(k, len, seed, void *out) // own implementation
 //
 // x86_64 versions
 // uint32_t MurmurHash3_x64_32(k, len, seed) // slices MurmurHash3_x64_128()
 // uint64_t MurmurHash3_x64_64(k, len, seed) // slices MurmurHash3_x64_128()
-// void MurmurHash3_x64_128(k, len, seed, void* out) // own implementation
+// void MurmurHash3_x64_128(k, len, seed, void *out) // own implementation
+//
+// also defines wrappers for the above, that detect platforms themselves
+// uint32_t MurmurHash3_32(k, len, seed)
+// uint64_t MurmurHash3_64(k, len, seed)
+// void MurmurHash3_128(k, len, seed, void *out)
 //
 
 #ifndef MEOW_HASH__MURMUR3_HPP_
@@ -29,6 +34,7 @@
 
 #include <stdint.h>
 #include <meow/config/compiler_features.hpp> // MEOW_FORCE_INLINE
+#include <meow/config/platform_bits.hpp> // MEOW_PLATFORM_BITS
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace hash_fn {
@@ -414,6 +420,36 @@ namespace meow { namespace hash_fn {
 		uint64_t out_128[2];
 		MurmurHash3_x64_128(key, len, seed, &out_128);
 		return out_128[0];
+	}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+// wrappers
+
+	uint32_t MurmurHash3_32(const void *key, int len, uint32_t seed)
+	{
+#if (64 == MEOW_PLATFORM_BITS)
+		return MurmurHash3_x64_32(key, len, seed);
+#else // 32bit and everything else
+		return MurmurHash3_x86_32(key, len, seed);
+#endif
+	}
+
+	uint32_t MurmurHash3_64(const void *key, int len, uint32_t seed)
+	{
+#if (64 == MEOW_PLATFORM_BITS)
+		return MurmurHash3_x64_64(key, len, seed);
+#else // 32bit and everything else
+		return MurmurHash3_x86_64(key, len, seed);
+#endif
+	}
+
+	void MurmurHash3_128(const void *key, int len, uint32_t seed, void *out)
+	{
+#if (64 == MEOW_PLATFORM_BITS)
+		MurmurHash3_x64_128(key, len, seed, out);
+#else // 32bit and everything else
+		MurmurHash3_x86_128(key, len, seed, out);
+#endif
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
