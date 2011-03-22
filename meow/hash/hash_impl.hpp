@@ -3,8 +3,8 @@
 // (c) 2011 Anton Povarov <anton.povarov@gmail.com>
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef MEOW_HASH__HASH_FWD_HPP_
-#define MEOW_HASH__HASH_FWD_HPP_
+#ifndef MEOW_HASH__HASH_IMPL_HPP_
+#define MEOW_HASH__HASH_IMPL_HPP_
 
 #include <boost/static_assert.hpp>
 #include <boost/type_traits/is_arithmetic.hpp>
@@ -112,5 +112,5 @@ namespace detail {
 } // namespace meow {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#endif // MEOW_HASH__HASH_FWD_HPP_
+#endif // MEOW_HASH__HASH_IMPL_HPP_
 

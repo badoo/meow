@@ -20,13 +20,13 @@ namespace meow {
 #if 0 && MEOW_HASH_FUNCTIONS_IMPL_INTERFACE // the example interface that's expected
 	{
 		static hash_result_t hash_word_array(
-									  uint32_t *p 			// base pointer
+									  uint32_t const *p 	// base pointer
 									, int len_32 			// length in uint32_t's
 									, uint32_t initval 		// arbitrary initial value
 									);
 
 		static hash_result_t hash_blob(
-									  void *p 				// base pointer
+									  void const *p 		// base pointer
 									, int len 				// length in bytes
 									, uint32_t initval 		// arbitrary initial value
 									);

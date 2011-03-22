@@ -7,7 +7,6 @@
 #define MEOW_HASH__HASH_JENKINS3_HPP_
 
 #include <meow/hash/hash_fwd.hpp>
-#include <meow/hash/hash_impl.hpp>
 #include <meow/hash/jenkins3.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -20,12 +19,12 @@ namespace meow {
 	template<>
 	struct hash_impl<hash_jenkins_tag>
 	{
-		static hash_result_t hash_word_array(uint32_t *p, unsigned len_32, uint32_t initval)
+		static hash_result_t hash_word_array(uint32_t const *p, unsigned len_32, uint32_t initval)
 		{
 			return hash_fn::hashword(p, len_32, initval);
 		}
 
-		static hash_result_t hash_blob(void *p, unsigned len, uint32_t initval)
+		static hash_result_t hash_blob(void const *p, unsigned len, uint32_t initval)
 		{
 			return hash_fn::hashlittle(p, len, initval);
 		}
@@ -34,6 +33,8 @@ namespace meow {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 } // namespace meow {
 ////////////////////////////////////////////////////////////////////////////////////////////////
+
+#include <meow/hash/hash_impl.hpp>
 
 #endif // MEOW_HASH__HASH_JENKINS3_HPP_
 
