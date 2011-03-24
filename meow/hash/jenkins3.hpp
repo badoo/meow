@@ -42,8 +42,8 @@ on 1 byte), but shoehorning those bytes into integers efficiently is messy.
 */
 
 
-#ifndef MEOW_HASH__JENKINS_HASH_HPP_
-#define MEOW_HASH__JENKINS_HASH_HPP_
+#ifndef MEOW_HASH__JENKINS3_HPP_
+#define MEOW_HASH__JENKINS3_HPP_
 
 #include <stdint.h>     /* defines uint32_t etc */
 
@@ -727,5 +727,5 @@ inline uint32_t hashbig( const void *key, size_t length, uint32_t initval)
 }} // namespace meow { namespace hash_fn {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#endif // MEOW_HASH__JENKINS_HASH_HPP_
+#endif // MEOW_HASH__JENKINS3_HPP_
 
