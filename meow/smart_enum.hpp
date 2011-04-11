@@ -34,8 +34,10 @@ namespace request_type {
 		, add
 		, del
 		, upd
-		, _max // <-- special element
-		, _none = _max
+		, _none // <-- special element if you asked for it with _WITH_NONE macro suffix
+		// special names that are added for iteration and bounds
+		, _min = unknown
+		, _max = upd (NOT _none!)
 	};
 
 	enum { _total = 4 /* total_number_of_elements */ };
@@ -59,6 +61,11 @@ namespace request_type {
 
 	inline meow::str_ref enum_as_str_ref(type t) // returns name by enum
 	type enum_from_str_ref(meow::str_ref s); // returns enum by it's name
+
+	// another macro that iterates over the enum
+	MEOW_SMART_ENUM_FOREACH(request_type, loop_variable)
+	{
+	}
 }
 #endif
 
@@ -74,6 +81,8 @@ namespace request_type {
 				, enum_seq 							\
 			) 										\
 		extra_items_macro() 						\
+		, _min = MEOW_SMART_ENUM_ENUM_ITEM(_, 0, enum_seq) \
+		, _max = MEOW_SMART_ENUM_ENUM_ITEM(_, BOOST_PP_DEC(BOOST_PP_SEQ_SIZE(enum_seq)), enum_seq) \
 	}; 												\
 	enum { 											\
 		  _total = BOOST_PP_SEQ_SIZE(enum_seq) 		\
@@ -91,18 +100,18 @@ namespace request_type {
 	MEOW_SMART_ENUM_GEN_ENUM(enum_seq, MEOW_SMART_ENUM_GEN_ENUM_EXTRAS) 	\
 /**/
 
-#define MEOW_SMART_ENUM_NAME_ITEM(z, n, seq) 			\
-	BOOST_PP_TUPLE_ELEM(2, 1, BOOST_PP_SEQ_ELEM(n, seq)) 	\
+#define MEOW_SMART_ENUM_NAME_ITEM(z, n, seq) 					\
+	BOOST_PP_TUPLE_ELEM(2, 1, BOOST_PP_SEQ_ELEM(n, seq)) 		\
 /**/
 
-#define MEOW_SMART_ENUM_SWITCH_ITEM(r, ns_name, item) 	 	\
-	case BOOST_PP_TUPLE_ELEM(2, 0, item): 				\
+#define MEOW_SMART_ENUM_SWITCH_ITEM(r, ns_name, item) 	 		\
+	case BOOST_PP_TUPLE_ELEM(2, 0, item): 						\
 		return BOOST_PP_TUPLE_ELEM(2, 1, item); 				\
 /**/
 
-#define MEOW_SMART_ENUM_FROM_IF_ITEM(r, ns_name, item) 		\
-	if (ref_lit(BOOST_PP_TUPLE_ELEM(2, 1, item)) == s) 		\
-		return BOOST_PP_TUPLE_ELEM(2, 0, item); 	\
+#define MEOW_SMART_ENUM_FROM_IF_ITEM(r, ns_name, item) 			\
+	if (meow::ref_lit(BOOST_PP_TUPLE_ELEM(2, 1, item)) == s) 	\
+		return BOOST_PP_TUPLE_ELEM(2, 0, item); 				\
 /**/
 
 #define MEOW_SMART_ENUM_GEN_FUNCTIONS(decl_prefix, ns_name, enum_seq, has_none)		\
@@ -165,6 +174,10 @@ namespace request_type {
 #define MEOW_DEFINE_SMART_ENUM_STRUCT_T(ns_name, enum_seq) 		\
 	MEOW_DEFINE_SMART_ENUM_STRUCT_I(ns_name, enum_seq)			\
 	typedef typename ns_name::type BOOST_PP_CAT(ns_name, _t);	\
+/**/
+
+#define MEOW_SMART_ENUM_FOREACH(seq, i) 					\
+	for (seq##_t i = seq::_min; i <= seq::_max; i = (seq##_t)((int)i + 1)) 	\
 /**/
 
 #endif // MEOW__SMART_ENUM_HPP_
