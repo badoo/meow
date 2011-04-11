@@ -50,21 +50,56 @@ namespace judy {
 			return i_.get(k);
 		}
 
-		value_t** get_or_create(key_t const& k)
+		value_t** get_or_create_ptr(key_t const& k)
 		{
 			return i_.get_or_create(k);
 		}
 
 	public:
 
-		// @desc: inserts elemtn gaining ownership
+		// @desc: creates element with ownership
+		// returns:
+		//  NULL - no memory
+		//  pointer to created or found object otherwise
+		//   you can check was_inserted out param to find out if that was inserted
+
+		static value_t* standard_ctor() { return new value_t; }
+
+		value_t* get_or_create(key_t const& k, bool *was_inserted = NULL)
+		{
+			return get_or_create(k, &self_t::standard_ctor, was_inserted);
+		}
+
+		template<class CtorF>
+		value_t* get_or_create(key_t const& k, CtorF const& ctor_fn, bool *was_inserted = NULL)
+		{
+			value_t **pp = i_.get_or_create(k);
+
+			if (NULL == pp)
+				return NULL;
+
+			// nothrow from here
+
+			value_t *& p = *pp;
+			if (NULL == p) // new
+			{
+				if (NULL != was_inserted)
+					*was_inserted = true;
+
+				p = ctor_fn();
+			}
+
+			return p;
+		}
+
+		// @desc: inserts element gaining ownership
 		//  returns: pair: <pointer to value_t inserted, value override happened>
 
 		typedef std::pair<value_t*, bool> insert_result_t;
 
 		insert_result_t insert(key_t const& k, value_ptr v)
 		{
-			value_t **pp = get_or_create(k);
+			value_t **pp = i_.get_or_create(k);
 			
 			if (NULL == pp)
 				throw std::bad_alloc();
