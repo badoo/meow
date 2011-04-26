@@ -576,24 +576,6 @@ namespace meow { namespace libev {
 
 	private:
 
-		// idle tracker activity guard
-		//  can't make it local to the function, linker is complaining about weak symbols like a girl
-		struct idle_tracking_guard_t
-		{
-			int revents;
-			context_t *ctx;
-
-			inline void set_activity(int events) { revents |= events; }
-
-			inline ~idle_tracking_guard_t()
-			{
-				if (revents)
-					tr_activity::on_activity(ctx, revents);
-			}
-		};
-
-	private:
-
 		// TODO: this is read-priority one
 		//  can make many of these easily, but will need some duplicated code
 		//  (or macros)
@@ -610,11 +592,12 @@ namespace meow { namespace libev {
 			// operations we want to wait for, modified while looping
 			int io_wait_ops = EV_NONE;
 
+			// operations we have actually executed, for idle notification
+			int io_activity_ops = EV_NONE;
+
 			// we need this everywhere and it's cached for an iteration
 			//  might be a wrong thing to do tho, time will tell
 			io_context_t *io_ctx = tr_base::io_context_ptr(ctx);
-
-			idle_tracking_guard_t idle_guard_ = { EV_NONE, ctx };
 
 			if (tr_log::is_allowed(ctx))
 			{
@@ -641,6 +624,8 @@ namespace meow { namespace libev {
 				{
 					custom_op_status_t c_status = tr_custom_op::custom_operation(ctx);
 					bitmask_clear(io_current_ops, EV_CUSTOM);
+
+					io_activity_ops |= EV_CUSTOM;
 
 					switch (c_status)
 					{
@@ -707,9 +692,6 @@ namespace meow { namespace libev {
 					meow::buffer_ref filled_buf(buf_to.begin(), r.filled_len);
 					rd_consume_status_t c_status = tr_read::consume_buffer(ctx, filled_buf, r.status);
 
-					// signal idle activity as soon before possible returns
-					idle_guard_.set_activity(EV_READ);
-
 					switch (c_status)
 					{
 						case rd_consume_status::finished: // cleanup everything, don't read anymore
@@ -722,6 +704,8 @@ namespace meow { namespace libev {
 						case rd_consume_status::closed: // fd has been closed
 							return;
 					}
+
+					io_activity_ops |= EV_READ;
 				}
 
 				if (tr_custom_op::requires_custom_op(ctx))
@@ -758,9 +742,6 @@ namespace meow { namespace libev {
 					meow::buffer_ref written_buf(buf.begin(), r.bytes_written);
 					wr_complete_status_t c_status = tr_write::write_complete(ctx, written_buf, r.status);
 
-					// signal idle activity as soon before possible returns
-					idle_guard_.set_activity(EV_WRITE);
-
 					switch (c_status)
 					{
 						case wr_complete_status::finished: // cleanup everything, don't do stuff anymore
@@ -773,6 +754,8 @@ namespace meow { namespace libev {
 						case wr_complete_status::closed: // fd has been closed
 							return;
 					}
+
+					io_activity_ops |= EV_WRITE;
 				}
 
 				if (tr_custom_op::requires_custom_op(ctx))
@@ -782,6 +765,16 @@ namespace meow { namespace libev {
 				}
 
 			} // while
+
+			// do activity notification
+			//  before doing any waiting
+			if (io_activity_ops)
+			{
+				if (tr_log::is_allowed(ctx))
+					tr_log::write(ctx, line_mode::single, "{0}; fd: {1}, activity: {2}", __func__, io_ctx->fd(), io_activity_ops);
+
+				tr_activity::on_activity(ctx, io_activity_ops);
+			}
 
 			// now adjust what we're waiting for based on what
 			//  we were waiting for and on what we've been executing in this loop
