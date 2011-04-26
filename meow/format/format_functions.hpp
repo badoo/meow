@@ -47,7 +47,7 @@ namespace meow { namespace format {
 
 // format
 
-#define FMT_STRING_STAGE_CALL(n) FMT_NUMBERED_CALL(fmt_string_stage, n)
+#define FMT_STRING_STAGE_CALL(n) fmt_string_stage
 #define FMT_TUNNEL_STAGE_CALL(n) FMT_NUMBERED_CALL(fmt_tunnel_stage, n)
 #define FMT_INTERFACE_CALL(n) fmt
 
