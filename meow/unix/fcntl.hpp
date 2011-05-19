@@ -7,7 +7,10 @@
 #define MEOW_UNIX__FCNTL_HPP_
 
 #include <fcntl.h>
-#include "libc_wrapper.hpp"
+
+#include <meow/api_call_error.hpp>
+#include <meow/unix/fd_handle.hpp>
+#include <meow/unix/libc_wrapper.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace os_unix {
@@ -37,6 +40,24 @@ namespace os_unix {
 	inline int close_on_exec(int s)
 	{
 		return ::fcntl(s, F_SETFD, FD_CLOEXEC) ? -1 : s;
+	}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+	inline void set_socket_blocking(fd_handle_t& fd, bool is_blocking)
+	{
+		int r = (is_blocking)
+				? blocking(get_handle(fd))
+				: nonblocking(get_handle(fd))
+				;
+
+		if (-1 == r)
+			throw meow::api_call_error("set_socket_blocking(%d, %s)", get_handle(fd), is_blocking ? "true" : "false");
+	}
+
+	inline void set_nonblocking(fd_handle_t& fd)
+	{
+		set_socket_blocking(fd, false);
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
