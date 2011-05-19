@@ -28,17 +28,15 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define MEOW_UNIX_ADDRINFO_LIST_FOR_EACH_EX(ai_ptr, curr_varname) \
-	for (os_addrinfo_t * curr_varname = get_pointer(ai_ptr); curr_varname; curr_varname = curr_varname -> ai_next)
-
-#define MEOW_UNIX_ADDRINFO_LIST_FOR_EACH(ai_ptr) MEOW_UNIX_ADDRINFO_LIST_FOR_EACH_EX(ai_ptr, curr)
+#define MEOW_UNIX_ADDRINFO_LIST_FOR_EACH(var, list) \
+		for (os_addrinfo_t *var = get_pointer(list); var; var = var -> ai_next)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 	inline size_t os_addrinfo_list_size(os_addrinfo_list_ptr const& al)
 	{
 		size_t result = 0;
-		MEOW_UNIX_ADDRINFO_LIST_FOR_EACH_EX(al, curr_ai) { ++result; }
+		MEOW_UNIX_ADDRINFO_LIST_FOR_EACH(i, al) { ++result; }
 		return result;
 	}
 
