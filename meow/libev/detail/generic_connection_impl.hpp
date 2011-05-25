@@ -61,15 +61,13 @@ namespace meow { namespace libev {
 
 	public: // callbacks, for the traits
 
-		events_t* ev() const { return ev_; }
-
 		void cb_read_closed(io_close_report_t const& r)	{ ev_->on_closed(this, r); }
 		void cb_write_closed(io_close_report_t const& r) { ev_->on_closed(this, r); }
 		void cb_custom_closed(io_close_report_t const& r) { ev_->on_closed(this, r); }
 
 	public:
 
-		generic_connection_impl_t(evloop_t *loop, int fd, events_t *ev)
+		generic_connection_impl_t(evloop_t *loop, int fd, events_t *ev = NULL)
 			: loop_(loop)
 			, io_(fd)
 			, ev_(ev)
@@ -87,6 +85,9 @@ namespace meow { namespace libev {
 
 		virtual int fd() const { return io_.fd(); }
 		virtual evloop_t* loop() const { return loop_; }
+
+		events_t* ev() const { return ev_; }
+		void set_ev(events_t *ev) { ev_ = ev; }
 
 	public:
 
@@ -160,7 +161,11 @@ namespace meow { namespace libev {
 					, typename base_interface::events_t						\
 					>														\
 	{																		\
-		name(evloop_t *loop, int fd, typename base_interface::events_t *ev)	\
+		name( 																\
+			  evloop_t *loop 												\
+			, int fd 														\
+			, typename base_interface::events_t *ev = NULL 					\
+			)																\
 			: name::base_t(loop, fd, ev)									\
 		{																	\
 		}																	\
