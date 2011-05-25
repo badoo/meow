@@ -143,9 +143,17 @@ namespace meow {
 
 	inline buffer_move_ptr buffer_create_with_data(void const *data, size_t data_len)
 	{
+		BOOST_ASSERT(data_len > 0);
+
 		buffer_move_ptr buf = create_buffer(data_len);
 		copy_to_buffer(*buf, data, data_len);
 		return move(buf);
+	}
+
+	inline buffer_move_ptr buffer_create_with_data(void const *data, void const *data_end)
+	{
+		BOOST_ASSERT(data < data_end);
+		return buffer_create_with_data(data, size_t((char const*)data_end - (char const*)data));
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
