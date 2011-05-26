@@ -25,8 +25,9 @@ namespace meow { namespace libev {
 		{
 			virtual ~events_t() {}
 
-			virtual void on_read(bin_msg_connection_t*, header_t const&, buffer_move_ptr) = 0;
-			virtual void on_read_error(bin_msg_connection_t*, str_ref error_msg) = 0;
+			// return false from this function if header is bad and you've aborted the connection
+			virtual bool on_header(bin_msg_connection_t*, header_t const&) = 0;
+			virtual void on_message(bin_msg_connection_t*, header_t const&, buffer_move_ptr) = 0;
 			virtual void on_closed(bin_msg_connection_t*, io_close_report_t const&) = 0;
 		};
 	};

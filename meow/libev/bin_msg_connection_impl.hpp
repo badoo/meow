@@ -141,6 +141,12 @@ namespace meow { namespace libev {
 							return rd_consume_status::closed;
 						}
 
+						if (!MEOW_LIBEV_GENERIC_CONNECTION_CTX_CALLBACK(ctx, on_header, ctx->r_header))
+						{
+							b->clear();
+							return rd_consume_status::closed;
+						}
+
 						// buffer will have full data in it, including header
 						//  which is already inside
 						b->resize_to(b->size() + tr::header_get_body_length(ctx->r_header));
@@ -153,7 +159,7 @@ namespace meow { namespace libev {
 						if (b->used_size() < tr::header_get_body_length(ctx->r_header) + sizeof(header_t))
 							break;
 
-						MEOW_LIBEV_GENERIC_CONNECTION_CTX_CALLBACK(ctx, on_read, ctx->r_header, move(b));
+						MEOW_LIBEV_GENERIC_CONNECTION_CTX_CALLBACK(ctx, on_message, ctx->r_header, move(b));
 
 						// go for the next request
 						ctx->r_state = read_state::header;
