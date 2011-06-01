@@ -6,47 +6,76 @@
 #ifndef MEOW_TREE__PATH_HPP_
 #define MEOW_TREE__PATH_HPP_
 
-#include "tree.hpp"
-#include "tree_ops.hpp"
+#include <vector>
+
+#include <boost/assert.hpp>
+#include <boost/foreach.hpp>
+#include <boost/range/iterator_range.hpp>
+
+#include <meow/smart_enum.hpp>
+#include <meow/str_ref.hpp>
+#include <meow/str_ref_algo.hpp>
+
+#include <meow/tree/tree.hpp>
+#include <meow/tree/tree_ops.hpp>
+
+#include <meow/move_ptr/static_move_ptr.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace tree {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-////////////////////////////////////////////////////////////////////////////////////////////////
-namespace path_private {
-////////////////////////////////////////////////////////////////////////////////////////////////
+	typedef std::vector<str_ref> path_parts_t;
+	typedef boost::iterator_range<str_ref const*> path_parts_range_t;
 
-	struct path_node_type {
-		enum type { self, parent, regular };
-	};
-	typedef path_node_type::type path_node_type_t;
-
-	inline path_node_type_t parse_path_node(char const *path)
+	inline path_parts_t path_into_parts(str_ref const& path)
 	{
-		switch (*path++)
+		return split_ex(path, "/");
+	}
+
+	inline path_parts_range_t path_make_parts_range(path_parts_t const& parts, ssize_t off_b = 0, ssize_t off_e = 0)
+	{
+		return path_parts_range_t(&*parts.begin() + off_b, &*parts.end() + off_e);
+	}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+	MEOW_DEFINE_SMART_ENUM_STRUCT(path_node_type,
+								((self,    "self"))
+								((parent,  "parent"))
+								((regular, "regular"))
+								);
+
+	inline path_node_type_t path_get_node_type(str_ref const& part)
+	{
+		BOOST_ASSERT(!part.empty());
+
+		char const *p = part.begin();
+
+		switch (*p++)
 		{
 			case '/':
 				BOOST_ASSERT(!"slash can't be here!");
 				break;
 
 			case '.': // possible self
-				switch (*path++)
-				{
-					case 0:	case '/': 
-						return path_node_type::self;
 
-					case '.': // possible parent
-						switch (*path++)
-						{
-							case 0: case '/': return path_node_type::parent;
-							default: return path_node_type::regular; // random filename with 2 dots in front
-						}
+				if (part.end() == p)
+					return path_node_type::self;
+
+				switch (*p++)
+				{
+					case '.': // parent ?
+						if (part.end() == p)
+							return path_node_type::parent;
+						else
+							return path_node_type::regular; // random filename with 2 dots in front
 						break;
 
-					default: // random filename with 1 dot in front
-						return path_node_type::regular;
+					default:
+						return path_node_type::regular; // random filename with 1 dot in front
 				}
+
 				break;
 
 			default: // normal file
@@ -54,78 +83,126 @@ namespace path_private {
 		}
 	}
 
-	inline node_t* get_path_relative(node_t *node, char const *path)
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+	inline bool path_is_absolute(str_ref const& path)
 	{
-//		fprintf(stderr, "%s[0]; node: %p, path: '%s'\n", __func__, node, path);
+		BOOST_ASSERT(!path.empty());
+		return ('/' == path[0]);
+	}
 
-		if (!path)
-			return node;
+	inline path_parts_t path_normalize(path_parts_t const& parts)
+	{
+		path_parts_t r;
+		r.reserve(parts.size());
 
-		// eat all adjacent slashes at start
-		while (*path && '/' == *path) path++;
-
-//		fprintf(stderr, "%s[1]; node: %p, path: '%s'\n", __func__, node, path);
-
-		// return self if path is empty
-		if (!path || !*path)
-			return node;
-
-		// now onto the node type
-		path_node_type_t node_type = parse_path_node(path);
-
-		switch (node_type)
+		BOOST_FOREACH(str_ref const& s, parts)
 		{
-			case path_node_type::self:
-				return get_path_relative(node, path + 1);
-			case path_node_type::parent:
-				if (node->has_parent())
-					node = node->parent();
-				return get_path_relative(node, path + 2);
-			case path_node_type::regular:
+			path_node_type_t const ntype = path_get_node_type(s);
+
+			switch (ntype)
 			{
-				char const *end = path;
-				while (*end && ('/' != *end)) end++; // find where the slash is
-				str_ref node_name = str_ref(path, end);
-//				printf("node_name: %.*s\n", (int)node_name.size(), node_name.data());
-
-				if (node_type::directory == node->type())
-				{
-					directory_t *dir = static_cast<directory_t*>(node);
-
-					node_t *child = dir->get_child_value(node_name);
-					if (!child)
-						return NULL;
-
-					return get_path_relative(child, end);
-				}
-
-				return NULL;
+				case path_node_type::self:
+					break;
+				case path_node_type::parent:
+					if (!r.empty())
+						r.pop_back();
+					break;
+				case path_node_type::regular:
+					r.push_back(s);
+					break;
 			}
-			break;
 		}
 
-		BOOST_ASSERT(!"can't be reached");
+		return r;
 	}
 
-	inline node_t* get_path_absolute(node_t *node, char const *path)
+	template<class StringT>
+	inline std::string path_normalize(StringT const& path)
 	{
-		BOOST_ASSERT('/' == *path);
-		return get_path_relative(get_root(node), ++path);
+		path_parts_t const parts = path_into_parts(path);
+		path_parts_t const new_parts = path_normalize(parts);
+
+		std::string r;
+		r.reserve(path.size());
+
+		if (path_is_absolute(path))
+			r.append("/");
+
+		BOOST_FOREACH(str_ref const& s, new_parts)
+		{
+			bool const is_first = (&s == &new_parts[0]);
+			if (!is_first)
+				r.append("/");
+
+			r.append(s.data(), s.size());
+		}
+
+		return r;
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
-} // namespace path_private {
+
+	template<class Function>
+	void path_walk(node_t *root, str_ref const& path, Function const& function)
+	{
+		path_parts_range_t const parts_r = path_into_parts(path);
+
+		BOOST_FOREACH(str_ref const& name, parts_r)
+		{
+			if (!function(root, parts_r, name))
+				break;
+		}
+
+		return root;
+	}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	inline node_t* get_path(node_t *root, char const *path)
+	bool do_path_get(tree::node_t *& root, path_parts_range_t const& parts_r, str_ref const& name)
 	{
-		BOOST_ASSERT(NULL != path);
-		BOOST_ASSERT(NULL != root);
+		path_node_type_t const ntype = tree::path_get_node_type(name);
+		switch (ntype)
+		{
+			case path_node_type::self:
+				break;
 
-		return ('/' == *path)
-			? path_private::get_path_absolute(root, path)
-			: path_private::get_path_relative(root, path)
-			;
+			case path_node_type::parent:
+				if (root->has_parent())
+					root = as_directory(root->parent());
+				break;
+
+			case path_node_type::regular:
+			{
+				if (tree::node_type::directory != root->type())
+					throw std::logic_error("bad tree node type, can't search for path inside the file");
+
+				root = as_directory(root)->get_child_value(name);
+			}
+			break;
+
+			default:
+				BOOST_ASSERT(!"can't be reached");
+		}
+
+		return (NULL != root);
+	}
+
+	inline node_t* get_path(node_t *root, path_parts_range_t const& parts_r)
+	{
+		BOOST_FOREACH(str_ref const& name, parts_r)
+		{
+			if (!do_path_get(root, parts_r, name))
+				break;
+		}
+
+		return root;
+	}
+
+	template<class StringT>
+	inline tree::node_t* get_path(tree::node_t *root, StringT const& path)
+	{
+		return get_path(root, path_make_parts_range(path_into_parts(path)));
 	}
 
 	inline directory_t* get_path_as_dir(node_t *root, char const *path)
@@ -145,6 +222,73 @@ namespace path_private {
 			return convert_proxy_t(NULL);
 
 		return as_file(found_node)->value();
+	}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+	void do_create_directories(directory_t*& root, path_parts_range_t const& parts_r, str_ref const& name)
+	{
+		path_node_type_t const ntype = path_get_node_type(name);
+		switch (ntype)
+		{
+			case path_node_type::self:
+				break;
+
+			case path_node_type::parent:
+				if (root->has_parent())
+					root = as_directory(root->parent());
+				break;
+
+			case path_node_type::regular:
+			{
+				node_t *node = root->get_child_value(name);
+				if (NULL == node)
+				{
+					node = tree::create_directory_p();
+					root->add_child(name, node);
+				}
+				else
+				{
+					if (node_type::directory != node->type())
+						throw std::logic_error("bad tree node type, can't create dirs inside the file");
+				}
+
+				root = as_directory(node);
+			}
+			break;
+
+			default:
+				BOOST_ASSERT(!"can't be reached");
+		}
+	}
+
+	directory_t* tree_create_dir(directory_t *root, path_parts_range_t const& parts_r)
+	{
+		BOOST_FOREACH(str_ref const& name, parts_r)
+		{
+			do_create_directories(root, parts_r, name);
+		}
+
+		return root;
+	}
+
+	template<class StringT>
+	directory_t* tree_create_dir(directory_t *root, StringT const& path)
+	{
+		path_parts_t const parts = path_into_parts(path);
+		return tree_create_dir(root, path_make_parts_range(parts));
+	}
+
+	template<class StringT, class NodeT>
+	NodeT* tree_create_at(tree::directory_t *root, StringT const& path, boost::static_move_ptr<NodeT> new_node)
+	{
+		path_parts_t const parts = path_into_parts(path);
+
+		if (parts.size() > 1)
+			root = tree_create_dir(root, path_make_parts_range(parts, 0, -1));
+
+		root->add_child(parts.back(), get_pointer(new_node));
+		return new_node.release();
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
