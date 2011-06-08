@@ -27,7 +27,7 @@ namespace meow { namespace libev {
 
 			// return false from this function if header is bad and you've aborted the connection
 			virtual bool on_header(bin_msg_connection_t*, header_t const&) = 0;
-			virtual void on_message(bin_msg_connection_t*, header_t const&, buffer_move_ptr) = 0;
+			virtual void on_message(bin_msg_connection_t*, buffer_move_ptr) = 0;
 			virtual void on_closed(bin_msg_connection_t*, io_close_report_t const&) = 0;
 		};
 	};

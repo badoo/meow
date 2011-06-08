@@ -75,12 +75,19 @@ namespace meow { namespace libev {
 			struct context_t
 			{
 				read_state_t 	r_state;
-				header_t 		r_header;
+				uint32_t        r_data_length;
 				buffer_move_ptr r_buf;
 
 				context_t()
-					: r_state(read_state::header)
 				{
+					this->r_reset_for_next_request();
+				}
+
+				void r_reset_for_next_request()
+				{
+					r_state = read_state::header;
+					r_data_length = 0;
+					r_buf.reset();
 				}
 			};
 
@@ -129,41 +136,43 @@ namespace meow { namespace libev {
 				switch (ctx->r_state)
 				{
 					case read_state::header:
+					{
 						// do we have full header buffered now?
 						if (b->used_size() < sizeof(header_t))
 							break;
 
-						if (!tr::parse_header(ctx, &ctx->r_header, b->used_part()))
+						header_t header;
+						if (!tr::parse_header(ctx, &header, b->used_part()))
 						{
-							// can do clear() as we always read maximum sizeof(header) first
-							//  so there are no other requests in the buffer for sure
-							b->clear();
+							ctx->r_reset_for_next_request();
 							return rd_consume_status::closed;
 						}
 
-						if (!MEOW_LIBEV_GENERIC_CONNECTION_CTX_CALLBACK(ctx, on_header, ctx->r_header))
+						if (!MEOW_LIBEV_GENERIC_CONNECTION_CTX_CALLBACK(ctx, on_header, header))
 						{
-							b->clear();
+							ctx->r_reset_for_next_request();
 							return rd_consume_status::closed;
 						}
 
-						// buffer will have full data in it, including header
-						//  which is already inside
-						b->resize_to(b->size() + tr::header_get_body_length(ctx->r_header));
+						// buffer will have full data in it, including header which is already inside
+						ctx->r_data_length = tr::header_get_body_length(header);
 						ctx->r_state = read_state::body;
 
-						break; // got no body in the buffer yet anyway
+						if (ctx->r_data_length > 0)
+							b->resize_to(b->size() + ctx->r_data_length);
+					}
+
+					/* fall through, can have body of size == 0 */
 
 					case read_state::body:
-						// do we have full body in the buffer?
-						if (b->used_size() < tr::header_get_body_length(ctx->r_header) + sizeof(header_t))
+
+						// reading till buffer fills up, as we resized it to the required target size
+						if (!b->full())
 							break;
 
-						MEOW_LIBEV_GENERIC_CONNECTION_CTX_CALLBACK(ctx, on_message, ctx->r_header, move(b));
+						MEOW_LIBEV_GENERIC_CONNECTION_CTX_CALLBACK(ctx, on_message, move(b));
 
-						// go for the next request
-						ctx->r_state = read_state::header;
-						ctx->r_header = header_t();
+						ctx->r_reset_for_next_request();
 						break;
 				}
 
