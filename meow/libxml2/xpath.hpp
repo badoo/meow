@@ -22,13 +22,13 @@ namespace meow { namespace libxml2 {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 	
-	xpath_object_ptr_t xpath_eval_expression(char const *expr, xmlXPathContext& ctx) {
+	inline xpath_object_ptr_t xpath_eval_expression(char const *expr, xmlXPathContext& ctx) {
 		return libxml2::acquire_move_ptr(xmlXPathEvalExpression(BAD_CAST expr, &ctx));
 	}
 
 	typedef boost::iterator_range<xmlNodePtr*> xpath_node_range_t;
 
-	xpath_node_range_t fetch_node_range(xmlXPathObject const& obj) {
+	inline xpath_node_range_t fetch_node_range(xmlXPathObject const& obj) {
 		xmlNodeSetPtr nodes = obj.nodesetval;
 		if (NULL == nodes || 0 == nodes->nodeNr)
 			return xpath_node_range_t((xmlNode**)NULL, (xmlNode**)NULL);

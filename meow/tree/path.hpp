@@ -144,7 +144,7 @@ namespace meow { namespace tree {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	template<class Function>
-	void path_walk(node_t *root, str_ref const& path, Function const& function)
+	inline void path_walk(node_t *root, str_ref const& path, Function const& function)
 	{
 		path_parts_range_t const parts_r = path_into_parts(path);
 
@@ -159,7 +159,7 @@ namespace meow { namespace tree {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	bool do_path_get(tree::node_t *& root, path_parts_range_t const& parts_r, str_ref const& name)
+	inline bool do_path_get(tree::node_t *& root, path_parts_range_t const& parts_r, str_ref const& name)
 	{
 		path_node_type_t const ntype = tree::path_get_node_type(name);
 		switch (ntype)
@@ -226,7 +226,7 @@ namespace meow { namespace tree {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	void do_create_directories(directory_t*& root, path_parts_range_t const& parts_r, str_ref const& name)
+	inline void do_create_directories(directory_t*& root, path_parts_range_t const& parts_r, str_ref const& name)
 	{
 		path_node_type_t const ntype = path_get_node_type(name);
 		switch (ntype)
@@ -262,7 +262,7 @@ namespace meow { namespace tree {
 		}
 	}
 
-	directory_t* tree_create_dir(directory_t *root, path_parts_range_t const& parts_r)
+	inline directory_t* tree_create_dir(directory_t *root, path_parts_range_t const& parts_r)
 	{
 		BOOST_FOREACH(str_ref const& name, parts_r)
 		{
@@ -273,14 +273,14 @@ namespace meow { namespace tree {
 	}
 
 	template<class StringT>
-	directory_t* tree_create_dir(directory_t *root, StringT const& path)
+	inline directory_t* tree_create_dir(directory_t *root, StringT const& path)
 	{
 		path_parts_t const parts = path_into_parts(path);
 		return tree_create_dir(root, path_make_parts_range(parts));
 	}
 
 	template<class StringT, class NodeT>
-	NodeT* tree_create_at(tree::directory_t *root, StringT const& path, boost::static_move_ptr<NodeT> new_node)
+	inline NodeT* tree_create_at(tree::directory_t *root, StringT const& path, boost::static_move_ptr<NodeT> new_node)
 	{
 		path_parts_t const parts = path_into_parts(path);
 
