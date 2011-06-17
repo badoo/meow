@@ -135,16 +135,19 @@ namespace meow { namespace mapping {
 
 		void call_handler(ContextT& ctx, str_ref name, str_ref value) const
 		{
-			handler_t const *called_handler = (handler_t*)this->MapT::map_find(name);
-
-			if (NULL != called_handler)
-				return (*called_handler)(ctx, value);
-
-			BOOST_FOREACH(header_handler_t const& h, unknown_v_)
-				h(ctx, name, value);
-
 			BOOST_FOREACH(header_handler_t const& h, any_v_)
 				h(ctx, name, value);
+
+			handler_t const *called_handler = (handler_t*)this->MapT::map_find(name);
+			if (NULL != called_handler)
+			{
+				(*called_handler)(ctx, value);
+			}
+			else
+			{
+				BOOST_FOREACH(header_handler_t const& h, unknown_v_)
+					h(ctx, name, value);
+			}
 		}
 	};
 

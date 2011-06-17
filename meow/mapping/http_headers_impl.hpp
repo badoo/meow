@@ -31,6 +31,8 @@ namespace meow { namespace mapping {
 		typedef http_header_mapping_t 				self_t;
 		typedef kv_mapping_t<ContextT, MapT> 		base_t;
 
+		typedef ContextT                            context_t;
+
 	public: // setters for setting up the mapping
 
 		template<class Function>
