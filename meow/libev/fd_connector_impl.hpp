@@ -195,7 +195,7 @@ namespace meow { namespace libev {
 
 			if (self->log_)
 			{
-				LOG_DEBUG_EX(self->log_, line_mode::prefix, "{0}; item: {1}, err: {2}", __func__, item, err);
+				LOG_DEBUG_EX(self->log_, line_mode::prefix, "{0}; fd: {1}, err: {2}", __func__, item->fd(), err);
 				if (err)
 					LOG_DEBUG_EX(self->log_, line_mode::suffix, " : {0}", strerror(err));
 				else

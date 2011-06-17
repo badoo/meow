@@ -120,8 +120,8 @@ namespace meow { namespace libev {
 		static custom_op_status_t custom_operation(ContextT *ctx)
 		{
 			BOOST_ASSERT(ctx->close_flags()->immediately);
-			ctx->cb_custom_closed(io_close_report(io_close_reason::custom_close));
 			ctx->close_->immediately = false;
+			ctx->cb_custom_closed(io_close_report(io_close_reason::custom_close));
 
 			return custom_op_status::closed;
 		}
