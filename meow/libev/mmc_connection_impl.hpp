@@ -24,7 +24,8 @@ namespace meow { namespace libev {
 
 		struct mmc_read
 		{
-			static size_t const max_message_length = 1024;
+			template<class ContextT>
+			static size_t max_message_length(ContextT*) { return 1024; }
 
 			template<class ContextT>
 			static str_ref fetch_message(ContextT*, str_ref buffer_s) {}
@@ -45,11 +46,6 @@ namespace meow { namespace libev {
 			struct context_t
 			{
 				buffer_move_ptr r_buf;
-
-				context_t()
-					: r_buf(new buffer_t(tr_mmc_read::max_message_length))
-				{
-				}
 			};
 		private:
 
@@ -71,6 +67,9 @@ namespace meow { namespace libev {
 			template<class ContextT>
 			static buffer_ref get_buffer(ContextT *ctx)
 			{
+				if (!ctx->r_buf)
+					ctx->r_buf.reset(new buffer_t(tr_mmc_read::max_message_length(ctx)));
+
 				return ctx->r_buf->free_part();
 			}
 
