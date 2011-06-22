@@ -41,9 +41,10 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-// MEOW_DEFINE_NESTED_NAME_ALIAS(traits, nested_name, none_type, void_type):
+// 
+// MEOW_DEFINE_NESTED_NAME_ALIAS_EX(traits, nested_name, new_name, none_type, void_type):
 // this macro checks if there is a nested traits::nested_name
-//  and typedefs the proper local 'nested_name' as follows
+//  and typedefs the proper local 'new_name' as follows
 //  * traits::nested_name doesn't exist 		-> none_type
 //  * traits::nested_name exists and is void 	-> void_type
 //  * else 										-> typename traits::nested_name
@@ -51,6 +52,9 @@
 // NOTE: using inner_if magic here, because we can't refer to traits::nested_name
 //  until it's known to exist, and that's checked in outer_if
 //
+//
+// MEOW_DEFINE_NESTED_NAME_ALIAS(traits, nested_name, none_type, void_type):
+//  same as above, but new_name = nested_name
 
 #define MEOW_DEFINE_NESTED_NAME_ALIAS_II(checker_name, nested_name, none_type, void_type) 		\
 	template<class NAME_ALIAS_Tr>											\
@@ -70,16 +74,29 @@
 	};																		\
 /**/
 
-#define MEOW_DEFINE_NESTED_NAME_ALIAS_I(traits, checker_name, nested_name, none_type, void_type) 	\
+#define MEOW_DEFINE_NESTED_NAME_ALIAS_I(traits, checker_name, nested_name, new_name, none_type, void_type) 	\
 	MEOW_DEFINE_NESTED_NAME_ALIAS_II(checker_name, nested_name, none_type, void_type) 		\
-	typedef typename checker_name<traits>::type nested_name;								\
+	typedef typename checker_name<traits>::type new_name;								\
 /**/
 
-#define MEOW_DEFINE_NESTED_NAME_ALIAS(traits, nested_name, none_type, void_type) 	\
-	MEOW_DEFINE_NESTED_NAME_ALIAS_I(traits, BOOST_PP_CAT(nested_name_redefiner_, __LINE__), nested_name, none_type, void_type) \
+#define MEOW_DEFINE_NESTED_NAME_ALIAS_EX(traits, nested_name, new_name, none_type, void_type) 	\
+	MEOW_DEFINE_NESTED_NAME_ALIAS_I(  traits 											\
+									, BOOST_PP_CAT(nested_name_redefiner_, __LINE__) 	\
+									, nested_name, new_name, none_type, void_type 		\
+									) 													\
+/**/
+
+#define MEOW_DEFINE_NESTED_NAME_ALIAS(traits, nested_name, none_type, void_type) 		\
+	MEOW_DEFINE_NESTED_NAME_ALIAS_I(  traits 											\
+									, BOOST_PP_CAT(nested_name_redefiner_, __LINE__) 	\
+									, nested_name, nested_name, none_type, void_type 	\
+									) 													\
 /**/
 
 // useful when you need to make a default, but also to give the user an option of disabling the thing completely
+#define MEOW_DEFINE_NESTED_NAME_ALIAS_OR_MY_TYPE_EX(traits, nested_name, new_name, none_type) \
+	MEOW_DEFINE_NESTED_NAME_ALIAS_EX(traits, nested_name, new_name, none_type, void)
+
 #define MEOW_DEFINE_NESTED_NAME_ALIAS_OR_MY_TYPE(traits, nested_name, none_type) \
 	MEOW_DEFINE_NESTED_NAME_ALIAS(traits, nested_name, none_type, void)
 
