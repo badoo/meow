@@ -15,14 +15,17 @@
 #include <meow/move_ptr/static_move_ptr.hpp>
 
 #include <meow/libev/libev_fwd.hpp>
+#include <meow/libev/io_context.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace libev {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
+	typedef boost::static_move_ptr<io_context_t> io_context_ptr;
+
 	struct fd_connector_t : private boost::noncopyable
 	{
-		typedef boost::function<void(int fd, int err)> callback_t;
+		typedef boost::function<void(io_context_ptr& io_ctx, int err)> callback_t;
 
 		virtual ~fd_connector_t() {}
 

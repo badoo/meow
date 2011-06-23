@@ -13,6 +13,7 @@
 #include <meow/bitfield_union.hpp>
 
 #include <meow/libev/libev_fwd.hpp>
+#include <meow/libev/io_context.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace libev {
@@ -24,6 +25,10 @@ namespace meow { namespace libev {
 		bool immediately : 1;
 	};
 	typedef meow::bitfield_union<generic_connection_close_data_t> close_flags_t;
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+	typedef boost::static_move_ptr<io_context_t> io_context_ptr;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -57,6 +62,9 @@ namespace meow { namespace libev {
 	public: // access to semi-private information for the brave
 
 		virtual buffer_chain_t& wchain_ref() = 0;
+
+		virtual io_context_t*  reset_io(io_context_ptr io_ctx) = 0;
+		virtual io_context_ptr grab_io() = 0;
 
 	public: // closing
 

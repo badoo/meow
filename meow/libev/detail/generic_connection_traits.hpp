@@ -35,12 +35,12 @@ namespace meow { namespace libev {
 
 		static io_context_t* io_context_ptr(context_t *ctx)
 		{
-			return &ctx->io_;
+			return ctx->io_.ptr();
 		}
 
 		static context_t* context_from_io(libev::io_context_t *io_ctx)
 		{
-			return MEOW_SELF_FROM_MEMBER(context_t, io_, io_ctx);
+			return static_cast<context_t*>(io_ctx->data());
 		}
 
 		static int io_allowed_ops(context_t *ctx)

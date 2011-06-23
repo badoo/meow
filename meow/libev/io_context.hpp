@@ -8,9 +8,8 @@
 
 #include <unistd.h> 		// for ::close()
 
+#include <meow/libev/libev.hpp>
 #include <meow/utility/offsetof.hpp>
-
-#include "libev.hpp" 	// for libev stuff
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace libev {
@@ -32,15 +31,26 @@ namespace meow { namespace libev {
 	public:
 
 		int fd() const { return evt_.fd; }
-		void set_fd(int new_fd) { evt_.fd = new_fd; }
 
-		void reset_fd()
+		int set_fd(int new_fd)
+		{
+			int fd_ = evt_.fd;
+			evt_.fd = new_fd;
+			return fd_;
+		}
+
+		int release_fd()
+		{
+			return set_fd(null_fd);
+		}
+
+		void reset_fd(int new_fd = null_fd)
 		{
 			if (this->is_valid())
 			{
 				::close(fd());
-				set_fd(null_fd);
 			}
+			set_fd(new_fd);
 		}
 
 		evio_t*       event()       { return &evt_; }

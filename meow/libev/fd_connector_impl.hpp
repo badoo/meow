@@ -43,34 +43,27 @@ namespace meow { namespace libev {
 
 		struct item_t : public hook_t
 		{
-			evio_t 			io;
-			evtimer_t 		timer;
+			io_context_ptr  io_ctx;   // io, will be given out, ->data points to item_t
+			evtimer_t 		timer;    // timeout, ->data points to fd_connector_impl_t
+			int             err_code; // saved errno from ::connect()
 			callback_t 		cb;
 
 			item_t(int fd, callback_t const& cb)
-				: cb(cb)
+				: io_ctx(new io_context_t(fd))
+				, cb(cb)
 			{
-				io.fd = fd;
+				store_item_ptr(this);
 			}
 
-			int fd() const { return io.fd; }
-			evio_t* io_event() { return &io; }
+			int fd() const { return io_ctx->fd(); }
+			evio_t* io_event() { return io_ctx->event(); }
 			evtimer_t* io_timer() { return &timer; }
 
-			void store_self(self_t *self) { io_event()->data = self; }
-			self_t* get_self() { return static_cast<self_t*>(io_event()->data); }
+			static void store_item_ptr(item_t *item) { item->io_ctx->reset_data(item); }
+			static item_t* get_item_ptr(io_context_t *ctx) { return static_cast<item_t*>(ctx->data()); }
 
-			void store_errno(int e)
-			{
-				// timeout's opaque data is always the errno store location
-				//  which will be used on EV_CUSTOM activations
-				io_timer()->data = union_cast<void*>(e);
-			}
-
-			int get_errno()
-			{
-				return union_cast<int>(io_timer()->data);
-			}
+			void store_connector_ptr(self_t *self) { io_timer()->data = self; }
+			self_t* get_connetor_ptr() { return static_cast<self_t*>(io_timer()->data); }
 		};
 		typedef boost::static_move_ptr<item_t> item_move_ptr;
 
@@ -115,7 +108,7 @@ namespace meow { namespace libev {
 			)
 		{
 			item_move_ptr item(new item_t(fd, cb));
-			item->store_self(this);
+			item->store_connector_ptr(this);
 
 			this->do_connect(get_pointer(item), addr, timeout);
 
@@ -138,6 +131,7 @@ namespace meow { namespace libev {
 		item_t* find_fd(int fd)
 		{
 			typedef list_t::iterator iterator_t;
+
 			for (iterator_t i = items_.begin(); i != items_.end(); ++i)
 			{
 				item_t *item = &*i;
@@ -171,7 +165,7 @@ namespace meow { namespace libev {
 				if (EINPROGRESS != errno) // connection error that occured immediately
 				{
 					ev_feed_event(loop_, item->io_event(), EV_CUSTOM);
-					item->store_errno(errno);
+					item->err_code = errno;
 				}
 				else
 				{
@@ -183,7 +177,7 @@ namespace meow { namespace libev {
 			{
 				BOOST_ASSERT((0 == n) && "connect() returns either -1 or 0");
 				ev_feed_event(loop_, item->io_event(), EV_CUSTOM);
-				item->store_errno(errno);
+				item->err_code = errno;
 			}
 		}
 
@@ -191,7 +185,7 @@ namespace meow { namespace libev {
 
 		static void libev_cb_stage2(evloop_t *loop, item_t *item, int err)
 		{
-			self_t *self = item->get_self();
+			self_t *self = item->get_connetor_ptr();
 
 			if (self->log_)
 			{
@@ -202,21 +196,24 @@ namespace meow { namespace libev {
 					LOG_DEBUG_EX(self->log_, line_mode::suffix, "");
 			}
 
-			if (ev_is_active(item->io_timer()))
-				ev_timer_stop(loop, item->io_timer());
-			if (ev_is_active(item->io_event()))
-				ev_io_stop(loop, item->io_event());
+			ev_timer_stop(loop, item->io_timer());
+			ev_io_stop(loop, item->io_event());
 
+			// need the ref to pass it through boost::function
+			io_context_ptr& io_ctx = item->io_ctx;
+			item->cb(io_ctx, err);
+
+			// deleter
 			item_move_ptr item_wrap(item);
-			item->cb(item->fd(), err);
 		}
 
 		static void libev_cb(evloop_t *loop, evio_t *ev, int revents)
 		{
-			item_t *item = MEOW_SELF_FROM_MEMBER(item_t, io, ev);
+			io_context_t *io_ctx = io_context_t::cast_from_event(ev);
+			item_t *item = item_t::get_item_ptr(io_ctx);
 
 			int err = (EV_CUSTOM & revents)
-						? item->get_errno()
+						? item->err_code
 						: os_unix::getsockopt_ex<int>(item->fd(), SOL_SOCKET, SO_ERROR)
 						;
 

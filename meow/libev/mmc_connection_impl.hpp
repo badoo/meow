@@ -121,6 +121,12 @@ namespace meow { namespace libev {
 						// move to the remainder of the data
 						//  that can be the next request
 						b->advance_first(message_s.size());
+
+						// if the buffer is now empty
+						//  we can just clear the buffer preemptively
+						//  to avoid data moves in the future
+						if (b->empty())
+							b->clear();
 					}
 				}
 
