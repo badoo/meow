@@ -247,7 +247,7 @@ namespace meow { namespace tree {
 				node_t *node = root->get_child_value(name);
 				if (NULL == node)
 				{
-					node = tree::create_directory_p();
+					node = create_directory_p();
 					root->add_child(name, node);
 				}
 				else
@@ -283,7 +283,7 @@ namespace meow { namespace tree {
 	}
 
 	template<class StringT, class NodeT>
-	inline NodeT* tree_create_at(tree::directory_t *root, StringT const& path, boost::static_move_ptr<NodeT> new_node)
+	inline NodeT* tree_create_at(directory_t *root, StringT const& path, boost::static_move_ptr<NodeT> new_node)
 	{
 		BOOST_STATIC_ASSERT((boost::is_base_and_derived<node_t, NodeT>::value));
 

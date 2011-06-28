@@ -116,6 +116,34 @@ namespace meow { namespace tree {
 		T *value_;
 	};
 
+	template<class T>
+	struct static_create_node_t : public static_node_t<T>
+	{
+		typedef static_node_t<T> base_t;
+
+		template<class StringT>
+		static_create_node_t(directory_t *root, StringT const& path)
+			: base_t()
+		{
+			init(root, path);
+		}
+
+		static_create_node_t(directory_t& root, char const *path)
+			: base_t()
+		{
+			init(root, path);
+		}
+
+	private:
+
+		template<class StringT>
+		void init(directory_t *root, StringT const& path)
+		{
+			node_t *node = tree_create_at(root, path, create_file<T>());
+			this->init_from_node(node);
+		}
+	};
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 }} // namespace meow { namespace tree {
 ////////////////////////////////////////////////////////////////////////////////////////////////
