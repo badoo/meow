@@ -111,6 +111,8 @@ MEOW_DEFINE_SMART_ENUM(node_type,	((file, 		"file"))
 	{
 		typedef directory_t 				self_t;
 		typedef node_name_and_ptr_t 		child_t;
+
+		typedef boost::iterator_range<child_t*> child_range_nc_t;
 		typedef boost::iterator_range<child_t const*> child_range_t;
 
 		virtual ~directory_t()
@@ -144,6 +146,11 @@ MEOW_DEFINE_SMART_ENUM(node_type,	((file, 		"file"))
 		}
 
 	public:
+
+		child_range_nc_t get_children()
+		{
+			return boost::make_iterator_range(&*children_.begin(), &*children_.end());
+		}
 
 		child_range_t get_children() const
 		{
@@ -269,6 +276,13 @@ MEOW_DEFINE_SMART_ENUM(node_type,	((file, 		"file"))
 		BOOST_ASSERT(NULL != node);
 		BOOST_ASSERT(node_type::directory == node->type());
 		return static_cast<directory_t*>(node);
+	}
+
+	inline directory_t const* as_directory(node_t const *node)
+	{
+		BOOST_ASSERT(NULL != node);
+		BOOST_ASSERT(node_type::directory == node->type());
+		return static_cast<directory_t const*>(node);
 	}
 
 	inline file_t* as_file(node_t *node)

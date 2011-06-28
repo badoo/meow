@@ -65,6 +65,11 @@ namespace meow { namespace tree {
 
 	public:
 
+		static_node_t()
+			: value_(NULL)
+		{
+		}
+
 		static_node_t(node_t *root, char const *path)
 		{
 			init(root, path);
@@ -75,7 +80,7 @@ namespace meow { namespace tree {
 			init(&root, path);
 		}
 
-	private:
+	public:
 
 		void init_from_node(node_t *node)
 		{

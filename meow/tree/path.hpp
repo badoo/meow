@@ -7,10 +7,13 @@
 #define MEOW_TREE__PATH_HPP_
 
 #include <vector>
+#include <stdexcept> // std::logic_error
 
 #include <boost/assert.hpp>
 #include <boost/foreach.hpp>
+#include <boost/static_assert.hpp>
 #include <boost/range/iterator_range.hpp>
+#include <boost/type_traits/is_base_and_derived.hpp>
 
 #include <meow/smart_enum.hpp>
 #include <meow/str_ref.hpp>
@@ -282,6 +285,8 @@ namespace meow { namespace tree {
 	template<class StringT, class NodeT>
 	inline NodeT* tree_create_at(tree::directory_t *root, StringT const& path, boost::static_move_ptr<NodeT> new_node)
 	{
+		BOOST_STATIC_ASSERT((boost::is_base_and_derived<node_t, NodeT>::value));
+
 		path_parts_t const parts = path_into_parts(path);
 
 		if (parts.size() > 1)
