@@ -299,7 +299,7 @@ namespace meow { namespace hash_fn {
 	}
 
 	// Block mix - combine the key bits with the hash bits and scramble everything
-	MEOW_FORCE_INLINE void bmix64 ( uint64_t & h1, uint64_t & h2, 
+	MEOW_FORCE_INLINE inline void bmix64 ( uint64_t & h1, uint64_t & h2, 
 									uint64_t & k1, uint64_t & k2, 
 									uint64_t & c1, uint64_t & c2 )
 	{
@@ -327,7 +327,7 @@ namespace meow { namespace hash_fn {
 	}
 
 	// Finalization mix - avalanches all bits to within 0.05% bias
-	MEOW_FORCE_INLINE uint64_t fmix64 ( uint64_t k )
+	MEOW_FORCE_INLINE inline uint64_t fmix64 ( uint64_t k )
 	{
 		k ^= k >> 33;
 		k *= BIG_CONSTANT(0xff51afd7ed558ccd);
@@ -425,7 +425,7 @@ namespace meow { namespace hash_fn {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // wrappers
 
-	uint32_t MurmurHash3_32(const void *key, int len, uint32_t seed)
+	inline uint32_t MurmurHash3_32(const void *key, int len, uint32_t seed)
 	{
 #if (64 == MEOW_PLATFORM_BITS)
 		return MurmurHash3_x64_32(key, len, seed);
@@ -434,7 +434,7 @@ namespace meow { namespace hash_fn {
 #endif
 	}
 
-	uint32_t MurmurHash3_64(const void *key, int len, uint32_t seed)
+	inline uint32_t MurmurHash3_64(const void *key, int len, uint32_t seed)
 	{
 #if (64 == MEOW_PLATFORM_BITS)
 		return MurmurHash3_x64_64(key, len, seed);
@@ -443,7 +443,7 @@ namespace meow { namespace hash_fn {
 #endif
 	}
 
-	void MurmurHash3_128(const void *key, int len, uint32_t seed, void *out)
+	inline void MurmurHash3_128(const void *key, int len, uint32_t seed, void *out)
 	{
 #if (64 == MEOW_PLATFORM_BITS)
 		MurmurHash3_x64_128(key, len, seed, out);
