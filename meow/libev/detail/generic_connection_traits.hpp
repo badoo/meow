@@ -58,10 +58,21 @@ namespace meow { namespace libev {
 		{
 			buffer_chain_t& wchain = ctx->wchain_;
 
-			if (wchain.empty())
-				return buffer_ref();
+			// skip empy buffers
+			// if the current buffer is empty
+			//  (this can only happen if we someow had empty buffer in the chain)
+			//  -> just drop it and try continue
+			while (!wchain.empty())
+			{
+				buffer_ref r = wchain.front()->used_part();
 
-			return wchain.front()->used_part();
+				if (!r.empty())
+					return r;
+
+				wchain.pop_front();
+			}
+
+			return buffer_ref();
 		}
 
 		template<class ContextT>
