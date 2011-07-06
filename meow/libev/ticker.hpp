@@ -33,7 +33,7 @@ namespace meow { namespace libev {
 			this->stop();
 		}
 
-		evloop_t* loop()
+		evloop_t* loop() const
 		{
 			return loop_;
 		}
