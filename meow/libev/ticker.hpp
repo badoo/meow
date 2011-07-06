@@ -72,7 +72,7 @@ namespace meow { namespace libev {
 			if (callback_)
 				callback_(this, ev_now(loop_));
 
-			ev_timer_again(loop_, &ev_);
+			// ev_timer_again(loop_, &ev_);
 		}
 
 		static void libev_cb(evloop_t *loop, evtimer_t *ev, int revents)
