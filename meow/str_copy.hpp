@@ -65,8 +65,8 @@ namespace meow {
 		string_copy(char_type const *b, char_type const *e) { BOOST_ASSERT(b <= e); this->init_copy(b, (e - b)); }
 		string_copy(string_type const& s) { this->init_copy(s.data(), s.size()); }
 
-		string_copy(string_ref<char_type> const& s) { this->init_copy((char_type*)s.data(), s.size()); }
-		string_copy(string_ref<char_type const> const& s) { this->init_copy((char_type*)s.data(), s.size()); }
+		explicit string_copy(string_ref<char_type> const& s) { this->init_copy((char_type*)s.data(), s.size()); }
+		explicit string_copy(string_ref<char_type const> const& s) { this->init_copy((char_type*)s.data(), s.size()); }
 
 		string_copy(self_t const& other) { this->init_copy(other.data(), other.size()); }
 
@@ -147,6 +147,18 @@ namespace meow {
 				return true;
 			else
 				return 0 == traits_type::compare(l.data(), r.data(), l.n_);
+		}
+
+		template<class C>
+		friend bool operator==(self_t const& l, string_ref<C> const& r)
+		{
+			return l.ref() == r;
+		}
+
+		template<class C>
+		friend bool operator==(string_ref<C> const& r, self_t const& l)
+		{
+			return l.ref() == r;
 		}
 
 		friend bool operator!=(self_t const& l, self_t const& r)
