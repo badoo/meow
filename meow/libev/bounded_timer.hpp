@@ -51,7 +51,8 @@ namespace meow { namespace libev {
 	typedef bounded_timer_t::callback_t   bounded_timer_callback_t;
 	typedef bounded_timer_t::timestamp_t  bounded_timer_timestamp_t;
 
-	typedef boost::static_move_ptr<bounded_timer_t> bounded_timer_ptr;
+	typedef boost::static_move_ptr<bounded_timer_t>       bounded_timer_ptr;
+	typedef boost::static_move_ptr<bounded_timer_node_t>  bounded_timer_node_ptr;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 }} // namespace meow { namespace libev {
