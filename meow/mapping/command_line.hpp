@@ -124,7 +124,7 @@ namespace cmdline_detail {
 	// @param: id_offset - start sys_option_t->val values from this number
 	//						used to avoid clashing with other options
 	template<class OptinfoT>
-	inline lopts_holder_t make_long_optarray(OptinfoT const *opts, size_t opts_size, size_t id_offset)
+	inline lopts_holder_t make_long_optarray(OptinfoT const *opts, int opts_size, int id_offset)
 	{
 		BOOST_ASSERT(opts_size < id_offset); // checking that we're able to satify request at this offset
 
@@ -134,7 +134,7 @@ namespace cmdline_detail {
 		{
 			if (!i->name)
 				continue;
-			sys_option_t const lopt = { i->name, static_cast<int>(i->argmode), 0, id_offset + (i - opts) };
+			sys_option_t const lopt = { i->name, static_cast<int>(i->argmode), 0, id_offset + (int)(i - opts) };
 			lopts.push_back(lopt);
 		}
 
