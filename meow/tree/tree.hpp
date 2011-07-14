@@ -15,6 +15,7 @@
 #include <meow/move_ptr/static_move_ptr.hpp>
 #include <meow/smart_enum.hpp>
 #include <meow/str_ref.hpp>
+#include <meow/str_copy.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace tree {
@@ -48,7 +49,7 @@ MEOW_DEFINE_SMART_ENUM(node_type,	((file, 		"file"))
 
 	struct node_name_and_ptr_t
 	{
-		str_ref 	name;
+		str_copy 	name;
 		node_t 		*ptr;
 	};
 
@@ -192,7 +193,7 @@ MEOW_DEFINE_SMART_ENUM(node_type,	((file, 		"file"))
 
 		void impl_insert_child(str_ref name, node_t *node)
 		{
-			child_t const ch = { name: name, ptr: node };
+			child_t const ch = { name: str_copy(name), ptr: node };
 			children_.push_back(ch);
 		}
 

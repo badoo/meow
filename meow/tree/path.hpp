@@ -229,7 +229,7 @@ namespace meow { namespace tree {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	inline void do_create_directories(directory_t*& root, path_parts_range_t const& parts_r, str_ref const& name)
+	inline void do_create_directories(directory_t*& root, str_ref const& name)
 	{
 		path_node_type_t const ntype = path_get_node_type(name);
 		switch (ntype)
@@ -269,7 +269,7 @@ namespace meow { namespace tree {
 	{
 		BOOST_FOREACH(str_ref const& name, parts_r)
 		{
-			do_create_directories(root, parts_r, name);
+			do_create_directories(root, name);
 		}
 
 		return root;
@@ -282,18 +282,16 @@ namespace meow { namespace tree {
 		return tree_create_dir(root, path_make_parts_range(parts));
 	}
 
-	template<class StringT, class NodeT>
-	inline NodeT* tree_create_at(directory_t *root, StringT const& path, boost::static_move_ptr<NodeT> new_node)
+	template<class StringT>
+	inline file_t* tree_create_file(directory_t *root, StringT const& path, file_ptr file)
 	{
-		BOOST_STATIC_ASSERT((boost::is_base_and_derived<node_t, NodeT>::value));
-
 		path_parts_t const parts = path_into_parts(path);
 
 		if (parts.size() > 1)
 			root = tree_create_dir(root, path_make_parts_range(parts, 0, -1));
 
-		root->add_child(parts.back(), get_pointer(new_node));
-		return new_node.release();
+		root->add_child(parts.back(), get_pointer(file));
+		return file.release();
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////

@@ -139,7 +139,7 @@ namespace meow { namespace tree {
 		template<class StringT>
 		void init(directory_t *root, StringT const& path)
 		{
-			node_t *node = tree_create_at(root, path, create_file<T>());
+			node_t *node = tree_create_file(root, path, create_file<T>());
 			this->init_from_node(node);
 		}
 	};
