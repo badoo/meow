@@ -6,7 +6,9 @@
 #ifndef MEOW_STR_REF_ALGO_HPP_
 #define MEOW_STR_REF_ALGO_HPP_
 
-#define _GNU_SOURCE     // loser, but whatever
+#ifndef _GNU_SOURCE
+	#define _GNU_SOURCE // loser, but whatever
+#endif
 
 #include <cstring> 		// for std::memchr
 #include <algorithm> 	// for std::find
