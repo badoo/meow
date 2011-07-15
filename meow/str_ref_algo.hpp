@@ -6,6 +6,8 @@
 #ifndef MEOW_STR_REF_ALGO_HPP_
 #define MEOW_STR_REF_ALGO_HPP_
 
+#define _GNU_SOURCE     // loser, but whatever
+
 #include <cstring> 		// for std::memchr
 #include <algorithm> 	// for std::find
 #include <vector>
@@ -147,7 +149,7 @@ namespace meow {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	template<class CharT>
-	inline string_ref<CharT> strstr_ex(string_ref<CharT> haystack, str_ref needle)
+	inline string_ref<CharT> strstr_ex(string_ref<CharT> const& haystack, str_ref const& needle)
 	{
 		BOOST_STATIC_ASSERT((boost::is_same<typename boost::remove_cv<CharT>::type, char>::value));
 
@@ -184,6 +186,28 @@ namespace meow {
 		}
 
 		return str_t();
+	}
+
+	inline ssize_t strnstr_ex(str_ref const& haystack, char const *needle)
+	{
+#if (defined(__MACH__) || defined(__APPLE__))
+		char *r = ::strnstr(haystack.data(), needle, haystack.size());
+		return r ? r - haystack.data() : -1;
+#else
+		str_ref const r = strstr_ex(haystack, str_ref(needle));
+		return r ? r.data() - haystack.data() : -1;
+#endif
+	}
+
+	inline ssize_t strnstr_ex(str_ref const& haystack, str_ref const& needle)
+	{
+#if defined(linux)
+		char *r = (char *)::memmem(haystack.data(), haystack.size(), needle.data(), needle.size());
+		return r ? r - haystack.data() : -1;
+#else
+		str_ref const r = strstr_ex(haystack, needle);
+		return r ? r.data() - haystack.data() : -1;
+#endif
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
