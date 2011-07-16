@@ -63,7 +63,7 @@ namespace meow { namespace libev {
 			static item_t* get_item_ptr(io_context_t *ctx) { return static_cast<item_t*>(ctx->data()); }
 
 			void store_connector_ptr(self_t *self) { io_timer()->data = self; }
-			self_t* get_connetor_ptr() { return static_cast<self_t*>(io_timer()->data); }
+			self_t* get_connector_ptr() { return static_cast<self_t*>(io_timer()->data); }
 		};
 		typedef boost::static_move_ptr<item_t> item_move_ptr;
 
@@ -87,9 +87,8 @@ namespace meow { namespace libev {
 			while (!items_.empty())
 			{
 				item_t *item = &items_.front();
-				items_.pop_front();
-
-				libev_cb_stage2(loop_, item, ECONNABORTED);
+				item_move_ptr item_wrap = this->item_grab_from_list(item);
+				this->item_do_callback(item, ECONNABORTED);
 			}
 		}
 
@@ -122,8 +121,10 @@ namespace meow { namespace libev {
 			if (NULL == item)
 				return;
 
+			item_move_ptr item_wrap = this->item_grab_from_list(item);
+
 			if (do_callback)
-				self_t::libev_cb_stage2(loop_, item, ECONNABORTED);
+				this->item_do_callback(item, ECONNABORTED);
 		}
 
 	private:
@@ -146,6 +147,9 @@ namespace meow { namespace libev {
 			// make sure it's nonblocking
 			os_unix::nonblocking(item->fd());
 
+			// nothrow after this line
+			// except if logging throws, but then we're fucked
+
 			// start connecting
 			struct sockaddr_in const& a = addr.sockaddr();
 
@@ -158,7 +162,7 @@ namespace meow { namespace libev {
 				LOG_DEBUG_EX(log_, line_mode::suffix, "= {0}; errno: {1} : {2}", n, errno, strerror(errno));
 
 			ev_io_init(item->io_event(), &self_t::libev_cb, item->fd(), EV_WRITE);
-			ev_timer_init(item->io_timer(), &self_t::libev_timeout_cb, timeout.tv_sec, timeout.tv_usec);
+			ev_timer_init(item->io_timer(), &self_t::libev_timeout_cb, os_timeval_to_double(timeout), 0.);
 
 			if (-1 == n)
 			{
@@ -181,49 +185,65 @@ namespace meow { namespace libev {
 			}
 		}
 
-	private:
+	private: // item ops
 
-		static void libev_cb_stage2(evloop_t *loop, item_t *item, int err)
+		// take the item from the list for clean disposal later
+		//  the returned result is guaranteed to not be engaged with libev in anyway
+		item_move_ptr item_grab_from_list(item_t *item)
 		{
-			self_t *self = item->get_connetor_ptr();
+			ev_timer_stop(loop_, item->io_timer());
+			ev_io_stop(loop_, item->io_event());
 
-			if (self->log_)
+			items_.erase(items_.iterator_to(*item));
+			return boost::move_raw(item);
+		}
+
+		void item_do_callback(item_t *item, int err)
+		{
+			BOOST_ASSERT(this == item->get_connector_ptr());
+
+			if (log_)
 			{
-				LOG_DEBUG_EX(self->log_, line_mode::prefix, "{0}; fd: {1}, err: {2}", __func__, item->fd(), err);
+				LOG_DEBUG_EX(log_, line_mode::prefix, "fd_connector::{0}; fd: {1}, err: {2}", __func__, item->fd(), err);
 				if (err)
-					LOG_DEBUG_EX(self->log_, line_mode::suffix, " : {0}", strerror(err));
+					LOG_DEBUG_EX(log_, line_mode::suffix, " : {0}", strerror(err));
 				else
-					LOG_DEBUG_EX(self->log_, line_mode::suffix, "");
+					LOG_DEBUG_EX(log_, line_mode::suffix, "");
 			}
-
-			ev_timer_stop(loop, item->io_timer());
-			ev_io_stop(loop, item->io_event());
 
 			// need the ref to pass it through boost::function
 			io_context_ptr& io_ctx = item->io_ctx;
 			item->cb(io_ctx, err);
+		}
 
-			// deleter
-			item_move_ptr item_wrap(item);
+	private:
+
+		void cb(item_t *item, int err)
+		{
+			item_move_ptr item_wrap = item_grab_from_list(item);
+			this->item_do_callback(item, err);
 		}
 
 		static void libev_cb(evloop_t *loop, evio_t *ev, int revents)
 		{
 			io_context_t *io_ctx = io_context_t::cast_from_event(ev);
 			item_t *item = item_t::get_item_ptr(io_ctx);
+			self_t *self = item->get_connector_ptr();
 
 			int err = (EV_CUSTOM & revents)
 						? item->err_code
 						: os_unix::getsockopt_ex<int>(item->fd(), SOL_SOCKET, SO_ERROR)
 						;
 
-			self_t::libev_cb_stage2(loop, item, err);
+			self->cb(item, err);
 		}
 
 		static void libev_timeout_cb(evloop_t *loop, evtimer_t *timer, int revents)
 		{
 			item_t *item = MEOW_SELF_FROM_MEMBER(item_t, timer, timer);
-			self_t::libev_cb_stage2(loop, item, ETIMEDOUT);
+			self_t *self = item->get_connector_ptr();
+
+			self->cb(item, ETIMEDOUT);
 		}
 
 	};
