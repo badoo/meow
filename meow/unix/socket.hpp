@@ -14,6 +14,8 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
+	typedef socklen_t               os_socklen_t;
+
     typedef struct sockaddr         os_sockaddr_t;
     typedef struct sockaddr_in      os_sockaddr_in_t;
     typedef struct sockaddr_in6     os_sockaddr_in6_t;
