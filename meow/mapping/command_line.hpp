@@ -326,11 +326,10 @@ namespace cmdline_detail {
 			}
 			else if ('?' == c) // ambiguous option or extra arg
 			{
-				if (0 == ::optopt) // unknown option
+				opt_trampoline_t const* trampo = mapping.get_option(::optopt);
+				if (NULL == trampo) // unknown option
 					throw cmdmap_unknown_option(argv[::optind - 1]);
 
-				opt_trampoline_t const* trampo = mapping.get_option(::optopt);
-				BOOST_ASSERT((NULL != trampo) && "option can't be not found after we checked if it's valid");
 				throw cmdmap_extra_parameter(*trampo);
 			}
 			else
@@ -339,7 +338,9 @@ namespace cmdline_detail {
 					c = ::optopt;
 
 				opt_trampoline_t const* trampo = mapping.get_option(c);
-				BOOST_ASSERT(trampo && "nonexistent opts must've been reported already");
+				if (NULL == trampo) // unknown option
+					throw cmdmap_unknown_option(argv[::optind - 1]);
+
 				try
 				{
 					trampo->handler_fn(*ctx, ::optarg ? str_ref(::optarg) : str_ref());
