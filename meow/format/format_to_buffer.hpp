@@ -6,43 +6,42 @@
 #ifndef MEOW_FORMAT__FORMAT_TO_BUFFER_HPP_
 #define MEOW_FORMAT__FORMAT_TO_BUFFER_HPP_
 
-#include "sink/char_buffer.hpp"
+#include "sink/buffer.hpp"
 #include "format_functions.hpp"
-
-#include <meow/str_ref.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace format {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define MEOW_DEFINE_FMT_TO_BUFFER_FN(z, n, d)			\
-	template<class F FMT_TEMPLATE_PARAMS(n)>			\
-	inline buffer_ref fmt_to_buffer(					\
-			  buffer_ref const& to						\
-			, F const& fmt_str							\
-			  FMT_DEF_PARAMS(n)) 						\
-	{													\
-		sink::char_buffer_sink_t sink(to);				\
-		fmt(sink, fmt_str FMT_CALL_SITE_ARGS(n));		\
-		return sink.used_part();						\
-	}													\
+#define MEOW_FORMAT_DEFINE_FMT_BUF(z, n, d) 					\
+template<class F FMT_TEMPLATE_PARAMS(n)> 						\
+inline buffer_move_ptr fmt_buf( 								\
+		  size_t initial_sz 									\
+		, F const& fmt_str 										\
+		  FMT_DEF_PARAMS(n)) 									\
+{ 																\
+	buffer_move_ptr buf = create_buffer(initial_sz);			\
+	fmt(*buf, fmt_str FMT_CALL_SITE_ARGS(n)); 					\
+	return move(buf); 											\
+} 																\
 /**/
 
-	BOOST_PP_REPEAT_FROM_TO(0, 32, MEOW_DEFINE_FMT_TO_BUFFER_FN, _);
+BOOST_PP_REPEAT_FROM_TO(0, 32, MEOW_FORMAT_DEFINE_FMT_BUF, _);
 
-#define MEOW_DEFINE_WRITE_TO_BUFFER_FN(z, n, d)			\
-	template<FMT_TEMPLATE_PARAMS_W(n)>					\
-	inline buffer_ref write_to_buffer(					\
-			buffer_ref const& to						\
-			FMT_DEF_PARAMS(n)) 							\
-	{													\
-		sink::char_buffer_sink_t sink(to);				\
-		write(sink FMT_CALL_SITE_ARGS(n));				\
-		return sink.used_part();						\
-	}													\
+
+#define MEOW_FORMAT_DEFINE_WRITE_BUF(z, n, d) 					\
+template<class F FMT_TEMPLATE_PARAMS(n)> 						\
+inline buffer_move_ptr write_buf( 								\
+		  size_t initial_sz 									\
+		  FMT_DEF_PARAMS(n)) 									\
+{ 																\
+	buffer_move_ptr buf = create_buffer(initial_sz);			\
+	write(*buf FMT_CALL_SITE_ARGS(n)); 							\
+	return move(buf); 											\
+} 																\
 /**/
 
-	BOOST_PP_REPEAT_FROM_TO(1, 32, MEOW_DEFINE_WRITE_TO_BUFFER_FN, _);
+BOOST_PP_REPEAT_FROM_TO(1, 32, MEOW_FORMAT_DEFINE_WRITE_BUF, _);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 }} // namespace meow { namespace format {
