@@ -290,8 +290,19 @@ namespace meow { namespace tree {
 		if (parts.size() > 1)
 			root = tree_create_dir(root, path_make_parts_range(parts, 0, -1));
 
-		root->add_child(parts.back(), get_pointer(file));
-		return file.release();
+		directory_t::child_t *child = root->get_child(parts.back());
+		if (NULL == child)
+		{
+			root->add_child(parts.back(), get_pointer(file));
+			return file.release();
+		}
+		else
+		{
+			if (node_type::file != child->ptr->type())
+				throw std::logic_error("tree_create_file(): child found, but is not a file");
+
+			return as_file(child->ptr);
+		}
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
