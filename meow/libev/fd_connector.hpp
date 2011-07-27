@@ -25,13 +25,14 @@ namespace meow { namespace libev {
 
 	struct fd_connector_t : private boost::noncopyable
 	{
+		typedef void* token_t;
 		typedef boost::function<void(io_context_ptr& io_ctx, int err)> callback_t;
 
 		virtual ~fd_connector_t() {}
 
 		virtual evloop_t* loop() const = 0;
 
-		virtual void try_connect(
+		virtual token_t try_connect(
 				  callback_t const& 		cb
 				, int 						fd
 				, ipv4::address_t const& 	addr
@@ -39,8 +40,8 @@ namespace meow { namespace libev {
 			) = 0;
 
 		virtual void cancel_connect(
-				  int 	fd
-				, bool 	do_callback = true
+				  token_t  token
+				, bool 	   do_callback = true
 			) = 0;
 	};
 

@@ -17,6 +17,7 @@ namespace meow { namespace libev {
 												((peer_close, 		"peer closed connection"))
 												((write_close, 		"server write and close"))
 												((custom_close, 	"server immediate close"))
+												((sync_close,       "server syncronous close"))
 												);
 
 	struct io_close_report_t

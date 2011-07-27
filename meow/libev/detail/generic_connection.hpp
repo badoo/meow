@@ -21,8 +21,8 @@ namespace meow { namespace libev {
 
 	struct generic_connection_close_data_t
 	{
-		bool after_write : 1;
-		bool immediately : 1;
+		bool after_write   : 1;
+		bool immediately   : 1;
 	};
 	typedef meow::bitfield_union<generic_connection_close_data_t> close_flags_t;
 
@@ -73,6 +73,7 @@ namespace meow { namespace libev {
 
 		virtual void close_after_write() = 0;
 		virtual void close_immediately() = 0;
+		virtual void close_syncronously() = 0;
 	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////

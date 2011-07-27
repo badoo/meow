@@ -99,7 +99,7 @@ namespace meow { namespace libev {
 			return loop_;
 		}
 
-		virtual void try_connect(
+		virtual token_t try_connect(
 				  callback_t const& 		cb
 				, int 						fd
 				, ipv4::address_t const& 	addr
@@ -111,16 +111,16 @@ namespace meow { namespace libev {
 
 			this->do_connect(get_pointer(item), addr, timeout);
 
-			items_.push_back(*item);
-			item.release();
+			items_.push_back(*item.release());
+			return reinterpret_cast<token_t>(&items_.back());
 		}
 
-		virtual void cancel_connect(int fd, bool do_callback)
+		virtual void cancel_connect(token_t token, bool do_callback)
 		{
-			item_t *item = this->find_fd(fd);
-			if (NULL == item)
+			if (NULL == token)
 				return;
 
+			item_t *item = reinterpret_cast<item_t*>(token);
 			item_move_ptr item_wrap = this->item_grab_from_list(item);
 
 			if (do_callback)
@@ -128,19 +128,6 @@ namespace meow { namespace libev {
 		}
 
 	private:
-
-		item_t* find_fd(int fd)
-		{
-			typedef list_t::iterator iterator_t;
-
-			for (iterator_t i = items_.begin(); i != items_.end(); ++i)
-			{
-				item_t *item = &*i;
-				if (item->fd() == fd)
-					return item;
-			}
-			return NULL;
-		}
 
 		void do_connect(item_t *item, ipv4::address_t const& addr, os_timeval_t const& timeout)
 		{

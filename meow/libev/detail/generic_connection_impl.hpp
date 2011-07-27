@@ -134,6 +134,7 @@ namespace meow { namespace libev {
 		void cb_read_closed(io_close_report_t const& r)	{ ev_->on_closed(this, r); }
 		void cb_write_closed(io_close_report_t const& r) { ev_->on_closed(this, r); }
 		void cb_custom_closed(io_close_report_t const& r) { ev_->on_closed(this, r); }
+		void cb_sync_closed(io_close_report_t const& r) { ev_->on_closed(this, r); }
 
 	public:
 
@@ -253,6 +254,11 @@ namespace meow { namespace libev {
 		{
 			close_->immediately = 1;
 			this->custom_activate();
+		}
+
+		virtual void close_syncronously()
+		{
+			this->cb_sync_closed(io_close_report(io_close_reason::sync_close));
 		}
 	};
 
