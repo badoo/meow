@@ -8,20 +8,20 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-template<class T>
-inline T bitmask_set(T& mask, T bit)
+template<class T1, class T2>
+inline T1 bitmask_set(T1& mask, T2 bit)
 {
 	return mask |= bit;
 }
 
-template<class T>
-inline T bitmask_clear(T& mask, T bit)
+template<class T1, class T2>
+inline T1 bitmask_clear(T1& mask, T2 bit)
 {
 	return mask &= ~bit;
 }
 
-template<class T>
-inline T bitmask_test(T const& mask, T bit)
+template<class T1, class T2>
+inline T1 bitmask_test(T1 const& mask, T2 bit)
 {
 	return (mask & bit);
 }

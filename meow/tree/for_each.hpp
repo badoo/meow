@@ -87,6 +87,10 @@ namespace meow { namespace tree {
 
 			case node_type::file:
 				return file_fn(as_file(root), level);
+
+			default:
+				BOOST_ASSERT(!"can't be reached");
+				break;
 		}
 	}
 
