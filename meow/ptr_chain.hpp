@@ -188,6 +188,12 @@ namespace meow {
 			return self_traits::value_pointer(l_.front());
 		}
 
+		value_t* back() const
+		{
+			BOOST_ASSERT(!this->empty());
+			return self_traits::value_pointer(l_.back());
+		}
+
 		value_move_ptr grab_front()
 		{
 			BOOST_ASSERT(!this->empty());
