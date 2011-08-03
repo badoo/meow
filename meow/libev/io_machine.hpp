@@ -574,7 +574,7 @@ namespace meow { namespace libev {
 		static void w_loop(context_t *ctx) { self_t::run_loop(ctx, EV_WRITE); }
 		static void rw_loop(context_t *ctx) { self_t::run_loop(ctx, EV_READ | EV_WRITE); }
 
-	private:
+	public:
 
 		// TODO: this is read-priority one
 		//  can make many of these easily, but will need some duplicated code

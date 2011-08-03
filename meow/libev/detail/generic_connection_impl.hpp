@@ -20,55 +20,19 @@
 namespace meow { namespace libev {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	template<bool>
-	struct generic_connection_impl_io_t;
-
-	// io is embedded
-	template<>
-	struct generic_connection_impl_io_t<true>
-	{
-		io_context_t io_;
-
-		void create_with_fd(int fd) { io_.reset_fd(fd); }
-		void reset() { io_.reset_fd(); }
-
-		io_context_t*       ptr()       { return &io_; }
-		io_context_t const* ptr() const { return &io_; }
-
-		void acquire(io_context_ptr& p) { BOOST_ASSERT(!"can't be called"); }
-		io_context_ptr grab() { BOOST_ASSERT(!"can't be called"); }
-	};
-
-	// io is held in move_ptr
-	template<>
-	struct generic_connection_impl_io_t<false>
-	{
-		io_context_ptr io_;
-
-		void create_with_fd(int fd) { io_.reset(new io_context_t(fd)); }
-		void reset() { io_.reset(); }
-
-		io_context_t*       ptr()       { return get_pointer(io_); }
-		io_context_t const* ptr() const { return get_pointer(io_); }
-
-		void acquire(io_context_ptr& p) { io_ = move(p); }
-		io_context_ptr grab() { return move(io_); }
-	};
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-
 	template<
 		  class Interface
 		, class Traits
-		, class Events = typename Interface::events_t
+		, class EventsT = typename Interface::events_t
 		>
 	struct generic_connection_impl_t
 		: public Interface
 		, public Traits::read::context_t
 	{
 		typedef generic_connection_impl_t 		self_t;
-		typedef generic_connection_impl_t 		base_t;
-		typedef Events							events_t;
+		typedef generic_connection_impl_t 		base_t; // macro at the bottom uses it
+		typedef EventsT							events_t;
+		typedef typename Interface::flags_t     flags_t;
 
 		struct traits_t
 		{
@@ -89,14 +53,12 @@ namespace meow { namespace libev {
 
 	public:
 
-		struct option_embed_io_def_t
+		struct option_automatic_startup_io_default
 		{
 			enum { value = true };
 		};
 
-		MEOW_DEFINE_NESTED_NAME_ALIAS_OR_MY_TYPE(Traits, option_embed_io, option_embed_io_def_t);
-
-		typedef generic_connection_impl_io_t<option_embed_io::value> io_t;
+		MEOW_DEFINE_NESTED_NAME_ALIAS_OR_MY_TYPE(Traits, option_automatic_startup_io, option_automatic_startup_io_default);
 
 	public:
 		// traits need access to this stuff
@@ -104,30 +66,9 @@ namespace meow { namespace libev {
 
 		evloop_t 		*loop_;
 		events_t 		*ev_;
-		io_t 	        io_;
-
+		io_context_t 	io_ctx_;
 		buffer_chain_t 	wchain_;
-		close_flags_t 	close_;
-
-	private: // io functions
-
-		void destroy_io()
-		{
-			if (io_.ptr())
-			{
-				if (io_.ptr()->is_valid())
-					iomachine_t::release_context(this);
-
-				io_.reset();
-			}
-		}
-
-		void initialize_io()
-		{
-			io_.ptr()->reset_data(this);
-			os_unix::nonblocking(this->fd());
-			iomachine_t::prepare_context(this);
-		}
+		flags_t         flags_;
 
 	public: // callbacks, for the traits
 
@@ -138,53 +79,61 @@ namespace meow { namespace libev {
 
 	public:
 
-		generic_connection_impl_t(evloop_t *loop, events_t *ev)
-			: loop_(loop)
-			, ev_(ev)
-		{
-		}
-
 		generic_connection_impl_t(evloop_t *loop, int fd, events_t *ev)
 			: loop_(loop)
 			, ev_(ev)
+			, io_ctx_(fd)
 		{
-			io_.create_with_fd(fd);
-			initialize_io();
+			if (option_automatic_startup_io::value)
+				this->io_startup();
 		}
 
 		~generic_connection_impl_t()
 		{
-			destroy_io();
+			this->io_shutdown();
 		}
 
 	public:
 
-		virtual int fd() const
-		{
-			io_context_t const *io_ctx = io_.ptr();
-
-			return (io_ctx && io_ctx->is_valid())
-				? io_.ptr()->fd()
-				: io_context_t::null_fd
-				;
-		}
-
+		virtual int fd() const { return io_ctx_.fd(); }
 		virtual evloop_t* loop() const { return loop_; }
 
-		events_t* ev() const { return ev_; }
-		void set_ev(events_t *ev) { ev_ = ev; }
+		virtual events_t* ev() const { return ev_; }
+		virtual void set_ev(events_t *ev) { ev_ = ev; }
+
+		virtual flags_t flags() const { return flags_; }
 
 	public:
 
-		virtual void r_loop() { iomachine_t::r_loop(this); }
-		virtual void w_loop() { iomachine_t::w_loop(this); }
-		virtual void rw_loop() { iomachine_t::rw_loop(this); }
+		virtual void io_startup()
+		{
+			if (bitmask_test(flags_, generic_connection_flags::io_started))
+				return;
 
-		virtual void activate(int revents) { iomachine_t::activate_context(this, revents); }
-		virtual void r_activate() { iomachine_t::r_activate(this); }
-		virtual void w_activate() { iomachine_t::w_activate(this); }
-		virtual void rw_activate() { iomachine_t::rw_activate(this); }
-		virtual void custom_activate() { iomachine_t::custom_activate(this); }
+			iomachine_t::prepare_context(this);
+			bitmask_set(flags_, generic_connection_flags::io_started);
+		}
+
+		virtual void io_shutdown()
+		{
+			if (!bitmask_test(flags_, generic_connection_flags::io_started))
+				return;
+
+			iomachine_t::release_context(this);
+			bitmask_clear(flags_, generic_connection_flags::io_started);
+		}
+
+		virtual void run_loop(int revents)
+		{
+			BOOST_ASSERT(bitmask_test(flags_, generic_connection_flags::io_started) && "call io_startup() first");
+			iomachine_t::run_loop(this, revents);
+		}
+
+		virtual void activate(int revents)
+		{
+			BOOST_ASSERT(bitmask_test(flags_, generic_connection_flags::io_started) && "call io_startup() first");
+			iomachine_t::activate_context(this, revents);
+		}
 
 	public:
 
@@ -214,45 +163,17 @@ namespace meow { namespace libev {
 
 		virtual buffer_chain_t& wchain_ref() { return wchain_; }
 
-		io_context_t* reset_io(io_context_ptr io_ctx)
-		{
-			if (false != option_embed_io::value)
-				throw std::logic_error("can't call this function for connections where: option_embed_io::value != false");
-
-			destroy_io();
-
-			if (io_ctx)
-			{
-				io_.acquire(io_ctx);
-				initialize_io();
-			}
-
-			return io_.ptr();
-		}
-
-		io_context_ptr grab_io()
-		{
-			if (false != option_embed_io::value)
-				throw std::logic_error("can't call this function for connections where: option_embed_io::value != false");
-
-			iomachine_t::release_context(this);
-			return io_.grab();
-		}
-
 	public: // closing
-
-		virtual bool is_closing() const { return 0 != close_; }
-		virtual close_flags_t close_flags() const { return close_; }
 
 		virtual void close_after_write()
 		{
-			close_->after_write = 1;
+			bitmask_set(flags_, generic_connection_flags::close_after_write);
 			this->w_activate();
 		}
 
 		virtual void close_immediately()
 		{
-			close_->immediately = 1;
+			bitmask_set(flags_, generic_connection_flags::close_immediately);
 			this->custom_activate();
 		}
 
@@ -276,13 +197,6 @@ namespace meow { namespace libev {
 					, typename base_interface::events_t						\
 					>														\
 	{																		\
-		name( 																\
-			  evloop_t *loop 												\
-			, typename base_interface::events_t *ev = NULL 					\
-			)																\
-			: name::base_t(loop, ev)										\
-		{																	\
-		}																	\
 		name( 																\
 			  evloop_t *loop 												\
 			, int fd 														\

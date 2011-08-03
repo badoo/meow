@@ -19,16 +19,16 @@
 namespace meow { namespace libev {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	struct generic_connection_close_data_t
+	struct generic_connection_flags
 	{
-		bool after_write   : 1;
-		bool immediately   : 1;
+		enum type
+		{
+			  close_immediately  = (1 << 0)
+			, close_after_write  = (1 << 1)
+			, io_started         = (1 << 31)
+		};
 	};
-	typedef meow::bitfield_union<generic_connection_close_data_t> close_flags_t;
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-
-	typedef boost::static_move_ptr<io_context_t> io_context_ptr;
+	typedef int generic_connection_flags_t;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -38,20 +38,28 @@ namespace meow { namespace libev {
 
 	public: // general info
 
-		virtual int 		fd() const = 0;
-		virtual evloop_t* 	loop() const = 0;
+		virtual int        fd() const = 0;
+		virtual evloop_t*  loop() const = 0;
+
+		typedef generic_connection_flags_t flags_t;
+		virtual flags_t    flags() const = 0;
 
 	public: // io
 
-		virtual void r_loop() = 0;
-		virtual void w_loop() = 0;
-		virtual void rw_loop() = 0;
+		virtual void io_startup() = 0;   // activate full-duplex io_machine
+		virtual void io_shutdown() = 0;  // stop io_machine
+
+		virtual void run_loop(int revents) = 0;
+		inline void r_loop() { this->run_loop(EV_READ); }
+		inline void w_loop() { this->run_loop(EV_WRITE); }
+		inline void rw_loop() { this->run_loop(EV_READ | EV_WRITE); }
+		inline void custom_loop() { this->run_loop(EV_CUSTOM); }
 
 		virtual void activate(int revents) = 0;
-		virtual void r_activate() = 0;
-		virtual void w_activate() = 0;
-		virtual void rw_activate() = 0;
-		virtual void custom_activate() = 0;
+		inline void r_activate() { this->activate(EV_READ); }
+		inline void w_activate() { this->activate(EV_WRITE); }
+		inline void rw_activate() { this->activate(EV_READ | EV_WRITE); }
+		inline void custom_activate() { this->activate(EV_CUSTOM); }
 
 		virtual void queue_buf(buffer_move_ptr) = 0;
 		virtual void queue_chain(buffer_chain_t&) = 0;
@@ -63,13 +71,17 @@ namespace meow { namespace libev {
 
 		virtual buffer_chain_t& wchain_ref() = 0;
 
-		virtual io_context_t*  reset_io(io_context_ptr io_ctx) = 0;
-		virtual io_context_ptr grab_io() = 0;
-
 	public: // closing
 
-		virtual bool 			is_closing() const = 0;
-		virtual close_flags_t 	close_flags() const = 0;
+		inline bool is_closing() const
+		{
+			flags_t const fl = this->flags();
+
+			return 
+				   (fl & generic_connection_flags::close_immediately)
+				|| (fl & generic_connection_flags::close_after_write)
+				;
+		}
 
 		virtual void close_after_write() = 0;
 		virtual void close_immediately() = 0;

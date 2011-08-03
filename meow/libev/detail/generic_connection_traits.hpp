@@ -35,12 +35,12 @@ namespace meow { namespace libev {
 
 		static io_context_t* io_context_ptr(context_t *ctx)
 		{
-			return ctx->io_.ptr();
+			return &ctx->io_ctx_;
 		}
 
 		static context_t* context_from_io(libev::io_context_t *io_ctx)
 		{
-			return static_cast<context_t*>(io_ctx->data());
+			return MEOW_SELF_FROM_MEMBER(context_t, io_ctx_, io_ctx);
 		}
 
 		static int io_allowed_ops(context_t *ctx)
@@ -107,7 +107,7 @@ namespace meow { namespace libev {
 
 			if (wchain.empty())
 			{
-				if (ctx->close_flags()->after_write)
+				if (bitmask_test(ctx->flags(), generic_connection_flags::close_after_write))
 				{
 					ctx->cb_write_closed(io_close_report(io_close_reason::write_close));
 					return wr_complete_status::closed;
@@ -124,14 +124,14 @@ namespace meow { namespace libev {
 		template<class ContextT>
 		static bool requires_custom_op(ContextT *ctx)
 		{
-			return ctx->close_flags()->immediately;
+			return bitmask_test(ctx->flags_, generic_connection_flags::close_immediately);
 		}
 
 		template<class ContextT>
 		static custom_op_status_t custom_operation(ContextT *ctx)
 		{
-			BOOST_ASSERT(ctx->close_flags()->immediately);
-			ctx->close_->immediately = false;
+			BOOST_ASSERT(bitmask_test(ctx->flags_, generic_connection_flags::close_immediately));
+			bitmask_clear(ctx->flags_, generic_connection_flags::close_immediately);
 			ctx->cb_custom_closed(io_close_report(io_close_reason::custom_close));
 
 			return custom_op_status::closed;
