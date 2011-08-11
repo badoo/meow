@@ -83,6 +83,7 @@ namespace meow { namespace libev {
 			: loop_(loop)
 			, ev_(ev)
 			, io_ctx_(fd)
+			, flags_(0)
 		{
 			if (option_automatic_startup_io::value)
 				this->io_startup();
