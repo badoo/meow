@@ -99,6 +99,9 @@ namespace meow { namespace libev {
 		virtual int fd() const { return io_ctx_.fd(); }
 		virtual evloop_t* loop() const { return loop_; }
 
+		virtual evio_t*       io_event() { return io_context()->event(); }
+		virtual io_context_t* io_context() { return &io_ctx_; }
+
 		virtual events_t* ev() const { return ev_; }
 		virtual void set_ev(events_t *ev) { ev_ = ev; }
 

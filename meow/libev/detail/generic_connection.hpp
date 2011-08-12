@@ -41,6 +41,9 @@ namespace meow { namespace libev {
 		virtual int        fd() const = 0;
 		virtual evloop_t*  loop() const = 0;
 
+		virtual evio_t*       io_event() = 0;
+		virtual io_context_t* io_context() = 0;
+
 		typedef generic_connection_flags_t flags_t;
 		virtual flags_t    flags() const = 0;
 
