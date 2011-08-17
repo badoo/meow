@@ -143,7 +143,7 @@ namespace meow { namespace libev {
 
 		virtual void queue_buf(buffer_move_ptr buf)
 		{
-			if (buf->empty())
+			if (!buf || buf->empty())
 				return;
 
 			wchain_.push_back(move(buf));
@@ -156,7 +156,7 @@ namespace meow { namespace libev {
 
 		virtual void send(buffer_move_ptr buf)
 		{
-			if (buf->empty())
+			if (!buf || buf->empty())
 				return;
 
 			this->queue_buf(move(buf));
