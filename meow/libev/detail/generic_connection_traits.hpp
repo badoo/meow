@@ -105,17 +105,13 @@ namespace meow { namespace libev {
 				BOOST_ASSERT(write_status::again == w_status);
 			}
 
-			if (wchain.empty())
-			{
-				if (bitmask_test(ctx->flags(), generic_connection_flags::close_after_write))
-				{
-					ctx->cb_write_closed(io_close_report(io_close_reason::write_close));
-					return wr_complete_status::closed;
-				}
-				return wr_complete_status::finished;
-			}
+			// NOTE: don't need to check for close here
+			//  the custom_op checker in io_machine takes care of it
 
-			return wr_complete_status::more;
+			return (wchain.empty())
+					? wr_complete_status::finished
+					: wr_complete_status::more
+					;
 		}
 	};
 
@@ -124,16 +120,27 @@ namespace meow { namespace libev {
 		template<class ContextT>
 		static bool requires_custom_op(ContextT *ctx)
 		{
-			return bitmask_test(ctx->flags_, generic_connection_flags::close_immediately);
+			if (!bitmask_test(ctx->flags_, generic_connection_flags::is_closing))
+				return false;
+
+			if (bitmask_test(ctx->flags_, generic_connection_flags::write_before_close))
+				return ctx->wchain_.empty();
+
+			return true;
 		}
 
 		template<class ContextT>
 		static custom_op_status_t custom_operation(ContextT *ctx)
 		{
-			BOOST_ASSERT(bitmask_test(ctx->flags_, generic_connection_flags::close_immediately));
-			bitmask_clear(ctx->flags_, generic_connection_flags::close_immediately);
-			ctx->cb_custom_closed(io_close_report(io_close_reason::custom_close));
+			BOOST_ASSERT(bitmask_test(ctx->flags_, generic_connection_flags::is_closing));
 
+			io_close_reason_t close_reason =
+				(bitmask_test(ctx->flags_, generic_connection_flags::write_before_close))
+				? io_close_reason::write_close
+				: io_close_reason::custom_close
+				;
+
+			ctx->cb_custom_closed(io_close_report(close_reason));
 			return custom_op_status::closed;
 		}
 	};

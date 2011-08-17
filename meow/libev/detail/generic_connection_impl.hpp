@@ -143,6 +143,9 @@ namespace meow { namespace libev {
 
 		virtual void queue_buf(buffer_move_ptr buf)
 		{
+			if (buf->empty())
+				return;
+
 			wchain_.push_back(move(buf));
 		}
 
@@ -153,6 +156,9 @@ namespace meow { namespace libev {
 
 		virtual void send(buffer_move_ptr buf)
 		{
+			if (buf->empty())
+				return;
+
 			this->queue_buf(move(buf));
 			this->w_activate();
 		}
@@ -171,14 +177,16 @@ namespace meow { namespace libev {
 
 		virtual void close_after_write()
 		{
-			bitmask_set(flags_, generic_connection_flags::close_after_write);
-			this->w_activate();
+			bitmask_set(flags_, generic_connection_flags::is_closing);
+			bitmask_set(flags_, generic_connection_flags::write_before_close);
+			this->activate(EV_WRITE /* don't add EV_CUSTOM here, it will cause a close immediately */);
 		}
 
 		virtual void close_immediately()
 		{
-			bitmask_set(flags_, generic_connection_flags::close_immediately);
-			this->custom_activate();
+			bitmask_set(flags_, generic_connection_flags::is_closing);
+			bitmask_clear(flags_, generic_connection_flags::write_before_close);
+			this->activate(EV_CUSTOM);
 		}
 
 		virtual void close_syncronously()

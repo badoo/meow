@@ -10,7 +10,6 @@
 
 #include <meow/buffer.hpp>
 #include <meow/buffer_chain.hpp>
-#include <meow/bitfield_union.hpp>
 
 #include <meow/libev/libev_fwd.hpp>
 #include <meow/libev/io_context.hpp>
@@ -23,9 +22,15 @@ namespace meow { namespace libev {
 	{
 		enum type
 		{
-			  close_immediately  = (1 << 0)
-			, close_after_write  = (1 << 1)
-			, io_started         = (1 << 31)
+			// the connection will be closed on next opportunity
+			  is_closing          = (1 << 0)
+
+			// honor all pending writes before closing,
+			//  ignored if "is_closing" is not set
+			, write_before_close  = (1 << 1)
+
+			// if io_startup() was called more times than io_shutdown()
+			, io_started          = (1 << 31)
 		};
 	};
 	typedef int generic_connection_flags_t;
@@ -78,12 +83,7 @@ namespace meow { namespace libev {
 
 		inline bool is_closing() const
 		{
-			flags_t const fl = this->flags();
-
-			return 
-				   (fl & generic_connection_flags::close_immediately)
-				|| (fl & generic_connection_flags::close_after_write)
-				;
+			return (flags() & generic_connection_flags::is_closing);
 		}
 
 		virtual void close_after_write() = 0;
