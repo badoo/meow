@@ -168,7 +168,7 @@ namespace meow { namespace libev {
 			{
 				BOOST_ASSERT((0 == n) && "connect() returns either -1 or 0");
 				ev_feed_event(loop_, item->io_event(), EV_CUSTOM);
-				item->err_code = errno;
+				item->err_code = 0;
 			}
 		}
 
