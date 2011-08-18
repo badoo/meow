@@ -48,11 +48,19 @@ namespace meow { namespace libev {
 			int             err_code; // saved errno from ::connect()
 			callback_t 		cb;
 
-			item_t(int fd, callback_t const& cb)
+			item_t(self_t *self, int fd, callback_t const& cb)
 				: io_ctx(new io_context_t(fd))
 				, cb(cb)
 			{
 				store_item_ptr(this);
+				store_connector_ptr(self);
+			}
+
+			~item_t()
+			{
+				self_t *self = get_connector_ptr();
+				ev_io_stop(self->loop(), io_event());
+				ev_timer_stop(self->loop(), io_timer());
 			}
 
 			int fd() const { return io_ctx->fd(); }
@@ -106,8 +114,9 @@ namespace meow { namespace libev {
 				, os_timeval_t const& 		timeout
 			)
 		{
-			item_move_ptr item(new item_t(fd, cb));
-			item->store_connector_ptr(this);
+			item_move_ptr item(new item_t(this, fd, cb));
+			ev_io_init(item->io_event(), &self_t::libev_cb, item->fd(), EV_WRITE);
+			ev_timer_init(item->io_timer(), &self_t::libev_timeout_cb, os_timeval_to_double(timeout), 0.);
 
 			this->do_connect(get_pointer(item), addr, timeout);
 
@@ -147,9 +156,6 @@ namespace meow { namespace libev {
 
 			if (log_)
 				LOG_DEBUG_EX(log_, line_mode::suffix, "= {0}; errno: {1} : {2}", n, errno, strerror(errno));
-
-			ev_io_init(item->io_event(), &self_t::libev_cb, item->fd(), EV_WRITE);
-			ev_timer_init(item->io_timer(), &self_t::libev_timeout_cb, os_timeval_to_double(timeout), 0.);
 
 			if (-1 == n)
 			{
