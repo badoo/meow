@@ -14,7 +14,9 @@ namespace meow {
 
 	typedef uint64_t unique_id_t;
 
-	template<class Tag>
+	struct unique_id_default_tag;
+
+	template<class Tag = unique_id_default_tag>
 	struct unique_id
 	{
 		static unique_id_t generate_unique_id()

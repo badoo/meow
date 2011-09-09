@@ -24,12 +24,17 @@ namespace meow {
 
 		void reset()
 		{
-			start_tv = os_unix::gettimeofday_ex();
+			start_tv = now();
+		}
+
+		os_timeval_t now() const
+		{
+			return os_unix::gettimeofday_ex();
 		}
 
 		os_timeval_t stamp() const
 		{
-			return os_unix::gettimeofday_ex() - start_tv;
+			return now() - start_tv;
 		}
 	};
 
