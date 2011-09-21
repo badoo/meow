@@ -38,6 +38,8 @@ namespace meow {
 		typedef Traits		traits_type;
 		typedef std::basic_string<typename traits_type::char_type, traits_type> string_type;
 
+		typedef typename boost::remove_const<char_type>::type char_type_nc;
+
 		typedef string_ref<char_type> string_ref_t;
 		typedef boost::static_move_ptr<char_type[]> move_pointer_t;
 
@@ -65,8 +67,8 @@ namespace meow {
 		string_copy(char_type const *b, char_type const *e) { BOOST_ASSERT(b <= e); this->init_copy(b, (e - b)); }
 		string_copy(string_type const& s) { this->init_copy(s.data(), s.size()); }
 
-		explicit string_copy(string_ref<char_type> const& s) { this->init_copy((char_type*)s.data(), s.size()); }
-		explicit string_copy(string_ref<char_type const> const& s) { this->init_copy((char_type*)s.data(), s.size()); }
+		explicit string_copy(string_ref<char_type_nc> const& s) { this->init_copy((char_type*)s.data(), s.size()); }
+		explicit string_copy(string_ref<char_type_nc const> const& s) { this->init_copy((char_type*)s.data(), s.size()); }
 
 		string_copy(self_t const& other) { this->init_copy(other.data(), other.size()); }
 
@@ -139,33 +141,6 @@ namespace meow {
 				;
 		}
 
-		friend bool operator==(self_t const& l, self_t const& r)
-		{
-			if(l.n_ != l.n_)
-				return false;
-			else if(l.data() == r.data())
-				return true;
-			else
-				return 0 == traits_type::compare(l.data(), r.data(), l.n_);
-		}
-
-		template<class C>
-		friend bool operator==(self_t const& l, string_ref<C> const& r)
-		{
-			return l.ref() == r;
-		}
-
-		template<class C>
-		friend bool operator==(string_ref<C> const& r, self_t const& l)
-		{
-			return l.ref() == r;
-		}
-
-		friend bool operator!=(self_t const& l, self_t const& r)
-		{
-			return !(l == r);
-		}
-
 		friend bool operator<(self_t const& l, self_t const& r)
 		{
 			if(!r.data())
@@ -186,8 +161,7 @@ namespace meow {
 
 	private:
 
-		template<class U>
-		void init_copy(U const *p, size_type n)
+		void init_copy(char_type_nc const *p, size_type n)
 		{
 			if (0 == n)
 			{
@@ -207,6 +181,37 @@ namespace meow {
 	};
 
 	typedef string_copy<char> str_copy;
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+	template<class C>
+	bool operator==(string_copy<C> const& l, string_copy<C> const& r)
+	{
+		if(l.size() != r.size())
+			return false;
+		else if(l.data() == r.data())
+			return true;
+		else
+			return 0 == string_copy<C>::traits_type::compare(l.data(), r.data(), l.size());
+	}
+
+	template<class C1, class C2>
+	bool operator==(string_copy<C1> const& l, string_ref<C2> const& r)
+	{
+		return l.ref() == r;
+	}
+
+	template<class C1, class C2>
+	bool operator==(string_ref<C1> const& r, string_copy<C2> const& l)
+	{
+		return l.ref() == r;
+	}
+
+	template<class C1, class C2>
+	bool operator!=(string_copy<C1> const& l, string_copy<C2> const& r)
+	{
+		return !(l == r);
+	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 } // namespace meow {
