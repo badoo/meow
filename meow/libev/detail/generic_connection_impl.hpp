@@ -114,6 +114,7 @@ namespace meow { namespace libev {
 			if (bitmask_test(flags_, generic_connection_flags::io_started))
 				return;
 
+			os_unix::nonblocking(fd());
 			iomachine_t::prepare_context(this);
 			bitmask_set(flags_, generic_connection_flags::io_started);
 		}
