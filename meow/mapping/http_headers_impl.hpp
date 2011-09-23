@@ -264,9 +264,6 @@ namespace detail {
 
 			head = col + 1;
 
-			// skip whitespace
-			while (head != hend && detail::my_isspace(*head)) ++head;
-
 			// value is everything to \r\n
 			if (__builtin_expect((hend - head) < 2, 0))
 				return false;
@@ -277,6 +274,9 @@ namespace detail {
 				if (__builtin_expect('\r' != *--lf, 0))
 					return false;
 			}
+
+			// skip leading whitespace
+			while (head != lf && detail::my_isspace(*head)) ++head;
 
 			str_ref const value = str_ref(head, lf);
 			header_fn(name, value);
