@@ -139,6 +139,19 @@ namespace meow {
 		copy_to_buffer(buf, data, data_len);
 	}
 
+	inline buffer_t& buffer_move_used_part_to_front(buffer_t& buf)
+	{
+		if (buf.begin() != buf.first)
+		{
+			str_ref const remainder_s = buf.used_part();
+			std::memmove(buf.begin(), remainder_s.begin(), remainder_s.size());
+			buf.reset_first(buf.begin());
+			buf.reset_last(buf.begin() + remainder_s.size());
+		}
+
+		return buf;
+	}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	inline buffer_move_ptr buffer_create_with_data(void const *data, size_t data_len)
@@ -154,6 +167,11 @@ namespace meow {
 	{
 		BOOST_ASSERT(data < data_end);
 		return buffer_create_with_data(data, size_t((char const*)data_end - (char const*)data));
+	}
+
+	inline buffer_move_ptr buffer_create_with_msg(str_ref const& msg)
+	{
+		return buffer_create_with_data(msg.data(), msg.size());
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
