@@ -29,33 +29,33 @@
 namespace meow { namespace libev {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	MEOW_DEFINE_SMART_ENUM(read_status, 
+	MEOW_DEFINE_SMART_ENUM_STRUCT(read_status,
 									((error, 	"error"))
 									((closed, 	"closed"))
 									((again, 	"again"))
 									((full, 	"buffer_full"))
 									);
 
-	MEOW_DEFINE_SMART_ENUM(rd_consume_status, 
-									((more, 	"more"))
-									((finished, "finished"))
-									((closed, 	"closed"))
+	MEOW_DEFINE_SMART_ENUM_STRUCT(rd_consume_status,
+									((more, 	  "more"))
+									((loop_break, "loop_break"))
+									((closed, 	  "closed"))
 									);
 
-	MEOW_DEFINE_SMART_ENUM(write_status, 
+	MEOW_DEFINE_SMART_ENUM_STRUCT(write_status,
 									((error, 	"error"))
 									((closed, 	"closed"))
 									((again, 	"again"))
 									((empty, 	"buffer_empty"))
 									);
 
-	MEOW_DEFINE_SMART_ENUM(wr_complete_status, 
+	MEOW_DEFINE_SMART_ENUM_STRUCT(wr_complete_status,
 									((more, 	"more"))
 									((finished, "finished"))
 									((closed, 	"closed"))
 									);
 
-	MEOW_DEFINE_SMART_ENUM(custom_op_status, 
+	MEOW_DEFINE_SMART_ENUM_STRUCT(custom_op_status,
 									((more, 	"more"))
 									((closed, 	"closed"))
 									);
@@ -694,9 +694,9 @@ namespace meow { namespace libev {
 
 					switch (c_status)
 					{
-						case rd_consume_status::finished: // cleanup everything, don't read anymore
+						case rd_consume_status::loop_break: // don't read anymore, but wait for more
 							bitmask_clear(io_current_ops, EV_READ);
-							bitmask_clear(io_wait_ops, EV_READ);
+							bitmask_set(io_wait_ops, EV_READ);
 							break;
 						case rd_consume_status::more: // read moar! but on next iteration after we write a bit
 							bitmask_set(io_wait_ops, EV_READ);

@@ -13,23 +13,28 @@ namespace meow { namespace libev {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	// low level io-related close reason
-	MEOW_DEFINE_SMART_ENUM(io_close_reason, 	((io_error, 		"io_error"))
-												((peer_close, 		"peer closed connection"))
-												((write_close, 		"server write and close"))
-												((custom_close, 	"server immediate close"))
-												((sync_close,       "server syncronous close"))
-												);
+	MEOW_DEFINE_SMART_ENUM(io_close_reason, ((io_error, 		"io_error"))
+											((peer_close, 		"peer closed connection"))
+											((write_close, 		"server write and close"))
+											((custom_close, 	"server immediate close"))
+											((sync_close,       "server syncronous close"))
+											);
 
 	struct io_close_report_t
 	{
 		io_close_reason_t 	reason;
 		int 				code;
+
+		io_close_report_t(io_close_reason_t r, int c = 0)
+			: reason(r)
+			, code(c)
+		{
+		}
 	};
 
 	inline io_close_report_t io_close_report(io_close_reason_t r, int c = 0)
 	{
-		io_close_report_t const res = { reason: r, code: c };
-		return res;
+		return io_close_report_t(r, c);
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
