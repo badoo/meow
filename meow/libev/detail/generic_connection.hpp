@@ -12,7 +12,6 @@
 #include <meow/buffer_chain.hpp>
 
 #include <meow/libev/libev_fwd.hpp>
-#include <meow/libev/io_context.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace libev {
@@ -36,6 +35,8 @@ namespace meow { namespace libev {
 	typedef int generic_connection_flags_t;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
+
+	struct io_context_t;
 
 	struct generic_connection_t : private boost::noncopyable
 	{
