@@ -128,6 +128,12 @@ namespace meow { namespace libev {
 			bitmask_clear(flags_, generic_connection_flags::io_started);
 		}
 
+		virtual void io_reset()
+		{
+			io_shutdown();
+			io_ctx_.reset_fd();
+		}
+
 		virtual void run_loop(int revents)
 		{
 			BOOST_ASSERT(bitmask_test(flags_, generic_connection_flags::io_started) && "call io_startup() first");

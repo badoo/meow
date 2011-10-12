@@ -57,6 +57,7 @@ namespace meow { namespace libev {
 
 		virtual void io_startup() = 0;   // activate full-duplex io_machine
 		virtual void io_shutdown() = 0;  // stop io_machine
+		virtual void io_reset() = 0;     // stop + close fd
 
 		virtual void run_loop(int revents) = 0;
 		inline void r_loop() { this->run_loop(EV_READ); }

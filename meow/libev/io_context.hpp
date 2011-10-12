@@ -7,8 +7,6 @@
 #define MEOW_LIBEV__IO_CONTEXT_HPP_
 
 #include <unistd.h> 		// for ::close()
-
-#include <meow/libev/libev.hpp>
 #include <meow/utility/offsetof.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
