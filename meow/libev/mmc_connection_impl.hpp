@@ -105,6 +105,12 @@ namespace meow { namespace libev {
 				return rd_consume_status::closed;
 			}
 
+			return self_t::read_process_buffer_data(c, read_part, (read_status::closed == r_status));
+		}
+
+		template<class ConnectionT>
+		static rd_consume_status_t read_process_buffer_data(ConnectionT *c, buffer_ref read_part, bool is_closed)
+		{
 			buffer_move_ptr& b = tr_ctx_info::get_context(c)->r_buf;
 			b->advance_last(read_part.size());
 
@@ -319,9 +325,9 @@ namespace meow { namespace libev {
 			return reader_ops::get_buffer(c);
 		}
 
-		virtual rd_consume_status_t consume_buffer(connection_t *c, buffer_ref b, read_status_t s)
+		virtual rd_consume_status_t consume_buffer(connection_t *c, buffer_ref b, bool is_closed)
 		{
-			return reader_ops::consume_buffer(c, b, s);
+			return reader_ops::read_process_buffer_data(c, b, is_closed);
 		}
 
 		virtual void on_closed(connection_t *c, io_close_report_t const& r)

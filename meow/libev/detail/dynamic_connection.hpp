@@ -23,7 +23,7 @@ namespace meow { namespace libev {
 		virtual ~dynamic_reader_events_t() {}
 
 		virtual buffer_ref           get_buffer(connection_t*) = 0;
-		virtual rd_consume_status_t  consume_buffer(connection_t*, buffer_ref, read_status_t) = 0;
+		virtual rd_consume_status_t  consume_buffer(connection_t*, buffer_ref, bool is_closed) = 0;
 		virtual void                 on_closed(connection_t*, io_close_report_t const&) = 0;
 	};
 
