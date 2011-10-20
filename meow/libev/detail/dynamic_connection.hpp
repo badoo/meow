@@ -6,8 +6,11 @@
 #ifndef MEOW_LIBEV_DETAIL__DYNAMIC_CONNECTION_HPP_
 #define MEOW_LIBEV_DETAIL__DYNAMIC_CONNECTION_HPP_
 
+// FIXME: move this header into parent directory, this is not implementation detail
+
 #include <meow/str_ref.hpp>
-#include <meow/libev/io_machine.hpp> // rd_consume_status_t, read_status_t
+#include <meow/libev/io_machine.hpp> // rd_consume_status_t, read_status_t, TODO: separate those enums
+#include <meow/libev/io_close_report.hpp>
 #include <meow/libev/detail/generic_connection.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
