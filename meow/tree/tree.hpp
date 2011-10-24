@@ -12,10 +12,11 @@
 #include <boost/assert.hpp>
 #include <boost/range/iterator_range.hpp> // dir children range
 
-#include <meow/move_ptr/static_move_ptr.hpp>
 #include <meow/smart_enum.hpp>
 #include <meow/str_ref.hpp>
 #include <meow/str_copy.hpp>
+#include <meow/utility/offsetof.hpp>
+#include <meow/move_ptr/static_move_ptr.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace tree {
@@ -41,9 +42,9 @@ namespace meow { namespace tree {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-MEOW_DEFINE_SMART_ENUM(node_type,	((file, 		"file"))
-									((directory, 	"directory"))
-									);
+	MEOW_DEFINE_SMART_ENUM(node_type,	((file,       "file"))
+										((directory,  "directory"))
+										);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -226,12 +227,6 @@ MEOW_DEFINE_SMART_ENUM(node_type,	((file, 		"file"))
 		value_t* local_value() { return &value_; }
 
 	public:
-
-#define MEOW_OFFSETOF(class_name, member_name) \
-		ptrdiff_t(((char*)&((class_name*)1)->member_name) - 1)
-
-#define MEOW_SELF_FROM_MEMBER(class_name, member_name, member_ptr) \
-		((class_name*)((char*)member_ptr - MEOW_OFFSETOF(class_name, member_name)))
 
 		static self_t* self_from_value(value_t *v)
 		{
