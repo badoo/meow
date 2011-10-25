@@ -14,6 +14,7 @@
 #include "inserter/integral.hpp"
 #include "inserter/floating_point.hpp"
 #include "inserter/pointer.hpp"
+#include "inserter/timeval.hpp"
 
 #include "sink/FILE.hpp"
 
