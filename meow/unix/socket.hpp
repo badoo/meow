@@ -69,6 +69,34 @@ namespace os_unix {
 		return r;
 	}
 
+	template<class AddressT>
+	AddressT getpeername_ex(int fd)
+	{
+		AddressT a;
+		socklen_t len = sizeof(a);
+		int r = ::getpeername(fd, reinterpret_cast<struct sockaddr*>(&a), &len);
+
+		if (-1 == r)
+			throw meow::api_call_error("getpeername(fd: %d, socklen: %zu)", fd, sizeof(a));
+
+		BOOST_ASSERT(len == sizeof(a));
+		return a;
+	}
+
+	template<class AddressT>
+	AddressT getsockname_ex(int fd)
+	{
+		AddressT a;
+		socklen_t len = sizeof(a);
+		int r = ::getsockname(fd, reinterpret_cast<struct sockaddr*>(&a), &len);
+
+		if (-1 == r)
+			throw meow::api_call_error("getpeername(fd: %d, socklen: %zu)", fd, sizeof(a));
+
+		BOOST_ASSERT(len == sizeof(a));
+		return a;
+	}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 } // namespace os_unix {
 ////////////////////////////////////////////////////////////////////////////////////////////////
