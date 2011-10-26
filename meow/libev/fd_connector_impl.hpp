@@ -8,18 +8,15 @@
 
 #include <boost/intrusive/list.hpp>
 
+#include <meow/convert/union_cast.hpp>
+#include <meow/format/inserter/sockaddr.hpp>
 #include <meow/libev/libev.hpp>
-
 #include <meow/logging/logger.hpp>
 #include <meow/logging/log_write.hpp>
-
 #include <meow/unix/fcntl.hpp> 	// nonblocking
-#include <meow/unix/ipv4_address.hpp>
 #include <meow/unix/socket.hpp> // getsockopt_ex
 #include <meow/unix/time.hpp> 	// os_timeval_t
-
 #include <meow/utility/offsetof.hpp>
-#include <meow/convert/union_cast.hpp>
 
 #include "fd_connector.hpp"
 
@@ -108,17 +105,18 @@ namespace meow { namespace libev {
 		}
 
 		virtual token_t try_connect(
-				  callback_t const& 		cb
-				, int 						fd
-				, ipv4::address_t const& 	addr
-				, os_timeval_t const& 		timeout
+				  callback_t const&     cb
+				, int 					fd
+				, ev_tstamp const       timeout
+				, os_sockaddr_t const   *addr
+				, os_socklen_t const    addr_len
 			)
 		{
 			item_move_ptr item(new item_t(this, fd, cb));
 			ev_io_init(item->io_event(), &self_t::libev_cb, item->fd(), EV_WRITE);
-			ev_timer_init(item->io_timer(), &self_t::libev_timeout_cb, os_timeval_to_double(timeout), 0.);
+			ev_timer_init(item->io_timer(), &self_t::libev_timeout_cb, timeout, 0.);
 
-			this->do_connect(get_pointer(item), addr, timeout);
+			this->do_connect(get_pointer(item), timeout, addr, addr_len);
 
 			items_.push_back(*item.release());
 			return reinterpret_cast<token_t>(&items_.back());
@@ -138,7 +136,7 @@ namespace meow { namespace libev {
 
 	private:
 
-		void do_connect(item_t *item, ipv4::address_t const& addr, os_timeval_t const& timeout)
+		void do_connect(item_t *item, ev_tstamp const timeout, os_sockaddr_t const *addr, os_socklen_t const addr_len)
 		{
 			// make sure it's nonblocking
 			os_unix::nonblocking(item->fd());
@@ -146,13 +144,10 @@ namespace meow { namespace libev {
 			// nothrow after this line
 			// except if logging throws, but then we're fucked
 
-			// start connecting
-			struct sockaddr_in const& a = addr.sockaddr();
-
 			if (log_)
 				LOG_DEBUG_EX(log_, line_mode::prefix, "::connect({0}, {1}) ", item->fd(), addr);
 
-			int n = ::connect(item->fd(), (struct sockaddr const*)&a, sizeof(a));
+			int n = ::connect(item->fd(), addr, addr_len);
 
 			if (log_)
 				LOG_DEBUG_EX(log_, line_mode::suffix, "= {0}; errno: {1} : {2}", n, errno, strerror(errno));

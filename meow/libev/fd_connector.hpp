@@ -9,7 +9,7 @@
 #include <boost/function.hpp>
 #include <boost/noncopyable.hpp>
 
-#include <meow/unix/ipv4_address.hpp>
+#include <meow/unix/socket.hpp>
 #include <meow/unix/time.hpp> 	// os_timeval_t
 
 #include <meow/move_ptr/static_move_ptr.hpp>
@@ -33,10 +33,11 @@ namespace meow { namespace libev {
 		virtual evloop_t* loop() const = 0;
 
 		virtual token_t try_connect(
-				  callback_t const& 		cb
-				, int 						fd
-				, ipv4::address_t const& 	addr
-				, os_timeval_t const& 		timeout
+				  callback_t const&     cb
+				, int 					fd
+				, ev_tstamp const       timeout
+				, os_sockaddr_t const 	*addr
+				, os_socklen_t const    addr_len
 			) = 0;
 
 		virtual void cancel_connect(

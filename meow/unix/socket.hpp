@@ -9,6 +9,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include <boost/assert.hpp>
+
 #include <meow/api_call_error.hpp>
 #include <meow/unix/libc_wrapper.hpp>
 
