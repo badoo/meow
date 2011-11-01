@@ -8,6 +8,8 @@
 
 #include <string>
 
+#include <boost/type_traits/remove_const.hpp>
+
 #include <meow/str_ref.hpp>
 #include <meow/convert/hex_to_from_bin.hpp>
 #include <meow/format/metafunctions.hpp>
@@ -17,9 +19,11 @@ namespace meow { namespace format {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	template<class CharT>
-	std::basic_string<CharT> as_hex_string(string_ref<CharT> const& s)
+	inline
+	std::basic_string<typename boost::remove_const<CharT>::type>
+	as_hex_string(string_ref<CharT> const& s)
 	{
-		std::basic_string<CharT> result(s.size() * 2, CharT());
+		std::basic_string<typename boost::remove_const<CharT>::type> result(s.size() * 2, CharT());
 
 		CharT *ee = copy_bin2hex(s.begin(), s.end(), &*result.begin());
 		BOOST_ASSERT(ee == &*result.end());
@@ -28,9 +32,11 @@ namespace meow { namespace format {
 	}
 
 	template<class CharT>
-	std::basic_string<CharT> as_escaped_hex_string(string_ref<CharT> const& s)
+	inline
+	std::basic_string<typename boost::remove_const<CharT>::type>
+	as_escaped_hex_string(string_ref<CharT> const& s)
 	{
-		std::basic_string<CharT> result(s.size() * 4, CharT());
+		std::basic_string<typename boost::remove_const<CharT>::type> result(s.size() * 4, CharT());
 
 		CharT *ee = copy_bin2hex_escaped(s.begin(), s.end(), &*result.begin());
 		BOOST_ASSERT(ee == &*result.end());
