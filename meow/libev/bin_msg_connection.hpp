@@ -15,18 +15,14 @@
 namespace meow { namespace libev {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	template<class HeaderT>
 	struct bin_msg_connection_t : public generic_connection_t
 	{
-		typedef bin_msg_connection_t 	self_t;
-		typedef HeaderT 				header_t;
-
 		struct events_t
 		{
 			virtual ~events_t() {}
 
-			// return false from this function if header is bad and you've aborted the connection
-			virtual bool on_header(bin_msg_connection_t*, header_t const&) = 0;
+			// return -1 from this function if header is bad and you've aborted the connection
+			virtual ssize_t on_header(bin_msg_connection_t*, str_ref const& headers_data) = 0;
 			virtual void on_message(bin_msg_connection_t*, buffer_move_ptr) = 0;
 			virtual void on_closed(bin_msg_connection_t*, io_close_report_t const&) = 0;
 		};
