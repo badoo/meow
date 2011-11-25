@@ -108,14 +108,17 @@ namespace meow { namespace format {
 	};																				\
 /**/
 
-	MEOW_DEFINE_SOCKADDR_TYPE_TUNNEL(struct sockaddr*, sockaddr const*,  , INET6_ADDRSTRLEN + port_strlen);
-	MEOW_DEFINE_SOCKADDR_TYPE_TUNNEL(struct sockaddr,  sockaddr const&, &, INET6_ADDRSTRLEN + port_strlen);
+	MEOW_DEFINE_SOCKADDR_TYPE_TUNNEL(struct sockaddr const*, sockaddr const*,  , INET6_ADDRSTRLEN + port_strlen);
+	MEOW_DEFINE_SOCKADDR_TYPE_TUNNEL(struct sockaddr*,       sockaddr const*,  , INET6_ADDRSTRLEN + port_strlen);
+	MEOW_DEFINE_SOCKADDR_TYPE_TUNNEL(struct sockaddr,        sockaddr const&, &, INET6_ADDRSTRLEN + port_strlen);
 
-	MEOW_DEFINE_SOCKADDR_TYPE_TUNNEL(struct sockaddr_in*, sockaddr_in const*,  , INET_ADDRSTRLEN + port_strlen);
-	MEOW_DEFINE_SOCKADDR_TYPE_TUNNEL(struct sockaddr_in,  sockaddr_in const&, &, INET_ADDRSTRLEN + port_strlen);
+	MEOW_DEFINE_SOCKADDR_TYPE_TUNNEL(struct sockaddr_in const*, sockaddr_in const*,  , INET_ADDRSTRLEN + port_strlen);
+	MEOW_DEFINE_SOCKADDR_TYPE_TUNNEL(struct sockaddr_in*,       sockaddr_in const*,  , INET_ADDRSTRLEN + port_strlen);
+	MEOW_DEFINE_SOCKADDR_TYPE_TUNNEL(struct sockaddr_in,        sockaddr_in const&, &, INET_ADDRSTRLEN + port_strlen);
 
-	MEOW_DEFINE_SOCKADDR_TYPE_TUNNEL(struct sockaddr_in6*, sockaddr_in6 const*,  , INET6_ADDRSTRLEN + port_strlen);
-	MEOW_DEFINE_SOCKADDR_TYPE_TUNNEL(struct sockaddr_in6,  sockaddr_in6 const&, &, INET6_ADDRSTRLEN + port_strlen);
+	MEOW_DEFINE_SOCKADDR_TYPE_TUNNEL(struct sockaddr_in6 const*, sockaddr_in6 const*,  , INET6_ADDRSTRLEN + port_strlen);
+	MEOW_DEFINE_SOCKADDR_TYPE_TUNNEL(struct sockaddr_in6*,       sockaddr_in6 const*,  , INET6_ADDRSTRLEN + port_strlen);
+	MEOW_DEFINE_SOCKADDR_TYPE_TUNNEL(struct sockaddr_in6,        sockaddr_in6 const&, &, INET6_ADDRSTRLEN + port_strlen);
 
 #undef MEOW_DEFINE_SOCKADDR_TYPE_TUNNEL
 

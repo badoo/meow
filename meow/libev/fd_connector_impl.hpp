@@ -8,8 +8,10 @@
 
 #include <boost/intrusive/list.hpp>
 
-#include <meow/convert/union_cast.hpp>
+#include <meow/format/format.hpp>
 #include <meow/format/inserter/sockaddr.hpp>
+
+#include <meow/convert/union_cast.hpp>
 #include <meow/libev/libev.hpp>
 #include <meow/logging/logger.hpp>
 #include <meow/logging/log_write.hpp>
@@ -145,7 +147,7 @@ namespace meow { namespace libev {
 			// except if logging throws, but then we're fucked
 
 			if (log_)
-				LOG_DEBUG_EX(log_, line_mode::prefix, "::connect({0}, {1}) ", item->fd(), addr);
+				LOG_DEBUG_EX(log_, line_mode::prefix, "::connect({0}, {1}, {2}) ", item->fd(), addr, addr_len);
 
 			int n = ::connect(item->fd(), addr, addr_len);
 

@@ -27,27 +27,14 @@ namespace meow { namespace format {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	// all pointers printing
-	// except for (char|wchar_t) [const|volatile] *, which is handled by default case
 	template<class T>
-	struct type_tunnel<
-			  T
-			, typename boost::enable_if_c<
-				   boost::is_pointer<T>::value
-				&& !boost::is_same<
-						  typename boost::remove_cv<typename boost::remove_pointer<T>::type>::type
-						, char
-					>::value
-				&& !boost::is_same<
-						  typename boost::remove_cv<typename boost::remove_pointer<T>::type>::type
-						, wchar_t
-					>::value
-			>::type>
+	struct type_tunnel<T*>
 	{
 		enum { radix = 16 };
-		enum { buffer_size = detail::number_buffer_max_length<sizeof(T)*8, radix>::value };
+		enum { buffer_size = detail::number_buffer_max_length<sizeof(T*)*8, radix>::value };
 		typedef meow::tmp_buffer<buffer_size + 2> buffer_t;
 
-		static str_ref call(T v, buffer_t const& buf = buffer_t())
+		static str_ref call(T const *v, buffer_t const& buf = buffer_t())
 		{
 			typedef detail::radix_info_t<radix> rinfo_t;
 			char *b = detail::integer_to_string_ex<rinfo_t>(buf.get(), buf.size(), uintptr_t(v));
