@@ -6,14 +6,6 @@
 #ifndef MEOW_FORMAT_INSERTER__POINTER_HPP_
 #define MEOW_FORMAT_INSERTER__POINTER_HPP_
 
-#include <cstdlib>
-
-#include <boost/utility/enable_if.hpp>
-#include <boost/type_traits/is_pointer.hpp>
-#include <boost/type_traits/remove_cv.hpp>
-#include <boost/type_traits/remove_pointer.hpp>
-#include <boost/type_traits/is_same.hpp>
-
 #include <meow/str_ref.hpp>
 #include <meow/tmp_buffer.hpp>
 

@@ -12,6 +12,7 @@
 
 #include "inserter/nullchar.hpp"
 #include "inserter/integral.hpp"
+#include "inserter/char_pointer.hpp"
 #include "inserter/floating_point.hpp"
 #include "inserter/pointer.hpp"
 #include "inserter/timeval.hpp"
