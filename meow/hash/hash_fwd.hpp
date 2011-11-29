@@ -32,7 +32,6 @@ namespace meow {
 									);
 	};
 #endif
-	template<class T, class Enabler = void> struct hash; // no default impl
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 } // namespace meow {

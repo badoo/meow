@@ -6,6 +6,8 @@
 #ifndef MEOW_HASH__HASH_IMPL_HPP_
 #define MEOW_HASH__HASH_IMPL_HPP_
 
+#include <cstring> // std::strlen
+
 #include <boost/static_assert.hpp>
 #include <boost/type_traits/is_arithmetic.hpp>
 #include <boost/type_traits/is_convertible.hpp>
@@ -27,86 +29,94 @@ namespace detail {
 } // namespace detail {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	template<class ArithmeticT>
-	struct hash<
-		  ArithmeticT
-		, typename boost::enable_if<boost::is_arithmetic<ArithmeticT> >::type
-		>
-	{
-		typedef hash_result_t result_type;
-
-		inline result_type operator()(ArithmeticT const& value) const
-		{
-			BOOST_STATIC_ASSERT(0 == (sizeof(ArithmeticT) % sizeof(uint32_t)));
-
-			if (0 == (sizeof(ArithmeticT) % sizeof(uint32_t)))
-			{
-				return hash_impl<hash_default_tag>::hash_word_array(
-						  reinterpret_cast<uint32_t const*>(&value)
-						, sizeof(ArithmeticT) / sizeof(uint32_t)
-						, detail::hash_def_initval
-					);
-			}
-			else
-			{
-				return hash_impl<hash_default_tag>::hash_blob(
-						  &value
-						, sizeof(ArithmeticT)
-						, detail::hash_def_initval
-					);
-			}
-		}
-	};
-
-	template<class T>
-	struct hash<T, typename boost::enable_if_c<
-			   boost::is_pointer<T>::value
-			&& (boost::is_convertible<char*, T>::value
-			  ||boost::is_convertible<signed char*, T>::value
-			  ||boost::is_convertible<unsigned char*, T>::value
+	// when you just have stuff in memory
+	inline hash_result_t
+	hash_blob(
+			  void const *blob
+			, size_t const size
+			, hash_result_t const initval = detail::hash_def_initval
 			)
-		>::type>
 	{
-		typedef hash_result_t result_type;
-
-		inline result_type operator()(T v) const
-		{
-			// check if string is longer than 4 bytes
-			static size_t const n_bytes = 4;
-			char const *b = (char const*)v;
-			char const *e = (char const*)memchr(b, 0x0, n_bytes);
-			if (NULL == e) e = b + n_bytes;
-
-			return hash_impl<hash_default_tag>::hash_blob(b, (e - b), detail::hash_def_initval);
-		}
-	};
+		return hash_impl<hash_default_tag>::hash_blob(blob, size, initval);
+	}
 
 	template<class T>
-	struct hash<string_ref<T> >
-	{
-		typedef hash_result_t result_type;
+	inline hash_result_t hash_object(T const& obj);
+	// THIS_FUNCTION_IS_NOT_FIT_FOR_GENERIC_OBJECTS_PLEASE_DEFINE_YOUR_OWN_THING
 
-		inline result_type operator()(string_ref<T> const& v) const
-		{
-			return hash_impl<hash_default_tag>::hash_blob(v.begin(), v.c_length() * sizeof(T), detail::hash_def_initval);
-		}
-	};
+	inline hash_result_t hash_object(char const *s, hash_result_t const initval = detail::hash_def_initval)
+	{
+		return hash_blob(s, std::strlen(s), initval);
+	}
+
+	inline hash_result_t hash_object(signed char const *s, hash_result_t const initval = detail::hash_def_initval)
+	{
+		return hash_object((char const*)s, initval);
+	}
+
+	inline hash_result_t hash_object(unsigned char const *s, hash_result_t const initval = detail::hash_def_initval)
+	{
+		return hash_object((char const*)s, initval);
+	}
+
+	template<class CharT>
+	inline hash_result_t
+	hash_object(
+			  string_ref<CharT const> const& s
+			, hash_result_t const initval = detail::hash_def_initval
+			)
+	{
+		return hash_blob(s.data(), s.size() * sizeof(CharT), initval);
+	}
+
+	template<class T, std::size_t N>
+	inline hash_result_t
+	hash_object(
+			  T const (&data)[N]
+			, hash_result_t const initval = detail::hash_def_initval
+			)
+	{
+		return hash_object(ref_lit(data), initval);
+	}
+
+	template<class ArithmeticT>
+	inline
+	typename boost::enable_if_c<
+		  boost::is_arithmetic<ArithmeticT>::value && (sizeof(ArithmeticT) >= sizeof(uint32_t))
+		, hash_result_t
+	>::type
+	hash_object(ArithmeticT value, hash_result_t const initval = detail::hash_def_initval)
+	{
+		return hash_impl<hash_default_tag>::hash_word_array(
+				  reinterpret_cast<uint32_t const*>(&value)
+				, sizeof(ArithmeticT) / sizeof(uint32_t)
+				, initval
+			);
+	}
+
+	template<class ArithmeticT>
+	inline
+	typename boost::enable_if_c<
+		  boost::is_arithmetic<ArithmeticT>::value && (sizeof(ArithmeticT) < sizeof(uint32_t))
+		, hash_result_t
+	>::type
+	hash_object(ArithmeticT value, hash_result_t const initval = detail::hash_def_initval)
+	{
+		return hash_blob(&value, sizeof(value), initval);
+	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	// convenience, when you just have the object to hash at hand
 	template<class T>
-	inline hash_result_t hash_object(T const& obj)
+	struct hash
 	{
-		return hash<T>()(obj);
-	}
+		typedef hash_result_t result_type;
 
-	// convenience, when you just need to hash some array as raw memory, useful for fixed length strings
-	template<class T, std::size_t N>
-	inline hash_result_t hash_object(T const (&data)[N])
-	{
-		return hash_object(ref_lit(data));
-	}
+		result_type operator()(T const& value) const
+		{
+			return hash_object(value);
+		}
+	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 } // namespace meow {
