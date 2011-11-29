@@ -15,10 +15,10 @@
 namespace judy {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	template<class K, class V, class H, class E>
-	void report_index_state(table_index_t<K, V, H, E> const& idx, FILE *to_file = stdout)
+	template<class V, class H, class E, size_t A>
+	void report_index_state(table_index_t<V, H, E, A> const& idx, FILE *to_file = stdout)
 	{
-		typedef table_index_t<K, V, H, E> index_t;
+		typedef table_index_t<V, H, E, A> index_t;
 
 		judy::judy_t jj = get_handle(idx);
 		fprintf(to_file, "%s\n", __PRETTY_FUNCTION__);

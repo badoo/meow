@@ -130,17 +130,15 @@ namespace detail {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	template<
-		  class K 						// key
-		, class V 						// value
+		  class ValueT 					// value
 		, class EqualF 					// test equality of key K and Value V
 		, size_t alignment_sz_arg = 0 	// see the description in table_index_t
 	>
 	struct index_leaf_t : private index_equal_base_t<EqualF>
 	{
-		typedef index_leaf_t 	self_t;
-		typedef K 				key_t;
-		typedef V 				value_t;
-		typedef size_t 			type_data_t;
+		typedef index_leaf_t  self_t;
+		typedef ValueT        value_t;
+		typedef size_t        type_data_t;
 
 	public:
 
@@ -157,7 +155,7 @@ namespace detail {
 		};
 
 		// number of bits we can use for own purposes in user-exposed pointers
-		static size_t const alignment_sz = alignment_helper<V, alignment_sz_arg>::alignment_sz;
+		static size_t const alignment_sz = alignment_helper<value_t, alignment_sz_arg>::alignment_sz;
 		static size_t const alignment_bits = meow::static_log2<alignment_sz, meow::lower_bound_tag>::value;
 
 		// TODO: implement the case for 1 too, this will mean
@@ -324,8 +322,6 @@ namespace detail {
 
 		value_range_t decode_value_range() const
 		{
-			BOOST_ASSERT(!this->empty());
-
 			switch (ptr_.type())
 			{
 				case self_t::type_direct_ptr:
@@ -365,7 +361,8 @@ namespace detail {
 
 	public:
 
-		value_t** get(key_t const& k) const
+		template<class K>
+		value_t** get(K const& k) const
 		{
 			value_range_t const r = this->decode_value_range();
 
@@ -374,13 +371,15 @@ namespace detail {
 				; ++i
 				)
 			{
+				BOOST_ASSERT((NULL != *i) && "index_leaf_t value range element can't be NULL; forgot to initialize pointer you got from get_or_create() ?");
 				if (self_t::fn_equal(k, **i))
 					return i;
 			}
 			return NULL;
 		}
 
-		value_t** get_or_create(key_t const& k)
+		template<class K>
+		value_t** get_or_create(K const& k)
 		{
 			if (this->empty())
 				return this->as_direct_ptr_ptr();
@@ -441,7 +440,8 @@ namespace detail {
 			BOOST_ASSERT(!"must not be reached");
 		}
 
-		bool del(key_t const& k)
+		template<class K>
+		bool del(K const& k)
 		{
 			value_t **found_v = this->get(k);
 			if (!found_v)
@@ -535,10 +535,9 @@ namespace detail {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	template<
-		  class K 				// key
-		, class V 				// value
-		, class HashF 			// hash(): key -> size_t
-		, class EqualF 			// equal(): key, value -> bool
+		  class ValueT 				// value
+		, class HashF 				// hash(): key -> size_t
+		, class EqualF 				// equal(): key, value -> bool
 		, size_t alignment_sz = 0   // the alignment of the type we'll be referencing
 									// you need it only when the target type is incomplete
 									// and it's alignment can't be determined automaticaly
@@ -546,12 +545,11 @@ namespace detail {
 		>
 	struct table_index_t : private detail::index_hash_base_t<HashF>
 	{
-		typedef table_index_t 	self_t;
-		typedef K 				key_t;
-		typedef V 				value_t;
+		typedef table_index_t  self_t;
+		typedef ValueT         value_t;
 
-		typedef detail::index_leaf_t<K, V, EqualF, alignment_sz> 	leaf_t;
-		typedef judy::index_t<size_t, leaf_t> 		index_t;
+		typedef detail::index_leaf_t<ValueT, EqualF, alignment_sz>  leaf_t;
+		typedef judy::index_t<size_t, leaf_t>                       index_t;
 		index_t j_;
 
 	public:
@@ -578,7 +576,8 @@ namespace detail {
 
 	public:
 
-		value_t** get(key_t const& k) const
+		template<class K>
+		value_t** get(K const& k) const
 		{
 			leaf_t *leaf_p = judy::index_get(j_, self_t::fn_hash(k));
 			if (!leaf_p)
@@ -594,7 +593,12 @@ namespace detail {
 		//  + if new_v is not null, assigns new_v to the slot
 		//  + is was_created is not null, sets it to true if the slot was created, false otherwise
 		//
-		value_t** get_or_create(key_t const& k, value_t *new_v = NULL, bool *was_created = NULL)
+		//  WARNING: if the value has been created, you can't use any operations on the contained
+		//            utill after you've initialized it with something non-NULL
+		//            as the container needs the value to check key-value equality
+		//
+		template<class K>
+		value_t** get_or_create(K const& k, value_t *new_v = NULL, bool *was_created = NULL)
 		{
 			leaf_t *leaf_p = judy::index_get_or_create(j_, self_t::fn_hash(k));
 			if (!leaf_p)
@@ -613,7 +617,8 @@ namespace detail {
 			return value;
 		}
 
-		bool del(key_t const& k)
+		template<class K>
+		bool del(K const& k)
 		{
 			size_t const k_hash = self_t::fn_hash(k);
 
@@ -649,16 +654,16 @@ namespace detail {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	template<class K, class V, class H, class E, size_t A>
-	V** index_get(table_index_t<K, V, H, E, A> const& idx, K const& k) { return idx.get(k); }
+	V** index_get(table_index_t<V, H, E, A> const& idx, K const& k) { return idx.get(k); }
 
 	template<class K, class V, class H, class E, size_t A>
-	V** index_get_or_create(table_index_t<K, V, H, E, A>& idx, K const& k) { return idx.get_or_create(k); }
+	V** index_get_or_create(table_index_t<V, H, E, A>& idx, K const& k) { return idx.get_or_create(k); }
 
 	template<class K, class V, class H, class E, size_t A>
-	bool index_del(table_index_t<K, V, H, E, A>& idx, K const& k) { return idx.del(k); }
+	bool index_del(table_index_t<V, H, E, A>& idx, K const& k) { return idx.del(k); }
 
-	template<class K, class V, class H, class E, size_t A>
-	void index_clear(table_index_t<K, V, H, E, A>& idx) { return idx.clear(); }
+	template<class V, class H, class E, size_t A>
+	void index_clear(table_index_t<V, H, E, A>& idx) { return idx.clear(); }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 } // namespace judy {
