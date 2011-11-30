@@ -69,6 +69,16 @@ namespace detail {
 		return hash_blob(s.data(), s.size() * sizeof(CharT), initval);
 	}
 
+	template<class CharT>
+	inline hash_result_t
+	hash_object(
+			  std::basic_string<CharT> const& s
+			, hash_result_t const initval = detail::hash_def_initval
+			)
+	{
+		return hash_blob(s.c_str(), s.size() * sizeof(CharT), initval);
+	}
+
 	template<class T, std::size_t N>
 	inline hash_result_t
 	hash_object(
