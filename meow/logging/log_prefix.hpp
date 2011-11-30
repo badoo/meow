@@ -54,7 +54,7 @@ namespace meow { namespace logging {
 
 	public:
 
-		typedef meow::tmp_buffer<64> buffer_t;
+		typedef meow::tmp_buffer<128> buffer_t;
 
 		str_ref prefix(log_level_t lvl, buffer_t const& buf = buffer_t())
 		{
