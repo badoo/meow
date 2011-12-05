@@ -46,17 +46,22 @@ struct simple_error_string
 } // namespace detail 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
+	struct api_call_error_base : public std::exception
+	{
+		virtual int code() const throw() = 0;
+	};
+
 	template<
 		  class ErrorPrinter	// prints strerror-like error message for given errno
 		, size_t buffer_size_bytes = 256
 	>
-	struct api_call_error_base : public std::exception
+	struct api_call_error_impl : public api_call_error_base
 	{
 		static size_t const buffer_size = buffer_size_bytes;
 
-		api_call_error_base(int code) : code_(code) {}
+		api_call_error_impl(int code) : code_(code) {}
 
-		int code() const throw() { return code_; }
+		virtual int code() const throw() { return code_; }
 		virtual char const* what() const throw() { return buffer_; }
 
 	protected:
@@ -79,9 +84,9 @@ struct simple_error_string
 		ErrorPrinter err_printer_;
 	};
 
-	struct api_call_error : public api_call_error_base<detail::simple_error_string>
+	struct api_call_error : public api_call_error_impl<detail::simple_error_string>
 	{
-		typedef api_call_error_base<detail::simple_error_string> base_type;
+		typedef api_call_error_impl<detail::simple_error_string> base_type;
 
 		// NOTE: disabled printf-like checks, because gcc-4.2-apple was broken with it
 		//  		and was giving incorrect warnings for formats with more than 1 argument
@@ -91,9 +96,9 @@ struct simple_error_string
 	};
 
 	template<class ErrorPrinter>
-	struct api_call_error_ex : public api_call_error_base<ErrorPrinter>
+	struct api_call_error_ex : public api_call_error_impl<ErrorPrinter>
 	{
-		typedef api_call_error_base<ErrorPrinter> base_type;
+		typedef api_call_error_impl<ErrorPrinter> base_type;
 
 		// NOTE: disabled printf-like checks, because gcc-4.2-apple was broken with it
 		//  		and was giving incorrect warnings for formats with more than 1 argument
