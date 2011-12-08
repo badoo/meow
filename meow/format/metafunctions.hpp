@@ -25,6 +25,12 @@ namespace meow { namespace format {
 		inline static T const& call(T const& v) { return v; }
 	};
 
+	template<class T>
+	inline std::string tunnel(T const& v) { return type_tunnel<T>::call(v); }
+
+	template<class R, class T>
+	inline R tunnel(T const& v) { return type_tunnel<T>::call(v); }
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 	namespace sink {
 ////////////////////////////////////////////////////////////////////////////////////////////////
