@@ -23,6 +23,8 @@ namespace meow { namespace format { namespace sink {
 				, size_t n_slices
 				)
 		{
+			sink.reserve(sink.size() + total_len);
+
 			for (size_t i = 0; i < n_slices; ++i)
 				sink.append(slices[i].data(), slices[i].size());
 		}
