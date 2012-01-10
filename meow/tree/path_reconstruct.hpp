@@ -18,28 +18,39 @@
 namespace meow { namespace tree {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
+	namespace detail
+	{
+		template<class S>
+		inline S& reconstruct_path_impl(S& sink, node_t *node)
+		{
+			// recursion terminator, tree root
+			if (!node->has_parent())
+				return sink;
+
+			// parent is a directory, always
+			directory_t *parent = as_directory(node->parent());
+
+			reconstruct_path_impl(sink, parent);
+
+			// get and print our own name, have to scan the parent's children for that
+			directory_t::child_t *parent_to_node = parent->get_child(node);
+			BOOST_ASSERT((NULL != parent_to_node) && "if we have a parent, then parent must be able to find us");
+			meow::format::write(sink, "/", parent_to_node->name);
+
+			return sink;
+		}
+	}
+
 	// reconstruct path to this node from the root of the tree
 	// this is a pretty time consuming operation actually if the tree is big enough
 	//  so use with care and cache results if possible
 	template<class S>
 	inline S& reconstruct_path(S& sink, node_t *node)
 	{
-		using meow::format::fmt;
+		if (!node->has_parent())
+			return meow::format::write(sink, "/");
 
-		// recursion terminator, tree root
-		if (!node->parent())
-			return sink;
-
-		// parent is a directory, always
-		directory_t *parent = as_directory(node->parent());
-
-		reconstruct_path(sink, parent);
-
-		directory_t::child_t *parent_to_node = parent->get_child(node);
-		BOOST_ASSERT((NULL != parent_to_node) && "if we have a parent, then parent must be able to find us");
-		fmt(sink, "/{0}", parent_to_node->name);
-
-		return sink;
+		return detail::reconstruct_path_impl(sink, node);
 	}
 
 	// convenience function, when you can just copy a sink (think sink == std::string)
