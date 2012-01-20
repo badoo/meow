@@ -7,6 +7,7 @@
 #define MEOW_UNIX__FCNTL_HPP_
 
 #include <fcntl.h>
+#include <sys/ioctl.h>
 
 #include <meow/api_call_error.hpp>
 #include <meow/unix/fd_handle.hpp>
@@ -27,14 +28,24 @@ namespace os_unix {
 
 	inline int nonblocking(int s)
 	{
+	#if defined(FIONBIO) // try using faster ioctl() interface if it's there
+		int v = 1;
+		return ::ioctl(s, FIONBIO, &v) ? -1 : s;
+	#else
 		int flags(::fcntl(s, F_GETFL, 0));
 		return ::fcntl(s, F_SETFL, flags | O_NONBLOCK) ? -1 : s;
+	#endif
 	}
 
 	inline int blocking(int s)
 	{
+	#if defined(FIONBIO) // try using faster ioctl() interface if it's there
+		int v = 0;
+		return ::ioctl(s, FIONBIO, &v) ? -1 : s;
+	#else
 		int flags(::fcntl(s, F_GETFL, 0));
 		return ::fcntl(s, F_SETFL, flags & ~O_NONBLOCK) ? -1 : s;
+	#endif
 	}
 
 	inline int close_on_exec(int s)
