@@ -52,13 +52,12 @@ namespace meow { namespace libev {
 		typedef libev::io_machine_t<self_t, traits_t> iomachine_t;
 
 	public:
-
-		struct option_automatic_startup_io_default
-		{
-			enum { value = true };
-		};
-
+		struct option_automatic_startup_io_default { enum { value = true }; };
 		MEOW_DEFINE_NESTED_NAME_ALIAS_OR_MY_TYPE(Traits, option_automatic_startup_io, option_automatic_startup_io_default);
+
+	public:
+		struct option_automatic_set_nonblocking_default { enum { value = true }; };
+		MEOW_DEFINE_NESTED_NAME_ALIAS_OR_MY_TYPE(Traits, option_automatic_set_nonblocking, option_automatic_set_nonblocking_default);
 
 	public:
 		// traits need access to this stuff
@@ -114,7 +113,9 @@ namespace meow { namespace libev {
 			if (bitmask_test(flags_, generic_connection_flags::io_started))
 				return;
 
-			os_unix::nonblocking(fd());
+			if (option_automatic_set_nonblocking::value)
+				os_unix::nonblocking(fd());
+
 			iomachine_t::prepare_context(this);
 			bitmask_set(flags_, generic_connection_flags::io_started);
 		}
