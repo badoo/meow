@@ -34,6 +34,21 @@ namespace meow { namespace format {
 	MEOW_FORMAT_DEFINE_CHAR_POINTER_TUNNEL(unsigned char*);
 	MEOW_FORMAT_DEFINE_CHAR_POINTER_TUNNEL(unsigned char const*);
 
+#define MEOW_FORMAT_DEFINE_CHAR_ARRAY_TUNNEL(type, has_const)		\
+	template<size_t N> struct type_tunnel<type has_const [N]> {		\
+		static str_ref call(type const (&a) [N]) {					\
+			return str_ref((char const*)a, N - 1);					\
+		}															\
+	};																\
+/**/
+
+	MEOW_FORMAT_DEFINE_CHAR_ARRAY_TUNNEL(char, );
+	MEOW_FORMAT_DEFINE_CHAR_ARRAY_TUNNEL(char, const);
+	MEOW_FORMAT_DEFINE_CHAR_ARRAY_TUNNEL(signed char, );
+	MEOW_FORMAT_DEFINE_CHAR_ARRAY_TUNNEL(signed char, const);
+	MEOW_FORMAT_DEFINE_CHAR_ARRAY_TUNNEL(unsigned char, );
+	MEOW_FORMAT_DEFINE_CHAR_ARRAY_TUNNEL(unsigned char, const);
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 }} // namespace meow { namespace format {
 ////////////////////////////////////////////////////////////////////////////////////////////////
