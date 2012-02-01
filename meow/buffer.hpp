@@ -35,17 +35,17 @@ namespace meow {
 
 		static char_t* do_malloc(size_t const n_chars)
 		{
-			return (char_t*)std::malloc(n_chars * sizeof(char_t));
+			return (char_t*)malloc(n_chars * sizeof(char_t));
 		}
 
 		static char_t* do_realloc(char_t *p, size_t const n_chars)
 		{
-			return (char_t*)std::realloc(p, n_chars * sizeof(char_t));
+			return (char_t*)realloc(p, n_chars * sizeof(char_t));
 		}
 
 		static void do_free(char_t *p)
 		{
-			std::free(p);
+			free(p);
 		}
 
 	public:
