@@ -106,7 +106,7 @@ namespace request_type {
 
 #define MEOW_SMART_ENUM_SWITCH_ITEM(r, ns_name, item) 	 		\
 	case BOOST_PP_TUPLE_ELEM(2, 0, item): 						\
-		return BOOST_PP_TUPLE_ELEM(2, 1, item); 				\
+		return meow::ref_lit(BOOST_PP_TUPLE_ELEM(2, 1, item)); 	\
 /**/
 
 #define MEOW_SMART_ENUM_FROM_IF_ITEM(r, ns_name, item) 			\
@@ -126,11 +126,11 @@ namespace request_type {
 				BOOST_ASSERT(!"invalid enum value"); 			\
 		} 														\
 	} 															\
-	decl_prefix char const* enum_as_string(type t) { 	\
+	decl_prefix char const* enum_as_string(type t) { 			\
 		return enum_as_str_ref(t).data(); 						\
 	} 															\
-	decl_prefix type enum_from_str_ref( 				\
-			  meow::str_ref s 									\
+	decl_prefix type enum_from_str_ref( 						\
+			  meow::str_ref const& s 							\
 			, type not_found_res BOOST_PP_IF(has_none, = ns_name::_none, )	\
 		) 														\
 	{ 															\

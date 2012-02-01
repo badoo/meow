@@ -23,10 +23,13 @@ namespace meow { namespace format {
 	{
 		sink::char_buffer_sink_t sink(b.get(), b.size());
 
-	#define CHECKED_ADD(ev)			\
-		do { if (ev & revents) {	\
-			meow::format::write(sink, (!sink.size() ? "" : "|"), ref_lit(#ev)); \
-		} }	while (0)				\
+	#define CHECKED_ADD(ev)				\
+		do { if (ev & revents) {		\
+			meow::format::write(sink	\
+					, (!sink.size() ? ref_lit("") : ref_lit("|"))	\
+					, ref_lit(#ev)		\
+					); 					\
+		} }	while (0)					\
 	/**/
 
 #if (3 == EV_VERSION_MAJOR)
