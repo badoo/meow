@@ -8,6 +8,7 @@
 
 #include <boost/noncopyable.hpp>
 
+#include <meow/bitfield_union.hpp>
 #include <meow/buffer.hpp>
 #include <meow/buffer_chain.hpp>
 
@@ -15,25 +16,6 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace libev {
-////////////////////////////////////////////////////////////////////////////////////////////////
-
-	struct generic_connection_flags
-	{
-		enum type
-		{
-			// the connection will be closed on next opportunity
-			  is_closing          = (1 << 0)
-
-			// honor all pending writes before closing,
-			//  ignored if "is_closing" is not set
-			, write_before_close  = (1 << 1)
-
-			// if io_startup() was called more times than io_shutdown()
-			, io_started          = (1 << 31)
-		};
-	};
-	typedef int generic_connection_flags_t;
-
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	struct io_context_t;
@@ -44,14 +26,29 @@ namespace meow { namespace libev {
 
 	public: // general info
 
-		virtual int        fd() const = 0;
-		virtual evloop_t*  loop() const = 0;
+		virtual int                 fd() const = 0;
+		virtual evloop_t*           loop() const = 0;
 
-		virtual evio_t*       io_event() = 0;
-		virtual io_context_t* io_context() = 0;
+		virtual evio_t*             io_event() = 0;
+		virtual io_context_t*       io_context() = 0;
 
-		typedef generic_connection_flags_t flags_t;
-		virtual flags_t    flags() const = 0;
+	public: // flags
+
+		struct flags_data_t
+		{
+			// the connection will be closed on next opportunity
+			bool is_closing          : 1;
+
+			// honor all pending writes before closing,
+			//  ignored if "is_closing" is not set
+			bool write_before_close  : 1;
+
+			// if io_startup() was called more times than io_shutdown()
+			bool io_started          : 1;
+		};
+		typedef meow::bitfield_union<flags_data_t, uint32_t> flags_t;
+
+		flags_t flags;
 
 	public: // io
 
@@ -83,10 +80,7 @@ namespace meow { namespace libev {
 
 	public: // closing
 
-		inline bool is_closing() const
-		{
-			return (flags() & generic_connection_flags::is_closing);
-		}
+		inline bool is_closing() const { return flags->is_closing; }
 
 		virtual void close_after_write() = 0;
 		virtual void close_immediately() = 0;

@@ -14,7 +14,7 @@ namespace meow {
 
 	struct length_value
 	{
-		typedef uint64_t type;
+		typedef int64_t type;
 
 		static type const unset  = type(-1);
 		static type const max    = type(-2);

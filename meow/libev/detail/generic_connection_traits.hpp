@@ -120,10 +120,10 @@ namespace meow { namespace libev {
 		template<class ContextT>
 		static bool requires_custom_op(ContextT *ctx)
 		{
-			if (!bitmask_test(ctx->flags_, generic_connection_flags::is_closing))
+			if (!ctx->flags->is_closing)
 				return false;
 
-			if (bitmask_test(ctx->flags_, generic_connection_flags::write_before_close))
+			if (ctx->flags->write_before_close)
 				return ctx->wchain_.empty();
 
 			return true;
@@ -132,13 +132,13 @@ namespace meow { namespace libev {
 		template<class ContextT>
 		static custom_op_status_t custom_operation(ContextT *ctx)
 		{
-			BOOST_ASSERT(bitmask_test(ctx->flags_, generic_connection_flags::is_closing));
+			BOOST_ASSERT(ctx->flags->is_closing);
 
 			io_close_reason_t close_reason =
-				(bitmask_test(ctx->flags_, generic_connection_flags::write_before_close))
-				? io_close_reason::write_close
-				: io_close_reason::custom_close
-				;
+				(ctx->flags->write_before_close)
+					? io_close_reason::write_close
+					: io_close_reason::custom_close
+					;
 
 			ctx->cb_custom_closed(io_close_report(close_reason));
 			return custom_op_status::closed;

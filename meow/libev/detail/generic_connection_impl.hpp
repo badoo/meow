@@ -32,7 +32,6 @@ namespace meow { namespace libev {
 		typedef generic_connection_impl_t 		self_t;
 		typedef generic_connection_impl_t 		base_t; // macro at the bottom uses it
 		typedef EventsT							events_t;
-		typedef typename Interface::flags_t     flags_t;
 
 		struct traits_t
 		{
@@ -67,7 +66,6 @@ namespace meow { namespace libev {
 		events_t 		*ev_;
 		io_context_t 	io_ctx_;
 		buffer_chain_t 	wchain_;
-		flags_t         flags_;
 
 	public: // callbacks, for the traits
 
@@ -82,7 +80,6 @@ namespace meow { namespace libev {
 			: loop_(loop)
 			, ev_(ev)
 			, io_ctx_(fd)
-			, flags_(0)
 		{
 			if (option_automatic_startup_io::value)
 				this->io_startup();
@@ -104,29 +101,27 @@ namespace meow { namespace libev {
 		virtual events_t* ev() const { return ev_; }
 		virtual void set_ev(events_t *ev) { ev_ = ev; }
 
-		virtual flags_t flags() const { return flags_; }
-
 	public:
 
 		virtual void io_startup()
 		{
-			if (bitmask_test(flags_, generic_connection_flags::io_started))
+			if (this->flags->io_started)
 				return;
 
 			if (option_automatic_set_nonblocking::value)
 				os_unix::nonblocking(fd());
 
 			iomachine_t::prepare_context(this);
-			bitmask_set(flags_, generic_connection_flags::io_started);
+			this->flags->io_started = true;
 		}
 
 		virtual void io_shutdown()
 		{
-			if (!bitmask_test(flags_, generic_connection_flags::io_started))
+			if (!this->flags->io_started)
 				return;
 
 			iomachine_t::release_context(this);
-			bitmask_clear(flags_, generic_connection_flags::io_started);
+			this->flags->io_started = false;
 		}
 
 		virtual void io_reset()
@@ -137,13 +132,13 @@ namespace meow { namespace libev {
 
 		virtual void run_loop(int revents)
 		{
-			BOOST_ASSERT(bitmask_test(flags_, generic_connection_flags::io_started) && "call io_startup() first");
+			BOOST_ASSERT(this->flags->io_started && "call io_startup() first");
 			iomachine_t::run_loop(this, revents);
 		}
 
 		virtual void activate(int revents)
 		{
-			BOOST_ASSERT(bitmask_test(flags_, generic_connection_flags::io_started) && "call io_startup() first");
+			BOOST_ASSERT(this->flags->io_started && "call io_startup() first");
 			iomachine_t::activate_context(this, revents);
 		}
 
@@ -185,15 +180,15 @@ namespace meow { namespace libev {
 
 		virtual void close_after_write()
 		{
-			bitmask_set(flags_, generic_connection_flags::is_closing);
-			bitmask_set(flags_, generic_connection_flags::write_before_close);
+			this->flags->is_closing = true;
+			this->flags->write_before_close = true;
 			this->activate(EV_WRITE /* don't add EV_CUSTOM here, it will cause a close immediately */);
 		}
 
 		virtual void close_immediately()
 		{
-			bitmask_set(flags_, generic_connection_flags::is_closing);
-			bitmask_clear(flags_, generic_connection_flags::write_before_close);
+			this->flags->is_closing = true;
+			this->flags->write_before_close = false;
 			this->activate(EV_CUSTOM);
 		}
 

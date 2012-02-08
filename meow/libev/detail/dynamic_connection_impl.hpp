@@ -20,10 +20,13 @@ namespace meow { namespace libev {
 		{
 			struct context_t {};
 
+			#define EV_CALL(c, fn_name, args...) c->ev_->fn_name(c, args);
+			#define EV_CALL_0(c, fn_name) c->ev_->fn_name(c);
+
 			template<class ConnectionT>
 			static buffer_ref get_buffer(ConnectionT *c)
 			{
-				return c->ev()->get_buffer(c);
+				return EV_CALL_0(c, get_buffer);
 			}
 
 			template<class ConnectionT>
@@ -32,14 +35,14 @@ namespace meow { namespace libev {
 				// now we might have our connection dead already
 				if (read_status::error == r_status)
 				{
-					c->ev()->on_closed(c, io_close_report(io_close_reason::io_error, errno));
+					EV_CALL(c, on_closed, io_close_report(io_close_reason::io_error, errno));
 					return rd_consume_status::closed;
 				}
 
 				// we might have data read here,
 				//  try processing it regardless of closed state first
 				bool const is_closed = (read_status::closed == r_status);
-				rd_consume_status_t const buf_status = c->ev()->consume_buffer(c, b, is_closed);
+				rd_consume_status_t const buf_status = EV_CALL(c, consume_buffer, b, is_closed);
 
 				// okay, buffer has been processed, so check the connection state
 
@@ -47,19 +50,22 @@ namespace meow { namespace libev {
 				//  we can't do much else other than closing it on our end too
 				if (read_status::closed == r_status)
 				{
-					c->ev()->on_closed(c, io_close_report(io_close_reason::peer_close));
+					EV_CALL(c, on_closed, io_close_report(io_close_reason::peer_close));
 					return rd_consume_status::closed;
 				}
 
 				// next is the buffer handler, if it says we're closed - then we are
 				if (rd_consume_status::closed == buf_status)
 				{
-					c->ev()->on_closed(c, io_close_report(io_close_reason::custom_close));
+					EV_CALL(c, on_closed, io_close_report(io_close_reason::custom_close));
 					return rd_consume_status::closed;
 				}
 
 				return buf_status;
 			}
+
+			#undef EV_CALL_0
+			#undef EV_CALL
 		};
 	};
 

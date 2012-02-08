@@ -63,6 +63,12 @@ namespace meow { namespace libev {
 
 #endif
 
+	// default and minimal reader context
+	struct mmc_reader_ctx_t
+	{
+		buffer_move_ptr r_buf;
+	};
+
 	template<class Traits>
 	struct mmc_reader_operations
 	{
@@ -127,9 +133,9 @@ namespace meow { namespace libev {
 						// if it's still full -> we have to bail
 						if (b->full())
 						{
-							tr_ctx_info::get_events(c)->on_error(c, ref_lit("message is too long"));
-
 							b->clear();
+
+							tr_ctx_info::get_events(c)->on_error(c, ref_lit("message is too long"));
 							return rd_consume_status::loop_break;
 						}
 					}
@@ -139,7 +145,6 @@ namespace meow { namespace libev {
 				else
 				{
 					str_ref const message_s = str_ref(b->first, found_e);
-					tr_ctx_info::get_events(c)->on_message(c, message_s);
 
 					// move to the remainder of the data
 					//  that can be the next request
@@ -150,21 +155,20 @@ namespace meow { namespace libev {
 					//  to avoid data moves in the future
 					if (b->empty())
 						b->clear();
+
+					// this needs to be the last line, so that we go check for close after
+					//  buffer->first/last have been updated, but data is intact and we have our message fetched
+					bool const can_loop_more = tr_ctx_info::get_events(c)->on_message(c, message_s);
+					if (!can_loop_more)
+						return rd_consume_status::more;
 				}
 			}
 
-			// if we got here, it means we're closing!
 			return rd_consume_status::closed;
 		}
 	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
-
-	// default and minimal reader context
-	struct mmc_reader_ctx_t
-	{
-		buffer_move_ptr r_buf;
-	};
 
 	template<class Traits /* the client supplied traits here */ >
 	struct mmc_connection_repack_traits : public Traits

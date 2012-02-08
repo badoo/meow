@@ -22,7 +22,7 @@ namespace meow { namespace libev {
 
 		virtual ~mmc_reader_events_t() {}
 
-		virtual void on_message(connection_t*, str_ref const& message) = 0;
+		virtual bool on_message(connection_t*, str_ref const& message) = 0;
 		virtual void on_error(connection_t*, str_ref const& error_msg) = 0;
 		virtual void on_closed(connection_t*, io_close_report_t const&) = 0;
 	};
