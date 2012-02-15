@@ -14,8 +14,11 @@ namespace meow {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	struct hash_jenkins_tag;
-	typedef hash_jenkins_tag hash_default_tag;
-	
+
+#ifndef MEOW_HASH_DEFAULT_TAG
+#define MEOW_HASH_DEFAULT_TAG meow::hash_jenkins_tag
+#endif
+
 	template<>
 	struct hash_impl<hash_jenkins_tag>
 	{

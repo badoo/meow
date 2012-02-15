@@ -29,6 +29,10 @@ namespace detail {
 } // namespace detail {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
+	typedef hash_impl<MEOW_HASH_DEFAULT_TAG> hash_default_impl;
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
 	// when you just have stuff in memory
 	inline hash_result_t
 	hash_blob(
@@ -37,7 +41,7 @@ namespace detail {
 			, hash_result_t const initval = detail::hash_def_initval
 			)
 	{
-		return hash_impl<hash_default_tag>::hash_blob(blob, size, initval);
+		return hash_default_impl::hash_blob(blob, size, initval);
 	}
 
 	template<class T>
@@ -97,7 +101,7 @@ namespace detail {
 	>::type
 	hash_object(ArithmeticT value, hash_result_t const initval = detail::hash_def_initval)
 	{
-		return hash_impl<hash_default_tag>::hash_word_array(
+		return hash_default_impl::hash_word_array(
 				  reinterpret_cast<uint32_t const*>(&value)
 				, sizeof(ArithmeticT) / sizeof(uint32_t)
 				, initval

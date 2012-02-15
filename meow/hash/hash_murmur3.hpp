@@ -14,19 +14,26 @@ namespace meow {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	struct hash_murmur3_tag;
-	typedef hash_murmur3_tag hash_default_tag;
+
+#ifndef MEOW_HASH_DEFAULT_TAG
+#define MEOW_HASH_DEFAULT_TAG meow::hash_murmur3_tag
+#endif
 
 	template<>
 	struct hash_impl<hash_murmur3_tag>
 	{
-		static hash_result_t hash_word_array(uint32_t const *p, unsigned len_32, uint32_t initval)
+		static hash_result_t hash_word_array(uint32_t const *p, unsigned const len_32, uint32_t const initval)
 		{
-			return hash_fn::MurmurHash3_x64_32(p, len_32 * 4, initval);
+			hash_result_t result;
+			hash_fn::MurmurHash3(p, len_32 * 4, initval, &result);
+			return result;
 		}
 
-		static hash_result_t hash_blob(void const *p, unsigned len, uint32_t initval)
+		static hash_result_t hash_blob(void const *p, unsigned const len, uint32_t const initval)
 		{
-			return hash_fn::MurmurHash3_x64_32(p, len, initval);
+			hash_result_t result;
+			hash_fn::MurmurHash3(p, len, initval, &result);
+			return result;
 		}
 	};
 
