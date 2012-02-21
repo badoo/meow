@@ -13,6 +13,7 @@
 #include <boost/type_traits/is_convertible.hpp>
 #include <boost/type_traits/is_pointer.hpp>
 
+#include <meow/str_ref.hpp>
 #include <meow/hash/hash_fwd.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
