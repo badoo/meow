@@ -27,7 +27,11 @@ namespace meow { namespace libev {
 		virtual void on_closed(connection_t*, io_close_report_t const&) = 0;
 	};
 
-	typedef generic_connection_e_t<mmc_reader_events_t> mmc_connection_t;
+	struct mmc_connection_t
+		: public generic_connection_e_t<mmc_reader_events_t>
+	{
+	};
+
 	typedef boost::static_move_ptr<mmc_connection_t> mmc_connection_ptr;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
