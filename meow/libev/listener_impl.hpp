@@ -77,8 +77,11 @@ namespace meow { namespace libev { namespace detail {
 
 		void do_shutdown()
 		{
-			ev_io_stop(loop_, io_ctx_.event());
-			io_ctx_.reset_fd();
+			if (io_ctx_.is_valid())
+			{
+				ev_io_stop(loop_, io_ctx_.event());
+				io_ctx_.reset_fd();
+			}
 		}
 
 	private:
