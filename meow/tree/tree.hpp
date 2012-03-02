@@ -260,10 +260,10 @@ namespace meow { namespace tree {
 	inline file_t* create_file_p(T const& v) { return new file_impl_t<T>(v); }
 
 	template<class T>
-	inline file_ptr create_file() { return file_ptr(create_file_p<T>()); }
+	inline file_ptr create_file() { return boost::move_raw(create_file_p<T>()); }
 
 	template<class T>
-	inline file_ptr create_file(T const& v) { return file_ptr(create_file_p<T>(v)); }
+	inline file_ptr create_file(T const& v) { return boost::move_raw(create_file_p<T>(v)); }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
