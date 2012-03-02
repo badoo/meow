@@ -15,6 +15,7 @@
 #include <boost/preprocessor/tuple/elem.hpp>
 
 #include <meow/str_ref.hpp>
+#include <meow/utility/static_math.hpp>
 
 // TODO: make enum value support and generate a switch on items,
 // 			not a names array.
@@ -86,6 +87,7 @@ namespace request_type {
 	}; 												\
 	enum { 											\
 		  _total = BOOST_PP_SEQ_SIZE(enum_seq) 		\
+		, _bits = meow::static_log2<_total, meow::upper_bound_tag>::value \
 	}; 												\
 /**/
 
