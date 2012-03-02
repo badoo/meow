@@ -8,23 +8,9 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-template<class T1, class T2>
-inline T1 bitmask_set(T1& mask, T2 bit)
-{
-	return mask |= bit;
-}
-
-template<class T1, class T2>
-inline T1 bitmask_clear(T1& mask, T2 bit)
-{
-	return mask &= ~bit;
-}
-
-template<class T1, class T2>
-inline T1 bitmask_test(T1 const& mask, T2 bit)
-{
-	return (mask & bit);
-}
+#define BITMASK_SET(mask, bit) ((mask) |= (bit))
+#define BITMASK_CLEAR(mask, bit) ((mask) &= ~(bit))
+#define BITMASK_TEST(mask, bit) ((mask) & (bit))
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 

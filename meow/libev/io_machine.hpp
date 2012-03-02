@@ -620,10 +620,10 @@ namespace meow { namespace libev {
 							);
 				}
 
-				if (bitmask_test(io_current_ops, EV_CUSTOM))
+				if (BITMASK_TEST(io_current_ops, EV_CUSTOM))
 				{
 					custom_op_status_t c_status = tr_custom_op::custom_operation(ctx);
-					bitmask_clear(io_current_ops, EV_CUSTOM);
+					BITMASK_CLEAR(io_current_ops, EV_CUSTOM);
 
 					io_activity_ops |= EV_CUSTOM;
 
@@ -636,7 +636,7 @@ namespace meow { namespace libev {
 					}
 				}
 
-				while (bitmask_test(io_current_ops, EV_READ)) // TODO: add iteration threshold here, via options prob
+				while (BITMASK_TEST(io_current_ops, EV_READ)) // TODO: add iteration threshold here, via options prob
 				{
 					// peek if there is any data available at all
 					//  so that we don't allocate huge buffers needlessly
@@ -650,8 +650,8 @@ namespace meow { namespace libev {
 									, __func__
 									);
 						}
-						bitmask_clear(io_current_ops, EV_READ);
-						bitmask_set(io_wait_ops, EV_READ);
+						BITMASK_CLEAR(io_current_ops, EV_READ);
+						BITMASK_SET(io_wait_ops, EV_READ);
 						break;
 					}
 
@@ -668,8 +668,8 @@ namespace meow { namespace libev {
 									, __func__
 									);
 						}
-						bitmask_clear(io_current_ops, EV_READ);
-						bitmask_clear(io_wait_ops, EV_READ);
+						BITMASK_CLEAR(io_current_ops, EV_READ);
+						BITMASK_CLEAR(io_wait_ops, EV_READ);
 						break;
 					}
 
@@ -679,8 +679,8 @@ namespace meow { namespace libev {
 					// special 'again' handling
 					if (read_status::again == r.status)
 					{
-						bitmask_clear(io_current_ops, EV_READ); // we don't want to read anymore, we got EAGAIN
-						bitmask_set(io_wait_ops, EV_READ); // we want to wait for a read to be available again
+						BITMASK_CLEAR(io_current_ops, EV_READ); // we don't want to read anymore, we got EAGAIN
+						BITMASK_SET(io_wait_ops, EV_READ); // we want to wait for a read to be available again
 
 						// we read nothing and are going to just wait for more
 						// -> just say bye
@@ -695,11 +695,11 @@ namespace meow { namespace libev {
 					switch (c_status)
 					{
 						case rd_consume_status::loop_break: // don't read anymore, but wait for more
-							bitmask_clear(io_current_ops, EV_READ);
-							bitmask_set(io_wait_ops, EV_READ);
+							BITMASK_CLEAR(io_current_ops, EV_READ);
+							BITMASK_SET(io_wait_ops, EV_READ);
 							break;
 						case rd_consume_status::more: // read moar! but on next iteration after we write a bit
-							bitmask_set(io_wait_ops, EV_READ);
+							BITMASK_SET(io_wait_ops, EV_READ);
 							break;
 						case rd_consume_status::closed: // fd has been closed
 							return;
@@ -710,11 +710,11 @@ namespace meow { namespace libev {
 
 				if (tr_custom_op::requires_custom_op(ctx))
 				{
-					bitmask_set(io_current_ops, EV_CUSTOM);
+					BITMASK_SET(io_current_ops, EV_CUSTOM);
 					continue;
 				}
 
-				while (bitmask_test(io_current_ops, EV_WRITE))
+				while (BITMASK_TEST(io_current_ops, EV_WRITE))
 				{
 					meow::buffer_ref buf = tr_write::get_buffer(ctx);
 
@@ -727,16 +727,16 @@ namespace meow { namespace libev {
 									, __func__
 									);
 						}
-						bitmask_clear(io_current_ops, EV_WRITE);
-						bitmask_clear(io_wait_ops, EV_WRITE);
+						BITMASK_CLEAR(io_current_ops, EV_WRITE);
+						BITMASK_CLEAR(io_wait_ops, EV_WRITE);
 						break;
 					}
 					write_result_t r = write_from_buffer(ctx, io_ctx->fd(), buf.data(), buf.size());
 
 					if (write_status::again == r.status)
 					{
-						bitmask_clear(io_current_ops, EV_WRITE);
-						bitmask_set(io_wait_ops, EV_WRITE);
+						BITMASK_CLEAR(io_current_ops, EV_WRITE);
+						BITMASK_SET(io_wait_ops, EV_WRITE);
 					}
 
 					meow::buffer_ref written_buf(buf.begin(), r.bytes_written);
@@ -745,11 +745,11 @@ namespace meow { namespace libev {
 					switch (c_status)
 					{
 						case wr_complete_status::finished: // cleanup everything, don't do stuff anymore
-							bitmask_clear(io_current_ops, EV_WRITE);
-							bitmask_clear(io_wait_ops, EV_WRITE);
+							BITMASK_CLEAR(io_current_ops, EV_WRITE);
+							BITMASK_CLEAR(io_wait_ops, EV_WRITE);
 							break;
 						case wr_complete_status::more: // write moar! but on next iteration
-							bitmask_set(io_wait_ops, EV_WRITE);
+							BITMASK_SET(io_wait_ops, EV_WRITE);
 							break;
 						case wr_complete_status::closed: // fd has been closed
 							return;
@@ -760,7 +760,7 @@ namespace meow { namespace libev {
 
 				if (tr_custom_op::requires_custom_op(ctx))
 				{
-					bitmask_set(io_current_ops, EV_CUSTOM);
+					BITMASK_SET(io_current_ops, EV_CUSTOM);
 					continue;
 				}
 
@@ -784,8 +784,8 @@ namespace meow { namespace libev {
 			//  so we need to only change those bits in new value for wait
 
 			int new_wait_ops = io_ctx->event()->events; 	// the initial mask is unchanged
-			bitmask_clear(new_wait_ops, io_executed_ops); 	// clear out masked space
-			bitmask_set(new_wait_ops, io_wait_ops); 		// set the new event bits
+			BITMASK_CLEAR(new_wait_ops, io_executed_ops); 	// clear out masked space
+			BITMASK_SET(new_wait_ops, io_wait_ops); 		// set the new event bits
 
 			if (tr_log::is_allowed(ctx))
 			{

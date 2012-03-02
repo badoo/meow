@@ -38,10 +38,10 @@ namespace meow { namespace logging {
 	{
 		default_prefix_t()
 		{
-			prefix_fields_t f;
-			bitmask_set(f, prefix_field::datetime);
-			bitmask_set(f, prefix_field::log_level);
-			bitmask_clear(f, prefix_field::log_name);
+			prefix_fields_t f = prefix_field::_null;
+			BITMASK_SET(f, prefix_field::datetime);
+			BITMASK_SET(f, prefix_field::log_level);
+			BITMASK_CLEAR(f, prefix_field::log_name);
 
 			this->set_fields(f);
 		}
