@@ -251,7 +251,7 @@ namespace meow { namespace tree {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	inline directory_t* create_directory_p() { return new directory_t; }
-	inline directory_ptr create_directory() { return directory_ptr(create_directory_p()); }
+	inline directory_ptr create_directory() { return boost::move_raw(create_directory_p()); }
 
 	template<class T>
 	inline file_t* create_file_p() { return new file_impl_t<T>(); }

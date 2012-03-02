@@ -54,23 +54,28 @@ namespace meow { namespace libxml2 {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // RAII wrappers for libxml objects
 
-	struct deleter_t
-	{
-		// NOTE: calling a free function here
-		//  this function should be overloaded for every libxml2 object
-		//  we want to be able to delete
-		// qualified call used to prevent unintentded ADL.
-		template<class T>
-		void operator()(T *obj) const { /*libxml2::*/delete_object(obj); }
-	};
+	template<class T> struct object_deleter;
 
 	#define MEOW_DEFINE_LIBXML2_OBJECT_DELETER(ns, obj_name)						\
-		inline void delete_object(MEOW_LIBXML2_COMPOSE_OBJNAME(ns, obj_name) *p)	\
-		{  MEOW_LIBXML2_COMPOSE_DELETER_NAME(ns, obj_name) (p); }
+		template<> struct object_deleter<MEOW_LIBXML2_COMPOSE_OBJNAME(ns, obj_name)> { \
+			static void call(MEOW_LIBXML2_COMPOSE_OBJNAME(ns, obj_name) *obj) {		\
+				MEOW_LIBXML2_COMPOSE_DELETER_NAME(ns, obj_name) (obj);				\
+			}																		\
+		};																			\
+	/**/
 
 	#define MEOW_DEFINE_LIBXML2_PRIMITIVE_OBJECT_DELETER(ns, obj_name)			\
-		inline void delete_object(MEOW_LIBXML2_COMPOSE_OBJNAME(ns, obj_name) *p)	\
-		{ xmlFree(p); }
+		template<> struct object_deleter<MEOW_LIBXML2_COMPOSE_OBJNAME(ns, obj_name)> { \
+			static void call(MEOW_LIBXML2_COMPOSE_OBJNAME(ns, obj_name) *obj) {		\
+				xmlFree(obj);														\
+			}																		\
+		};																			\
+
+	struct deleter_t
+	{
+		template<class T>
+		void operator()(T *obj) const { return object_deleter<T>::call(obj); }
+	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // libxml object smart pointers

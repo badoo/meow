@@ -102,7 +102,7 @@ namespace judy {
 		template<class Function>
 		void for_each(Function const& function)
 		{
-			BOOST_STATIC_ASSERT(check_iteration<j_ops>::value && "j_ops must have iteration enabled");
+			BOOST_STATIC_ASSERT(check_iteration<j_ops>::value); // clang++ doesn't like: && (bool)"j_ops must have iteration enabled");
 			j_ops::iteration::for_each(j_, boost::bind(call_proxy_t(), boost::cref(function), _1, _2));
 		}
 

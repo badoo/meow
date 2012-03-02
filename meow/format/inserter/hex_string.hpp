@@ -11,6 +11,7 @@
 #include <boost/type_traits/remove_const.hpp>
 
 #include <meow/str_ref.hpp>
+#include <meow/tmp_buffer.hpp>
 #include <meow/convert/hex_to_from_bin.hpp>
 #include <meow/format/metafunctions.hpp>
 
