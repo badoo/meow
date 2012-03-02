@@ -68,6 +68,7 @@ namespace meow { namespace libev { namespace detail {
 			os_unix::bind_ex(get_handle(s), (sockaddr*)addr.sockaddr_tmp(), addr.addrlen());
 			os_unix::listen_ex(get_handle(s), backlog);
 			os_unix::nonblocking(get_handle(s));
+			os_unix::close_on_exec(get_handle(s));
 
 			ev_io_set(io_ctx_.event(), get_handle(s), EV_READ);
 			ev_io_start(loop_, io_ctx_.event());
