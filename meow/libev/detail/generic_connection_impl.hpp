@@ -35,9 +35,11 @@ namespace meow { namespace libev {
 
 		struct traits_t
 		{
-			typedef generic_connection_traits_base<self_t> 		base;
 			typedef typename Traits::read 						read;
-			typedef generic_connection_traits_write<self_t> 	write;
+
+			MEOW_DEFINE_NESTED_NAME_ALIAS_OR_MY_TYPE(Traits, base, generic_connection_traits_base<self_t>);
+			MEOW_DEFINE_NESTED_NAME_ALIAS_OR_MY_TYPE(Traits, write, generic_connection_traits_write<self_t>);
+			// typedef generic_connection_traits_write<self_t> 	write;
 
 			//MEOW_DEFINE_NESTED_NAME_ALIAS_OR_MY_TYPE(Traits, custom_op, generic_connection_traits_custom_op);
 			typedef generic_connection_traits_custom_op 		custom_op;
