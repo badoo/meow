@@ -52,27 +52,21 @@ namespace meow { namespace libev {
 	template<class BaseTraits>
 	struct generic_connection_traits_write
 	{
-
 		template<class ContextT>
-		static buffer_ref get_buffer(ContextT *ctx)
+		static bool get_buffer(ContextT *ctx, buffer_ref *result)
 		{
 			buffer_chain_t& wchain = ctx->wchain_;
 
-			// skip empy buffers
-			// if the current buffer is empty
-			//  (this can only happen if we someow had empty buffer in the chain)
-			//  -> just drop it and try continue
-			while (!wchain.empty())
+			if (wchain.empty())
 			{
-				buffer_ref r = wchain.front()->used_part();
-
-				if (!r.empty())
-					return r;
-
-				wchain.pop_front();
+				*result = buffer_ref();
+			}
+			else
+			{
+				*result = wchain.front()->used_part();
 			}
 
-			return buffer_ref();
+			return true;
 		}
 
 		template<class ContextT>

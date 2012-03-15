@@ -601,7 +601,7 @@ namespace meow { namespace libev {
 
 			if (tr_log::is_allowed(ctx))
 			{
-				tr_log::write(ctx, line_mode::single, "{0}; fd: {1}; aop: 0x{2}, rop: 0x{3}, eop: 0x{4}"
+				tr_log::write(ctx, line_mode::single, "{0}; >> loop; fd: {1}; aop: 0x{2}, rop: 0x{3}, eop: 0x{4}"
 						, __func__, io_ctx->fd()
 						, meow::format::as_hex(io_allowed_ops)
 						, meow::format::as_hex(io_requested_ops)
@@ -716,21 +716,30 @@ namespace meow { namespace libev {
 
 				while (BITMASK_TEST(io_current_ops, EV_WRITE))
 				{
-					meow::buffer_ref buf = tr_write::get_buffer(ctx);
-
-					if (buf.empty())
+					buffer_ref buf;
+					bool const is_ok = tr_write::get_buffer(ctx, &buf);
+					if (!is_ok)
 					{
 						if (tr_log::is_allowed(ctx))
-						{
-							tr_log::write(ctx, line_mode::single
-									, "{0}; empty buffer from tr_write::get_buffer()"
-									, __func__
-									);
-						}
+							tr_log::write(ctx, line_mode::single, "{0}; !ERROR! from tr_write::get_buffer()", __func__);
+
 						BITMASK_CLEAR(io_current_ops, EV_WRITE);
 						BITMASK_CLEAR(io_wait_ops, EV_WRITE);
-						break;
+						return;
 					}
+					else
+					{
+						if (buf.empty()) // nothing to write
+						{
+							if (tr_log::is_allowed(ctx))
+								tr_log::write(ctx, line_mode::single, "{0}; <empty> tr_write::get_buffer()", __func__);
+
+							BITMASK_CLEAR(io_current_ops, EV_WRITE);
+							BITMASK_CLEAR(io_wait_ops, EV_WRITE);
+							break;
+						}
+					}
+
 					write_result_t r = write_from_buffer(ctx, io_ctx->fd(), buf.data(), buf.size());
 
 					if (write_status::again == r.status)
@@ -739,7 +748,7 @@ namespace meow { namespace libev {
 						BITMASK_SET(io_wait_ops, EV_WRITE);
 					}
 
-					meow::buffer_ref written_buf(buf.begin(), r.bytes_written);
+					buffer_ref written_buf(buf.begin(), r.bytes_written);
 					wr_complete_status_t c_status = tr_write::write_complete(ctx, written_buf, r.status);
 
 					switch (c_status)
@@ -790,7 +799,7 @@ namespace meow { namespace libev {
 			if (tr_log::is_allowed(ctx))
 			{
 				tr_log::write(    ctx, line_mode::single
-								, "{0}; fd: {1}; loop end; curr_ev_ops: 0x{2}, new_wait_ops = 0x{3}"
+								, "{0}; << loop; fd: {1}; curr_ev_ops: 0x{2}, new_wait_ops = 0x{3}"
 								, __func__
 								, io_ctx->fd()
 								, meow::format::as_hex(io_ctx->event()->events)
