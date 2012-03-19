@@ -58,9 +58,10 @@ namespace meow { namespace libev {
 
 		public:
 
-			template<class ContextT>
-			static buffer_ref get_buffer(ContextT *ctx)
+			template<class ConnectionT>
+			static buffer_ref get_buffer(ConnectionT *c)
 			{
+				context_t *ctx = c;
 				buffer_move_ptr& b = ctx->r_buf;
 
 				if (!b)
@@ -79,19 +80,21 @@ namespace meow { namespace libev {
 				BOOST_ASSERT(!"can't be reached");
 			}
 
-			template<class ContextT>
-			static rd_consume_status_t consume_buffer(ContextT *ctx, buffer_ref read_part, read_status_t r_status)
+			template<class ConnectionT>
+			static rd_consume_status_t consume_buffer(ConnectionT *c, buffer_ref read_part, read_status_t r_status)
 			{
+				context_t *ctx = c;
+
 				// now we might have our connection dead already
 				if (read_status::error == r_status)
 				{
-					MEOW_LIBEV_GENERIC_CONNECTION_CTX_CALLBACK(ctx, on_closed, io_close_report(io_close_reason::io_error, errno));
+					MEOW_LIBEV_GENERIC_CONNECTION_CTX_CALLBACK(c, on_closed, io_close_report(io_close_reason::io_error, errno));
 					return rd_consume_status::closed;
 				}
 
 				if (read_status::closed == r_status)
 				{
-					MEOW_LIBEV_GENERIC_CONNECTION_CTX_CALLBACK(ctx, on_closed, io_close_report(io_close_reason::peer_close));
+					MEOW_LIBEV_GENERIC_CONNECTION_CTX_CALLBACK(c, on_closed, io_close_report(io_close_reason::peer_close));
 					return rd_consume_status::closed;
 				}
 
@@ -105,7 +108,7 @@ namespace meow { namespace libev {
 						if (b->used_size() < tr::header_size)
 							break;
 
-						ssize_t const body_length = MEOW_LIBEV_GENERIC_CONNECTION_CTX_CALLBACK(ctx, on_header, b->used_part());
+						ssize_t const body_length = MEOW_LIBEV_GENERIC_CONNECTION_CTX_CALLBACK(c, on_header, b->used_part());
 
 						// error parsing header, length unknown, assume close
 						if (body_length < 0)
@@ -125,7 +128,7 @@ namespace meow { namespace libev {
 						if (!b->full())
 							break;
 
-						MEOW_LIBEV_GENERIC_CONNECTION_CTX_CALLBACK(ctx, on_message, move(b));
+						MEOW_LIBEV_GENERIC_CONNECTION_CTX_CALLBACK(c, on_message, move(b));
 
 						ctx->r_reset_for_next_request();
 						break;

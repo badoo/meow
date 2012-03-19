@@ -6,58 +6,21 @@
 #ifndef MEOW_LIBEV_DETAIL__SSL_CONNECTION_HPP_
 #define MEOW_LIBEV_DETAIL__SSL_CONNECTION_HPP_
 
+#include <stdexcept> // std::logic_error
+
 #include <cyassl/ssl.h>
 #include <cyassl/internal.h>
-
-#include "generic_connection.hpp"
-#include "generic_connection_impl.hpp"
 
 #include <meow/format/format.hpp>
 #include <meow/format/format_to_string.hpp> // used for ssl_log_writer
 #include <meow/format/inserter/hex_string.hpp>
 
+#include "ssl.hpp"
+#include "generic_connection.hpp"
+#include "generic_connection_impl.hpp"
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace libev {
-////////////////////////////////////////////////////////////////////////////////////////////////
-
-	struct CyaSSL_deleter_t {
-		void operator()(CYASSL *ssl) { CyaSSL_free(ssl); }
-	};
-	typedef boost::static_move_ptr<CYASSL, CyaSSL_deleter_t> ssl_handle_t;
-
-	struct cyassl_custom_io_ctx_t
-	{
-		virtual ~cyassl_custom_io_ctx_t() {}
-		virtual int cyassl_read(char *buf, int buf_sz) = 0;
-		virtual int cyassl_write(char *buf, int buf_sz) = 0;
-
-		static int cyassl_real_read_cb(char *buf, int buf_sz, void *ctx)
-		{
-			cyassl_custom_io_ctx_t *self = static_cast<cyassl_custom_io_ctx_t*>(ctx);
-			return self->cyassl_read(buf, buf_sz);
-		}
-
-		static int cyassl_real_write_cb(char *buf, int buf_sz, void *ctx)
-		{
-			cyassl_custom_io_ctx_t *self = static_cast<cyassl_custom_io_ctx_t*>(ctx);
-			return self->cyassl_write(buf, buf_sz);
-		}
-	};
-
-	struct CyaSSL_CTX_deleter_t
-	{
-		void operator()(CYASSL_CTX *ssl_ctx) { CyaSSL_CTX_free(ssl_ctx); }
-	};
-	typedef boost::static_move_ptr<CYASSL_CTX, CyaSSL_CTX_deleter_t> ssl_ctx_handle_t;
-
-	ssl_ctx_handle_t ssl_ctx_create(CYASSL_METHOD *method)
-	{
-		ssl_ctx_handle_t h(CyaSSL_CTX_new(method));
-		CyaSSL_SetIORecv(h.get(), &cyassl_custom_io_ctx_t::cyassl_real_read_cb);
-		CyaSSL_SetIOSend(h.get(), &cyassl_custom_io_ctx_t::cyassl_real_write_cb);
-		return move(h);
-	}
-
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	template<class Traits>
@@ -84,7 +47,7 @@ namespace meow { namespace libev {
 			buffer_move_ptr  r_buf;
 			buffer_move_ptr  r_plaintext_buf;
 			buffer_chain_t   w_plaintext_chain;
-			ssl_handle_t     rw_ssl;
+			ssl_move_ptr     rw_ssl;
 		};
 
 		template<class ContextT>
@@ -132,6 +95,9 @@ namespace meow { namespace libev {
 				if (read_status::error == r_status)
 					return tr_read::consume_buffer(ctx, buffer_ref(), r_status);
 
+				if (read_status::again == r_status && read_part.empty())
+					return rd_consume_status::more;
+
 				buffer_move_ptr& b = ctx->r_buf;
 				b->advance_last(read_part.size());
 
@@ -149,6 +115,7 @@ namespace meow { namespace libev {
 						break;
 
 					int r = CyaSSL_read(ssl, data_buf.data(), data_buf.size());
+					SSL_LOG_WRITE(ctx, line_mode::single, "SSL_read({0}, {1}, {2}) = {3}", ctx, (void*)data_buf.data(), data_buf.size(), r);
 
 					if (r <= 0)
 					{
@@ -396,7 +363,11 @@ namespace meow { namespace libev {
 
 		virtual void ssl_init(CYASSL_CTX *ssl_ctx)
 		{
-			this->rw_ssl.reset(CyaSSL_new(ssl_ctx));
+			CYASSL *ssl = CyaSSL_new(ssl_ctx);
+			if (NULL == ssl)
+				throw std::logic_error("CyaSSL_new() failed: make sure you've got certificate/private-key and memory");
+
+			this->rw_ssl.reset(ssl);
 			CyaSSL_SetIOReadCtx(this->rw_ssl.get(), static_cast<cyassl_custom_io_ctx_t*>(this));
 			CyaSSL_SetIOWriteCtx(this->rw_ssl.get(), static_cast<cyassl_custom_io_ctx_t*>(this));
 		}
@@ -436,7 +407,7 @@ namespace meow { namespace libev {
 
 			if (b->empty())
 			{
-				b.reset();
+				b->clear();
 				SSL_LOG_WRITE(this, line_mode::suffix, "<-- IO_ERR_WANT_READ [empty]");
 				return IO_ERR_WANT_READ;
 			}
