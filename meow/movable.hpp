@@ -12,7 +12,7 @@
 namespace movable {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // modeled after Andrei Alexandresku mojo protocol
-// http://www.ddj.com/dept/cpp/184403855
+// http://drdobbs.com/cpp/184403855
 
 	template<class T>
 	struct constant
@@ -31,12 +31,27 @@ namespace movable {
 	};
 
 	template<class T>
+	struct fn_result : public T
+	{
+		fn_result(fn_result const& other)
+			: T(temporary<T>(const_cast<fn_result&>(other)))
+		{
+		}
+
+		explicit fn_result(T& t)
+			: T(temporary<T>(t))
+		{
+		}
+	};
+
+	template<class T>
 	struct move_enabled
 	{
 		typedef move_enabled move_base_t;
 
 		operator constant<T>() const { return constant<T>(static_cast<T const&>(*this)); }
 		operator temporary<T>() { return temporary<T>(static_cast<T&>(*this)); }
+		operator fn_result<T>() { return fn_result<T>(static_cast<T&>(*this)); }
 
 	protected: // to be derived from
 		move_enabled() {}

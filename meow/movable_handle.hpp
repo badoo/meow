@@ -41,6 +41,8 @@ namespace meow {
 
 		movable_handle(movable_handle&);
 
+		movable_handle(movable::constant<self_type> other);
+/*
 		template<class T> struct cant_move_from_const;
 
 		template<class T>
@@ -51,7 +53,7 @@ namespace meow {
 		// the const lvalue move catcher, disallow that
 		template<class U>
 		movable_handle(U&, typename cant_move_from_const<U>::type * = 0) {}
-
+*/
 	public:
 
 		movable_handle()
@@ -69,14 +71,14 @@ namespace meow {
 			: handle_(other.get().release())
 		{
 		}
-
+/*
 		// copy construction from temporary, see the lvalue const catcher above
-		movable_handle(movable_handle const& other) 
+		movable_handle(movable_handle const& other)
 			: movable_handle::move_base_t()
 			, handle_(const_cast<self_type&>(other).release())
 		{
 		}
-
+*/
 		~movable_handle()
 		{
 			if (!traits_type::is_null(handle_))
