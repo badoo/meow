@@ -64,7 +64,7 @@ namespace meow {
 			{
 				value_move_ptr value;
 
-				item_t(value_move_ptr v) : value(move(v)) {}
+				item_t(value_move_ptr& v) : value(move(v)) {}
 			};
 
 			static value_t* value_pointer(item_t const& i)
@@ -85,9 +85,9 @@ namespace meow {
 				delete item;
 			}
 
-			static item_t* item_from_value(value_move_ptr v)
+			static item_t* item_from_value(value_move_ptr& v)
 			{
-				return new item_t(move(v));
+				return new item_t(v);
 			}
 		};
 
@@ -113,7 +113,7 @@ namespace meow {
 				l.pop_front();
 			}
 
-			static item_t* item_from_value(value_move_ptr v)
+			static item_t* item_from_value(value_move_ptr& v)
 			{
 				return v.release();
 			}
@@ -210,7 +210,7 @@ namespace meow {
 
 		void push_back(value_move_ptr v)
 		{
-			item_t *item = self_traits::item_from_value(move(v));
+			item_t *item = self_traits::item_from_value(v);
 			l_.push_back(*item);
 		}
 

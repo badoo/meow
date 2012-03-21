@@ -82,7 +82,7 @@ namespace meow { namespace tree {
 					}
 				}
 
-				return new_d;
+				return move(new_d);
 			}
 
 			case node_type::file:

@@ -19,6 +19,7 @@
 #include <boost/config.hpp> // Member template friends, put size_t in std.
 #include <algorithm>        // swap.
 #include <cstddef>          // size_t
+
 #include <boost/compressed_pair.hpp>
 #include <boost/static_assert.hpp>
 #include <boost/type_traits/add_reference.hpp>
@@ -35,28 +36,17 @@
 
 namespace boost {
 
-template<typename T, typename Deleter>
-class static_move_ptr;
-
-template<typename T>
-struct is_const_static_move_ptr : mpl::false_ { };
-
-template<typename T, typename Deleter>
-struct is_const_static_move_ptr< const static_move_ptr<T, Deleter> >
-    : mpl::true_
-    { };
-
 template< typename T,
           typename Deleter =
               move_ptrs::default_deleter<T> >
 class static_move_ptr {
 public:
-    typedef typename remove_bounds<T>::type             element_type;
-	typedef element_type 								value_type;
-    typedef Deleter                                     deleter_type;
+    typedef typename remove_bounds<T>::type  element_type;
+	typedef element_type                     value_type;
+    typedef Deleter                          deleter_type;
 private:
     BOOST_STATIC_CONSTANT(bool, is_array = boost::is_array<T>::value);
-//  this messes up apple gcc 4.0.1, maybe some others as well
+// gcc-4.2 can't handle this
 //    BOOST_STATIC_ASSERT(!is_array || (is_same<T, element_type[]>::value));
     struct safe_bool_helper { int x; };
     typedef int safe_bool_helper::* safe_bool;
@@ -76,9 +66,10 @@ public:
         }
 
     template<typename TT, typename DD>
-    static_move_ptr( const static_move_ptr<TT, DD>& p,
-                     typename
-                     move_ptrs::enable_if_convertible<TT, T>::type* = 0 )
+    static_move_ptr(
+			  static_move_ptr<TT, DD> const& p
+			, typename move_ptrs::enable_if_convertible<TT, T>::type* = 0
+		)
         : impl_( p.get(),
                  const_cast<typename add_reference<DD>::type>(p.get_deleter()) )
         {
@@ -94,6 +85,11 @@ public:
             BOOST_STATIC_ASSERT(convertible::value);
             src.ptr().release();
         }
+
+	explicit static_move_ptr(T *t)
+		: impl_(t, Deleter())
+	{
+	}
 
     template<typename TT>
     explicit static_move_ptr(TT* tt)
@@ -177,49 +173,38 @@ public:
     deleter_reference get_deleter() { return impl_.second(); }
 
     deleter_const_reference get_deleter() const { return impl_.second(); }
-
 private:
+
     template<typename TT, typename DD>
     void check(const static_move_ptr<TT, DD>& ptr)
-	{
-		typedef move_ptrs::is_smart_ptr_convertible<TT, T> convertible;
-		BOOST_STATIC_ASSERT(convertible::value);
-	}
+        {
+            typedef move_ptrs::is_smart_ptr_convertible<TT, T> convertible;
+            BOOST_STATIC_ASSERT(convertible::value);
+        }
 
-#if 0
+// this is a clever trick to detect and prohibit a move from const source
+//  it relies on bringing an ill-formed copy-ctor declaration that is enabled only when a const source is given
+//   thus resulting in error message
+// it doesn't work past gcc 4.5 and clang 2.9
+// but c++11 std::unique_ptr<> is a better replacement when using those anyway
+#if !( (defined(__GNUC__) && (__GNUC__ == 4 && __GNUC_MINOR__ >= 6) || (__GNUC__ > 4)) \
+	||(defined(__clang__) && ((__clang_major__ >= 3) || (__clang_major__ == 2 && __clang_minor__ >= 9))) \
+	)
     template<typename Ptr> struct cant_move_from_const;
 
     template<typename TT, typename DD>
     struct cant_move_from_const< const static_move_ptr<TT, DD> > {
         typedef typename static_move_ptr<TT, DD>::error type;
     };
+
+    template<typename Ptr>
+    static_move_ptr(Ptr&, typename cant_move_from_const<Ptr>::type = 0);
 #endif
+	static_move_ptr(static_move_ptr&);
 
-    template<typename Ptr, typename Enabler = void>
-    struct cant_move_from_const;
+	template<class TT, class DD>
+	static_move_ptr(static_move_ptr<TT, DD>&);
 
-    template<typename TT>
-    struct cant_move_from_const<
-              TT,
-              typename enable_if<
-                is_const_static_move_ptr<TT>
-              >::type
-           >
-	{
-		typedef typename TT::error type;
-	};
-
-	template<typename Ptr>
-	static_move_ptr(Ptr&, typename cant_move_from_const<Ptr>::type = 0);
-
-    static_move_ptr(static_move_ptr&);
-
-    template<typename TT, typename DD>
-    static_move_ptr( static_move_ptr<TT, DD>&,
-                     typename
-                     move_ptrs::enable_if_convertible<
-                         TT, T, static_move_ptr&
-                     >::type::type* = 0 );
 #ifndef BOOST_NO_MEMBER_TEMPLATE_FRIENDS
     template<typename TT, typename DD>
     friend class static_move_ptr;
@@ -236,13 +221,16 @@ private:
 };
 
 template<class T, class D>
-T* get_pointer(static_move_ptr<T, D> const& p) { return p.get(); }
+inline T* get_pointer(static_move_ptr<T, D> const& p)
+{
+	return p.get();
+}
 
 template<typename T>
-static_move_ptr<T> move_raw(T *x)
+inline static_move_ptr<T> move_raw(T *x)
 {
-	static_move_ptr<T> p(x);
-	return move(p);
+       static_move_ptr<T> p(x);
+       return move(p);
 }
 
 } // End namespace boost.
@@ -251,5 +239,5 @@ static_move_ptr<T> move_raw(T *x)
 #pragma warning(pop) // #pragma warning(disable:4251)
 #endif
 
-#endif // #ifndef MEOW_MOVE_PTR__STATIC_MOVE_PTR_HPP_
+#endif      // #ifndef MEOW_MOVE_PTR__STATIC_MOVE_PTR_HPP_
 
