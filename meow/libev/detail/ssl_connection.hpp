@@ -167,6 +167,11 @@ namespace meow { namespace libev {
 				while (!b->empty())
 				{
 					str_ref const buf_data = b->used_part();
+
+					SSL_LOG_WRITE(ctx, line_mode::single, "write_to_ssl: {{ {0}, {1} }"
+							, buf_data.size(), meow::format::as_hex_string(buf_data)
+							);
+
 					int r = CyaSSL_write(ssl, buf_data.data(), buf_data.size());
 
 					if (r <= 0)
@@ -427,6 +432,10 @@ namespace meow { namespace libev {
 			if (buf_sz <= 0)
 				return 0;
 
+			buffer_move_ptr b = buffer_create_with_data(buf, buf_sz);
+			this->wchain_.push_back(move(b));
+
+#if 0
 			static size_t const wr_buffer_size = 8 * 1024;
 
 			buffer_chain_t& wchain = this->wchain_;
@@ -443,7 +452,7 @@ namespace meow { namespace libev {
 
 				remaining_sz -= sz;
 			}
-
+#endif
 			return buf_sz;
 		}
 
