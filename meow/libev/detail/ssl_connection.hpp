@@ -101,7 +101,7 @@ namespace meow { namespace libev {
 				buffer_move_ptr& b = ctx->r_buf;
 				b->advance_last(read_part.size());
 
-				SSL_LOG_WRITE(ctx, line_mode::single, "{0}; {1} - {{ {2}, {3} }'"
+				SSL_LOG_WRITE(ctx, line_mode::single, "{0}; {1} - {{ {2}, {3} }"
 						, __func__, read_status::enum_as_str_ref(r_status)
 						, read_part.size(), meow::format::as_hex_string(read_part));
 

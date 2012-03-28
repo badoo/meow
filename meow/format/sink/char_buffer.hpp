@@ -47,6 +47,8 @@ namespace meow { namespace format { namespace sink {
 		size_t size() const { return offset_; }
 		size_t capacity() const { return buf_sz_; }
 
+		void reset() { offset_ = 0; }
+
 		buffer_ref used_part() const { return buffer_ref(buf_, size()); }
 		buffer_ref free_part() const { return buffer_ref(buf_ + size(), buf_ + capacity()); }
 
