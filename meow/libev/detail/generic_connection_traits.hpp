@@ -129,6 +129,8 @@ namespace meow { namespace libev {
 			{
 				buffer_chain_t& wchain = ctx->wchain_;
 
+				IO_LOG_WRITE(ctx, line_mode::single, "{0}; ctx: {1}, wsz: {2}", __func__, ctx, wchain.size());
+
 				static size_t const writev_max_bufs = 8;
 				struct iovec iov[writev_max_bufs];
 
