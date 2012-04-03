@@ -59,8 +59,14 @@ namespace meow { namespace format {
 
 			*--p = '.';
 			p = detail::integer_to_string(begin, p - begin, tm.tm_sec);
+			if (tm.tm_sec < 10)
+				*--p = '0';
 			p = detail::integer_to_string(begin, p - begin, tm.tm_min);
+			if (tm.tm_min < 10)
+				*--p = '0';
 			p = detail::integer_to_string(begin, p - begin, tm.tm_hour);
+			if (tm.tm_hour < 10)
+				*--p = '0';
 			*--p = ' ';
 			p = detail::integer_to_string(begin, p - begin, tm.tm_mday);
 			if (tm.tm_mday < 10)
