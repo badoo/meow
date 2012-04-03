@@ -71,18 +71,6 @@ namespace meow { namespace format {
 			p = detail::integer_to_string(begin, p - begin, tm.tm_year + 1900);
 
 			return str_ref(p, buf.end());
-#if 0
-			size_t n = snprintf(
-							  buf.begin(), buf.size()
-							, "%04u%02u%02u %02u%02u%02u.%06u"
-							, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday
-							, tm.tm_hour, tm.tm_min, tm.tm_sec
-							, (unsigned)twrap.tv.tv_usec
-							);
-			BOOST_ASSERT((n == (buffer_size - 1)));
-
-			return str_ref(buf.get(), n);
-#endif
 		}
 	};
 
