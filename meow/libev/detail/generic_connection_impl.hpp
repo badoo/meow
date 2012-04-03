@@ -33,23 +33,7 @@ namespace meow { namespace libev {
 		typedef generic_connection_impl_t 		base_t; // macro at the bottom uses it
 		typedef EventsT							events_t;
 
-		struct traits_t
-		{
-			typedef typename Traits::read 						read;
-
-			MEOW_DEFINE_NESTED_NAME_ALIAS_OR_MY_TYPE(Traits, base, generic_connection_traits_base<self_t>);
-			MEOW_DEFINE_NESTED_NAME_ALIAS_OR_MY_TYPE(Traits, write, generic_connection_traits_write<self_t>);
-			// typedef generic_connection_traits_write<self_t> 	write;
-
-			//MEOW_DEFINE_NESTED_NAME_ALIAS_OR_MY_TYPE(Traits, custom_op, generic_connection_traits_custom_op);
-			typedef generic_connection_traits_custom_op 		custom_op;
-
-			MEOW_DEFINE_NESTED_NAME_ALIAS_OR_VOID(Traits, allowed_ops);
-			MEOW_DEFINE_NESTED_NAME_ALIAS_OR_VOID(Traits, read_precheck);
-			MEOW_DEFINE_NESTED_NAME_ALIAS_OR_VOID(Traits, log_writer);
-			MEOW_DEFINE_NESTED_NAME_ALIAS_OR_VOID(Traits, activity_tracker);
-		};
-
+		typedef generic_connection_traits<self_t, Traits> traits_t;
 		typedef libev::io_machine_t<self_t, traits_t> iomachine_t;
 
 	public:

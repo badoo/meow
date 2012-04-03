@@ -716,6 +716,26 @@ namespace meow { namespace libev {
 
 				while (BITMASK_TEST(io_current_ops, EV_WRITE))
 				{
+//#if 0
+					wr_complete_status_t w_status = tr_write::writev_bufs(ctx);
+
+					switch (w_status)
+					{
+						case wr_complete_status::finished: // wrote everything i had
+							BITMASK_CLEAR(io_current_ops, EV_WRITE);
+							BITMASK_CLEAR(io_wait_ops, EV_WRITE);
+							break;
+						case wr_complete_status::more: // can write more, but need to wait
+							BITMASK_CLEAR(io_current_ops, EV_WRITE);
+							BITMASK_SET(io_wait_ops, EV_WRITE);
+							break;
+						case wr_complete_status::closed: // fd has been closed
+							return;
+					}
+
+					io_activity_ops |= EV_WRITE;
+//#endif
+#if 0
 					buffer_ref buf;
 					bool const is_ok = tr_write::get_buffer(ctx, &buf);
 					if (!is_ok)
@@ -765,6 +785,7 @@ namespace meow { namespace libev {
 					}
 
 					io_activity_ops |= EV_WRITE;
+#endif
 				}
 
 				if (tr_custom_op::requires_custom_op(ctx))

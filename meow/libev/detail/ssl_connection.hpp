@@ -6,12 +6,15 @@
 #ifndef MEOW_LIBEV_DETAIL__SSL_CONNECTION_HPP_
 #define MEOW_LIBEV_DETAIL__SSL_CONNECTION_HPP_
 
+#include <sys/uio.h> // writev()
+
 #include <stdexcept> // std::logic_error
 
 #include <cyassl/ssl.h>
 #include <cyassl/internal.h>
 
 #include <meow/format/format.hpp>
+#include <meow/format/format_tmp.hpp> // used for log_writer
 #include <meow/format/format_to_string.hpp> // used for ssl_log_writer
 #include <meow/format/inserter/hex_string.hpp>
 
@@ -38,6 +41,14 @@ namespace meow { namespace libev {
 			do { if (ssl_log_writer::is_allowed(ctx))				\
 				ssl_log_writer::write(ctx, lmode, meow::format::fmt_str(fmt, ##__VA_ARGS__));	\
 			} while(0)												\
+		/**/
+
+		typedef typename Traits::log_writer log_writer;
+
+		#define IO_LOG_WRITE(ctx, lmode, fmt, ...) 				\
+			do { if (log_writer::is_allowed(ctx))				\
+				log_writer::write(ctx, lmode, meow::format::fmt_tmp<1024>(fmt, ##__VA_ARGS__));	\
+			} while(0)											\
 		/**/
 
 		typedef typename Traits::read tr_read;
@@ -295,6 +306,169 @@ namespace meow { namespace libev {
 						? wr_complete_status::finished
 						: wr_complete_status::more
 						;
+			}
+
+			template<class ContextT>
+			static int move_from_plaintext_to_wchain(ContextT *ctx)
+			{
+				buffer_chain_t& wchain = ctx->wchain_;
+				buffer_chain_t& plaintext_wchain = ctx->w_plaintext_chain;
+
+				if (!ctx_ssl_is_initialized(ctx))
+				{
+					wchain.append_chain(plaintext_wchain);
+				}
+
+				// write as much as possible to ssl
+				while (!plaintext_wchain.empty())
+				{
+					buffer_t *b = plaintext_wchain.front();
+					int ssl_errno = write_buffer_to_ssl(ctx, b);
+
+					if (0 != ssl_errno)
+					{
+						char err_buf[1024] = {};
+						CyaSSL_ERR_error_string_n(ssl_errno, err_buf, sizeof(err_buf));
+						SSL_LOG_WRITE(ctx, line_mode::single, "SSL_write(): {0} - {1}", ssl_errno, err_buf);
+
+						ctx->cb_write_closed(io_close_report(io_close_reason::ssl_error, ssl_errno));
+						return ssl_errno;
+					}
+
+					if (b->empty())
+						plaintext_wchain.pop_front();
+					else
+						break;
+				}
+
+				return SSL_ERROR_NONE;
+			}
+
+			template<class ContextT>
+			static wr_complete_status_t writev_bufs(ContextT *ctx)
+			{
+				int ssl_errno = move_from_plaintext_to_wchain(ctx);
+				if (SSL_ERROR_NONE != ssl_errno)
+				{
+					ctx->cb_write_closed(io_close_report(io_close_reason::ssl_error, ssl_errno));
+					return wr_complete_status::closed;
+				}
+
+				return writev_from_wchain(ctx);
+			}
+
+			template<class ContextT>
+			static wr_complete_status_t writev_from_wchain(ContextT *ctx)
+			{
+				buffer_chain_t& wchain = ctx->wchain_;
+
+				static size_t const writev_max_bufs = 8;
+				struct iovec iov[writev_max_bufs];
+
+				struct iovec *bufs = iov;
+				size_t n_bufs = 0;
+
+				typedef buffer_chain_t::iterator b_iter_t;
+				b_iter_t b_i = wchain.begin();
+				b_iter_t end_i = wchain.end();
+
+				io_context_t *io_ctx = &ctx->io_ctx_;
+
+				while (n_bufs > 0 || !wchain.empty())
+				{
+					// move the data to the beginning
+					if (bufs != iov)
+					{
+						std::memmove(iov, bufs, n_bufs * sizeof(iov[0]));
+						bufs = iov;
+					}
+
+					// fill up iovec as much as we can from the last known position
+					if (n_bufs < writev_max_bufs)
+					{
+						while (b_i != end_i)
+						{
+							buffer_t *b = *b_i;
+
+							bufs[n_bufs].iov_base = b->first;
+							bufs[n_bufs].iov_len = b->used_size();
+
+							++b_i;
+							++n_bufs;
+
+							if (n_bufs >= writev_max_bufs)
+								break;
+						}
+					}
+
+					IO_LOG_WRITE(ctx, line_mode::prefix, "::writev({0}, {1} : ", io_ctx->fd(), n_bufs);
+
+					size_t total_len = 0;
+					for (size_t i = 0; i < n_bufs; ++i)
+					{
+						struct iovec *v = bufs + i;
+						total_len += v->iov_len;
+
+						IO_LOG_WRITE(ctx, line_mode::middle, "{2}{{ {0}, {1} }"
+								, v->iov_base, v->iov_len
+								, ((i > 0) ? ", " : "")
+								);
+					}
+
+					IO_LOG_WRITE(ctx, line_mode::middle, ", {0}) = ", total_len);
+					ssize_t n = ::writev(io_ctx->fd(), bufs, n_bufs);
+					if (n >= 0)
+						IO_LOG_WRITE(ctx, line_mode::suffix, "{0}", n);
+					else
+						IO_LOG_WRITE(ctx, line_mode::suffix, "{0}; {1} - {2}", n, errno, strerror(errno));
+
+					switch (n)
+					{
+					case -1:
+						if (EAGAIN == errno || EWOULDBLOCK == errno)
+						{
+							return wr_complete_status::more;
+						}
+						else
+						{
+							ctx->cb_write_closed(io_close_report(io_close_reason::io_error, errno));
+							return wr_complete_status::closed;
+						}
+
+					case 0:
+						ctx->cb_write_closed(io_close_report(io_close_reason::peer_close));
+						return wr_complete_status::closed;
+
+					default:
+						size_t len = n;
+						while (len > 0 && len >= bufs->iov_len)
+						{
+							len -= bufs->iov_len;
+							bufs++;
+
+							// we assume that writev() never returns more than all the buffers
+							//  could hold, so n_bufs can't underflow here
+							BOOST_ASSERT(n_bufs > 0);
+							n_bufs--;
+
+							// buf fully written
+							wchain.pop_front();
+						}
+
+						if (len > 0)
+						{
+							bufs->iov_base = (char*)bufs->iov_base + len;
+							bufs->iov_len -= len;
+
+							// partial write, adjust anyway, might not have the chance later
+							buffer_t *b = wchain.front();
+							b->advance_first(len);
+						}
+						break;
+					} // switch
+				} // while
+
+				return wr_complete_status::finished;
 			}
 		};
 	};
