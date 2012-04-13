@@ -36,12 +36,12 @@ namespace meow { namespace format {
 	inline
 	str_ref as_hex_string(str_ref const& s, meow::tmp_buffer<N*2> const& b = meow::tmp_buffer<N*2>())
 	{
-		BOOST_ASSERT(s.size() == N);
+		BOOST_ASSERT(s.size() <= N);
 
 		char const *ee = meow::copy_bin2hex(s.begin(), s.end(), b.begin());
-		BOOST_ASSERT(ee == b.end());
+		BOOST_ASSERT(ee <= b.end());
 
-		return str_ref(b.begin(), b.end());
+		return str_ref(b.begin(), ee);
 	}
 
 	template<class CharT>
