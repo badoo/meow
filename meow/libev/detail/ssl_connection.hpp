@@ -126,35 +126,42 @@ namespace meow { namespace libev {
 						break;
 
 					int r = CyaSSL_read(ssl, data_buf.data(), data_buf.size());
-					SSL_LOG_WRITE(ctx, line_mode::single, "SSL_read({0}, {1}, {2}) = {3}", ctx, (void*)data_buf.data(), data_buf.size(), r);
+					SSL_LOG_WRITE(ctx, line_mode::prefix, "SSL_read({0}, {1}, {2}) = {3}", ctx, (void*)data_buf.data(), data_buf.size(), r);
 
 					if (r <= 0)
 					{
 						int err_code = CyaSSL_get_error(ssl, r);
+						SSL_LOG_WRITE(ctx, line_mode::suffix, ", ssl_code: {0}", err_code);
 
-						if (   SSL_ERROR_ZERO_RETURN == err_code
-							|| SSL_ERROR_WANT_WRITE == err_code
-							|| SSL_ERROR_WANT_READ == err_code
-							)
+						// connection ssl was shut down by processing a message
+						if (SSL_ERROR_ZERO_RETURN == err_code)
+							return tr_read::consume_buffer(ctx, buffer_ref(), read_status::closed);
+
+						// not a real error, just nonblocking thingy
+						if (SSL_ERROR_WANT_WRITE == err_code || SSL_ERROR_WANT_READ == err_code)
 						{
-							if (read_status::closed != r_status)
+							// patch us the status in case we've read a ton from
+							//  the client, but ssl engine gave us nothing
+							if (read_status::full == r_status)
 								r_status = read_status::again;
 
+							// r_status == closed goes to this line
 							return tr_read::consume_buffer(ctx, buffer_ref(), r_status);
 						}
-						else
-						{
-							int ssl_errno = ssl->error;
-							char err_buf[1024] = {};
-							CyaSSL_ERR_error_string_n(ssl_errno, err_buf, sizeof(err_buf));
-							SSL_LOG_WRITE(ctx, line_mode::single, "SSL_read(): {0} - {1}", ssl_errno, err_buf);
-							//TODO: ctx->ssl_cb_on_error(ssl_errno);
 
-							return tr_read::consume_buffer(ctx, buffer_ref(), read_status::error);
-						}
+						// real error
+						int ssl_errno = ssl->error;
+						char err_buf[1024] = {};
+						CyaSSL_ERR_error_string_n(ssl_errno, err_buf, sizeof(err_buf));
+						SSL_LOG_WRITE(ctx, line_mode::single, "SSL_read(): {0} - {1}", ssl_errno, err_buf);
+						//TODO: ctx->ssl_cb_on_error(ssl_errno);
+
+						return tr_read::consume_buffer(ctx, buffer_ref(), read_status::error);
 					}
 					else
 					{
+						SSL_LOG_WRITE(ctx, line_mode::suffix, "");
+
 						size_t const read_sz = r;
 						read_status_t const rst = (read_sz == data_buf.size()) ? read_status::full : read_status::again;
 
