@@ -368,8 +368,66 @@ namespace meow { namespace libev {
 			static wr_complete_status_t writev_from_wchain(ContextT *ctx)
 			{
 				buffer_chain_t& wchain = ctx->wchain_;
+				io_context_t *io_ctx = &ctx->io_ctx_;
 
 				IO_LOG_WRITE(ctx, line_mode::single, "{0}; ctx: {1}, wsz: {2}", __func__, ctx, wchain.size());
+
+				if (wchain.empty())
+					return wr_complete_status::finished;
+
+				// check for just 1 buffer in the chain
+				//  if that - use plain write() syscall
+				if (wchain.end() == ++wchain.begin())
+				{
+					buffer_t *b = wchain.front();
+
+					size_t offset = 0;
+					size_t const total_size = b->used_size();
+
+					while (offset < total_size)
+					{
+						size_t const wr_size = total_size - offset;
+
+						IO_LOG_WRITE(ctx, line_mode::prefix
+								, "::write({0}, {1} + {2}, {3} = {4} - {5}) = "
+								, io_ctx->fd(), (void*)b->first, offset
+								, wr_size, total_size, offset
+								);
+
+						ssize_t const n = ::write(io_ctx->fd(), b->first + offset, wr_size);
+
+						if (-1 == n)
+						{
+							IO_LOG_WRITE(ctx, line_mode::suffix, "{0}, errno: {1} : {2}", n, errno, strerror(errno));
+
+							if (EAGAIN == errno || EWOULDBLOCK == errno)
+								break;
+
+							ctx->cb_write_closed(io_close_report(io_close_reason::io_error, errno));
+							return wr_complete_status::closed;
+						}
+						else
+						{
+							IO_LOG_WRITE(ctx, line_mode::suffix, "{0}", n);
+
+							if (0 == n)
+							{
+								ctx->cb_write_closed(io_close_report(io_close_reason::peer_close));
+								return wr_complete_status::closed;
+							}
+
+							offset += n;
+						}
+					}
+
+					b->advance_first(offset);
+
+					if (!b->empty())
+						return wr_complete_status::more;
+
+					wchain.pop_front();
+					return wr_complete_status::finished;						
+				}
 
 				static size_t const writev_max_bufs = 8;
 				struct iovec iov[writev_max_bufs];
@@ -380,8 +438,6 @@ namespace meow { namespace libev {
 				typedef buffer_chain_t::iterator b_iter_t;
 				b_iter_t b_i = wchain.begin();
 				b_iter_t end_i = wchain.end();
-
-				io_context_t *io_ctx = &ctx->io_ctx_;
 
 				while (n_bufs > 0 || !wchain.empty())
 				{
