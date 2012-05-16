@@ -6,12 +6,9 @@
 #ifndef MEOW_FORMAT_INSERTER__POINTER_HPP_
 #define MEOW_FORMAT_INSERTER__POINTER_HPP_
 
-#include <meow/str_ref.hpp>
 #include <meow/tmp_buffer.hpp>
 
-#include <meow/format/detail/integer_to_string.hpp>
-#include <meow/format/detail/integer_traits.hpp>
-#include <meow/format/detail/radix_info.hpp>
+#include <meow/convert/hex_to_from_bin.hpp>
 #include <meow/format/metafunctions.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -22,17 +19,20 @@ namespace meow { namespace format {
 	template<class T>
 	struct type_tunnel<T*>
 	{
-		enum { radix = 16 };
-		enum { buffer_size = detail::number_buffer_max_length<sizeof(T*)*8, radix>::value };
-		typedef meow::tmp_buffer<buffer_size + 2> buffer_t;
+		enum { buffer_size = sizeof(T*) * 2 + 2 /* the leading "0x" */ };
+		typedef meow::tmp_buffer<buffer_size> buffer_t;
 
 		static str_ref call(T const *v, buffer_t const& buf = buffer_t())
 		{
-			typedef detail::radix_info_t<radix> rinfo_t;
-			char *b = detail::integer_to_string_ex<rinfo_t>(buf.get(), buf.size(), uintptr_t(v));
-			*--b = 'x';
-			*--b = '0';
-			return str_ref(b, buf.end());
+			char const *b = (char*)&v;
+			char *ee = buf.get();
+			*ee++ = '0';
+			*ee++ = 'x';
+			ee = copy_bin2hex(b, b + sizeof(T*), ee);
+
+			BOOST_ASSERT(ee <= buf.end());
+
+			return str_ref(buf.get(), ee);
 		}
 	};
 
