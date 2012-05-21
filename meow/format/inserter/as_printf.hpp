@@ -37,6 +37,7 @@ namespace meow { namespace format {
 		BOOST_ASSERT((n + 1) == real_buffer_size);
 		va_end(ap);
 
+		result.resize(n); // cut out the trailing null-char, don't want it there
 		return result;
 	}
 

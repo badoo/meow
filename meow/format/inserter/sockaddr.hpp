@@ -87,13 +87,12 @@ namespace meow { namespace format {
 	inline str_ref os_sockaddr_print_to(buffer_ref buf, struct sockaddr const *sa, bool print_port = true)
 	{
 		switch (sa->sa_family) {
+		default:
+			// default = AF_INET
 		case AF_INET:
 			return os_sockaddr_print_to(buf, reinterpret_cast<struct sockaddr_in const*>(sa), print_port);
 		case AF_INET6:
 			return os_sockaddr_print_to(buf, reinterpret_cast<struct sockaddr_in6 const*>(sa), print_port);
-		default:
-			BOOST_ASSERT(!"unknown address family");
-			return str_ref();
 		}
 	}
 

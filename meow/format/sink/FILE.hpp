@@ -22,7 +22,7 @@ namespace meow { namespace format { namespace sink {
 	struct sink_write<FILE*>
 	{
 		template<class CharT>
-		static void call(FILE *& to_file, size_t total_len, string_ref<CharT const> const *slices, size_t n_slices)
+		static void call(FILE *to_file, size_t total_len, string_ref<CharT const> const *slices, size_t n_slices)
 		{
 			for (size_t i = 0; i < n_slices; ++i)
 			{
