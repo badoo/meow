@@ -10,6 +10,7 @@
 #include "format_parser.hpp"
 #include "format_functions.hpp"
 
+#include "inserter/as_printf.hpp"
 #include "inserter/nullchar.hpp"
 #include "inserter/integral.hpp"
 #include "inserter/char_pointer.hpp"

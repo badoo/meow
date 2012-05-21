@@ -50,7 +50,10 @@ int main()
 
 	double const f_number = -12312.9283283;
 	fmt(sink, "floating point test, float: {0}, double: {1}, ldouble: {2}\n", float(f_number), double(f_number), (long double)f_number);
-	fmt(sink, "floating point fmt test: {0}, {1}\n", ff::float_fmt("%1.2f", f_number), ff::float_fmt("%e", f_number));
+	fmt(sink, "floating point fmt test: {0}, {1}\n", ff::as_printf("%1.2f", f_number), ff::as_printf("%e", f_number));
+
+	fmt(sink, "as_printf() test: {0}\n", ff::as_printf("i'm printf %d, %f %.20E", 10, f_number, f_number));
+	fmt(sink, "as_printf_tmp() test: {0}\n", ff::as_printf_tmp<64>("HAI %d, %f", number, f_number));
 
 	// formatting exceptions test
 	fmt(sink, "braces test1: {{"); fmt(sink, "\n"); // ok, should give 1 { in the end
