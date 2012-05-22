@@ -13,6 +13,7 @@
 
 #include <meow/api_call_error.hpp>
 #include <meow/unix/libc_wrapper.hpp>
+#include <meow/format/format_to_string.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -30,12 +31,12 @@ namespace os_unix {
 													((int, "type: %d"))
 													((int, "proto: %d"))
 													);
-
+/*
 	MEOW_DEFINE_LIBC_THROWING_WRAPPER(int, bind, 	((int, "sock: %d"))
 													((os_sockaddr_t const*, "%p"))
 													((socklen_t, "%d"))
 													);
-
+*/
 	MEOW_DEFINE_LIBC_THROWING_WRAPPER(int, listen, 	((int, "sock: %d"))
 													((int, "backlog: %d"))
 													);
@@ -51,6 +52,13 @@ namespace os_unix {
 													);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
+
+	inline int bind_ex(int fd, os_sockaddr_t const *a, os_socklen_t const a_len)
+	{
+		if (-1 == ::bind(fd, a, a_len))
+			throw meow::api_call_error(meow::format::fmt_str("bind({0}, {1}, {2})", fd, a, a_len).c_str());
+		return fd;
+	}
 
 	template<class T>
 	T getsockopt_ex(int fd, int level, int opt)
