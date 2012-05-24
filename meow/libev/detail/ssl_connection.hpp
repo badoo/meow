@@ -123,7 +123,7 @@ namespace meow { namespace libev {
 					buffer_ref data_buf = tr_read::get_buffer(ctx);
 
 					if (!data_buf)
-						break;
+						return rd_consume_status::loop_break;
 
 					int r = CyaSSL_read(ssl, data_buf.data(), data_buf.size());
 					SSL_LOG_WRITE(ctx, line_mode::prefix, "SSL_read({0}, {1}, {2}) = {3}", ctx, (void*)data_buf.data(), data_buf.size(), r);
