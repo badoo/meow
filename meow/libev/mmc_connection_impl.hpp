@@ -357,6 +357,23 @@ namespace meow { namespace libev {
 		}
 	};
 
+	struct mmc_reader__dynamic_t : public mmc_reader_t<mmc_reader__dynamic_t>
+	{
+		size_t max_message_length;
+
+		mmc_reader__dynamic_t(mmc_reader_events_t *ev = NULL, size_t const l = 1024)
+			: mmc_reader_t<mmc_reader__dynamic_t>(ev)
+			, max_message_length(l)
+		{
+		}
+
+		template<class ConnectionT>
+		size_t mmc_reader_max_message_length(ConnectionT *c)
+		{
+			return max_message_length;
+		}
+	};
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 }} // namespace meow { namespace libev {
 ////////////////////////////////////////////////////////////////////////////////////////////////
