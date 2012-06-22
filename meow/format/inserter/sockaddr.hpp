@@ -124,25 +124,31 @@ namespace meow { namespace format {
 
 #undef MEOW_DEFINE_SOCKADDR_TYPE_TUNNEL
 
-#define MEOW_DEFINE_SOCKADDR_AS_IP(arg_type, arg_call, buf_size) 	\
-	inline str_ref sockaddr_as_ip(									\
-			  arg_type sa											\
+#define MEOW_DEFINE_SOCKADDR_FUNCTIONS(arg_type, arg_call, buf_size) 	\
+	inline str_ref sockaddr_tmp(										\
+			  arg_type sa												\
 			, meow::tmp_buffer<buf_size> const& buf = meow::tmp_buffer<buf_size>()) \
-	{																\
+	{																	\
+		return os_sockaddr_print_to(buffer_ref(buf.begin(), buf.end()), arg_call sa, true); \
+	} 																	\
+	inline str_ref sockaddr_as_ip(										\
+			  arg_type sa												\
+			, meow::tmp_buffer<buf_size> const& buf = meow::tmp_buffer<buf_size>()) \
+	{																	\
 		return os_sockaddr_print_to(buffer_ref(buf.begin(), buf.end()), arg_call sa, false); \
-	} 																\
+	} 																	\
 /**/
 
-	MEOW_DEFINE_SOCKADDR_AS_IP(struct sockaddr const*,  , INET6_ADDRSTRLEN + 1);
-	MEOW_DEFINE_SOCKADDR_AS_IP(struct sockaddr const&, &, INET6_ADDRSTRLEN + 1);
+	MEOW_DEFINE_SOCKADDR_FUNCTIONS(struct sockaddr const*,  , INET6_ADDRSTRLEN + 1);
+	MEOW_DEFINE_SOCKADDR_FUNCTIONS(struct sockaddr const&, &, INET6_ADDRSTRLEN + 1);
 
-	MEOW_DEFINE_SOCKADDR_AS_IP(struct sockaddr_in const*,  , INET_ADDRSTRLEN + 1);
-	MEOW_DEFINE_SOCKADDR_AS_IP(struct sockaddr_in const&, &, INET_ADDRSTRLEN + 1);
+	MEOW_DEFINE_SOCKADDR_FUNCTIONS(struct sockaddr_in const*,  , INET_ADDRSTRLEN + 1);
+	MEOW_DEFINE_SOCKADDR_FUNCTIONS(struct sockaddr_in const&, &, INET_ADDRSTRLEN + 1);
 
-	MEOW_DEFINE_SOCKADDR_AS_IP(struct sockaddr_in6 const*,  , INET6_ADDRSTRLEN + 1);
-	MEOW_DEFINE_SOCKADDR_AS_IP(struct sockaddr_in6 const&, &, INET6_ADDRSTRLEN + 1);
+	MEOW_DEFINE_SOCKADDR_FUNCTIONS(struct sockaddr_in6 const*,  , INET6_ADDRSTRLEN + 1);
+	MEOW_DEFINE_SOCKADDR_FUNCTIONS(struct sockaddr_in6 const&, &, INET6_ADDRSTRLEN + 1);
 
-#undef MEOW_DEFINE_SOCKADDR_AS_IP
+#undef MEOW_DEFINE_SOCKADDR_FUNCTIONS
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 }} // namespace meow { namespace format {
