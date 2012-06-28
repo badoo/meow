@@ -178,7 +178,7 @@ namespace meow { namespace libev {
 		struct write
 		{
 			template<class ContextT>
-			static write_status_t write_buffer_to_ssl(ContextT *ctx, buffer_t *b)
+			static int write_buffer_to_ssl(ContextT *ctx, buffer_t *b)
 			{
 				CYASSL *ssl = ssl_from_context(ctx);
 
@@ -198,15 +198,23 @@ namespace meow { namespace libev {
 
 						switch (err_code)
 						{
-							case SSL_ERROR_WANT_WRITE:
+							// it's fine, the writer might want to read
+							//  in case we're in the middle of a handshake
 							case SSL_ERROR_WANT_READ:
-								return write_status::again;
+								return 0;
 
+							// can recieve ssl shutdown message
+							//  while in the middle of a handshake
 							case SSL_ERROR_ZERO_RETURN:
-								return write_status::closed;
+								return 0;
+
+							// should never happen, our write callback always
+							//  accepts everything passed to it
+							case SSL_ERROR_WANT_WRITE:
+								return 0;
 
 							default:
-								return write_status::error;
+								return ssl->error;
 						}
 					}
 					else
@@ -215,11 +223,11 @@ namespace meow { namespace libev {
 					}
 				}
 
-				return write_status::empty;
+				return 0;
 			}
 
 			template<class ContextT>
-			static wr_complete_status_t move_from_plaintext_to_wchain(ContextT *ctx)
+			static int move_from_plaintext_to_wchain(ContextT *ctx)
 			{
 				buffer_chain_t& wchain = ctx->wchain_;
 				buffer_chain_t& plaintext_wchain = ctx->w_plaintext_chain;
@@ -229,56 +237,40 @@ namespace meow { namespace libev {
 					wchain.append_chain(plaintext_wchain);
 				}
 
-				CYASSL *ssl = ssl_from_context(ctx);
-
 				// write as much as possible to ssl
 				while (!plaintext_wchain.empty())
 				{
 					buffer_t *b = plaintext_wchain.front();
-					write_status_t const w_status = write_buffer_to_ssl(ctx, b);
+					int ssl_errno = write_buffer_to_ssl(ctx, b);
 
-					switch (w_status)
+					if (0 != ssl_errno)
 					{
-						case write_status::empty:
-							plaintext_wchain.pop_front();
-							continue;
+						char err_buf[1024] = {};
+						CyaSSL_ERR_error_string_n(ssl_errno, err_buf, sizeof(err_buf));
+						SSL_LOG_WRITE(ctx, line_mode::single, "SSL_write(): {0} - {1}", ssl_errno, err_buf);
 
-						case write_status::error:
-						{
-							int ssl_errno = ssl->error;
-							char err_buf[1024] = {};
-							CyaSSL_ERR_error_string_n(ssl_errno, err_buf, sizeof(err_buf));
-							SSL_LOG_WRITE(ctx, line_mode::single, "SSL_write(): {0} - {1}", ssl_errno, err_buf);
-
-							ctx->cb_write_closed(io_close_report(io_close_reason::io_error));
-							return wr_complete_status::closed;
-						}
-
-						case write_status::again:
-							return wr_complete_status::more;
-
-						case write_status::closed:
-							ctx->cb_write_closed(io_close_report(io_close_reason::peer_close));
-							return wr_complete_status::closed;
+						//ctx->cb_write_closed(io_close_report(io_close_reason::ssl_error, ssl_errno));
+						return ssl_errno;
 					}
+
+					if (b->empty())
+						plaintext_wchain.pop_front();
+					else
+						break;
 				}
 
-				return wr_complete_status::finished;
+				return SSL_ERROR_NONE;
 			}
 
 			template<class ContextT>
 			static wr_complete_status_t writev_bufs(ContextT *ctx)
 			{
-				wr_complete_status_t const wr_status = move_from_plaintext_to_wchain(ctx);
-
-				switch (wr_status)
+				int ssl_errno = move_from_plaintext_to_wchain(ctx);
+				if (SSL_ERROR_NONE != ssl_errno)
 				{
-					case wr_complete_status::closed:
-						return wr_status;
-
-					case wr_complete_status::finished:
-					case wr_complete_status::more:
-						break;
+					//ctx->cb_write_closed(io_close_report(io_close_reason::ssl_error, ssl_errno));
+					ctx->cb_write_closed(io_close_report(io_close_reason::custom_close));
+					return wr_complete_status::closed;
 				}
 
 				return writev_from_wchain(ctx);
