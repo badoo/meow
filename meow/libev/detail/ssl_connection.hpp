@@ -140,13 +140,8 @@ namespace meow { namespace libev {
 						// not a real error, just nonblocking thingy
 						if (SSL_ERROR_WANT_WRITE == err_code || SSL_ERROR_WANT_READ == err_code)
 						{
-							// patch us the status in case we've read a ton from
-							//  the client, but ssl engine gave us nothing
-							if (read_status::full == r_status)
-								r_status = read_status::again;
-
-							// r_status == closed goes to this line
-							return tr_read::consume_buffer(ctx, buffer_ref(), r_status);
+							// nothing to do here, the underlying connection should not care about empty data + 'try-again-later'
+							return rd_consume_status::loop_break;
 						}
 
 						// real error
@@ -166,8 +161,14 @@ namespace meow { namespace libev {
 						read_status_t const rst = (read_sz == data_buf.size()) ? read_status::full : read_status::again;
 
 						rd_consume_status_t rdc_status = tr_read::consume_buffer(ctx, buffer_ref(data_buf.data(), read_sz), rst);
-						if (rd_consume_status::closed == rdc_status)
-							return rdc_status;
+						switch (rdc_status) {
+							case rd_consume_status::more:
+								continue;
+
+							case rd_consume_status::loop_break:
+							case rd_consume_status::closed:
+								return rdc_status;
+						}
 					}
 				}
 
