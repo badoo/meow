@@ -140,10 +140,26 @@ namespace meow {
 			this->grab_front();
 		}
 
-		value_t* push_back(value_move_ptr v)
+		value_t* push_front(value_t *v)
+		{
+			l_.push_front(*v);
+			return v;
+		}
+
+		value_t* push_front(value_move_ptr v)
+		{
+			return push_front(v.release());
+		}
+
+		value_t* push_back(value_t *v)
 		{
 			l_.push_back(*v);
-			return v.release();
+			return v;
+		}
+
+		value_t* push_back(value_move_ptr v)
+		{
+			return push_back(v.release());
 		}
 
 		void append_chain(self_t& other)
