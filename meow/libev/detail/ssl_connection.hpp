@@ -55,7 +55,7 @@ namespace meow { namespace libev {
 
 		struct rw_context_t : public tr_read::context_t
 		{
-			buffer_move_ptr  r_buf;
+			buffer_move_ptr  ssl_rbuf;
 			buffer_move_ptr  r_plaintext_buf;
 			buffer_chain_t   w_plaintext_chain;
 			ssl_move_ptr     rw_ssl;
@@ -87,7 +87,7 @@ namespace meow { namespace libev {
 				}
 				else
 				{
-					buffer_move_ptr& b = ctx->r_buf;
+					buffer_move_ptr& b = ctx->ssl_rbuf;
 					if (!b)
 						b = create_buffer(network_buffer_size);
 
@@ -109,7 +109,7 @@ namespace meow { namespace libev {
 				if (read_status::again == r_status && read_part.empty())
 					return rd_consume_status::more;
 
-				buffer_move_ptr& b = ctx->r_buf;
+				buffer_move_ptr& b = ctx->ssl_rbuf;
 				b->advance_last(read_part.size());
 
 				SSL_LOG_WRITE(ctx, line_mode::single, "{0}; {1} - {{ {2}, {3} }"
@@ -556,7 +556,7 @@ namespace meow { namespace libev {
 
 			BOOST_ASSERT(buf_sz > 0);
 
-			buffer_move_ptr& b = this->r_buf;
+			buffer_move_ptr& b = this->ssl_rbuf;
 
 			if (!b)
 			{
