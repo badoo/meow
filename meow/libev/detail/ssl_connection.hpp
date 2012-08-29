@@ -67,12 +67,6 @@ namespace meow { namespace libev {
 			return ctx->rw_ssl.get();
 		}
 
-		template<class ContextT>
-		static bool ctx_ssl_is_initialized(ContextT *ctx)
-		{
-			return !!ctx->rw_ssl;
-		}
-
 		struct read
 		{
 			typedef rw_context_t context_t;
@@ -81,33 +75,29 @@ namespace meow { namespace libev {
 			template<class ContextT>
 			static buffer_ref get_buffer(ContextT *ctx)
 			{
-				if (!ctx_ssl_is_initialized(ctx))
-				{
+				if (NULL == ssl_from_context(ctx))
 					return tr_read::get_buffer(ctx);
-				}
-				else
-				{
-					buffer_move_ptr& b = ctx->ssl_rbuf;
-					if (!b)
-						b = create_buffer(network_buffer_size);
 
-					return b->free_part();
-				}
+				buffer_move_ptr& b = ctx->ssl_rbuf;
+				if (!b)
+					b = create_buffer(network_buffer_size);
+
+				return b->free_part();
 			}
 
 			template<class ContextT>
 			static rd_consume_status_t consume_buffer(ContextT *ctx, buffer_ref read_part, read_status_t r_status)
 			{
-				if (!ctx_ssl_is_initialized(ctx))
-				{
+				CYASSL *ssl = ssl_from_context(ctx);
+
+				if (NULL == ssl)
 					return tr_read::consume_buffer(ctx, read_part, r_status);
-				}
 
 				if (read_status::error == r_status)
 					return tr_read::consume_buffer(ctx, buffer_ref(), r_status);
 
 				if (read_status::again == r_status && read_part.empty())
-					return rd_consume_status::more;
+					return rd_consume_status::loop_break;
 
 				buffer_move_ptr& b = ctx->ssl_rbuf;
 				b->advance_last(read_part.size());
@@ -115,8 +105,6 @@ namespace meow { namespace libev {
 				SSL_LOG_WRITE(ctx, line_mode::single, "{0}; {1} - {{ {2}, {3} }"
 						, __func__, read_status::enum_as_str_ref(r_status)
 						, read_part.size(), meow::format::as_hex_string(read_part));
-
-				CYASSL *ssl = ssl_from_context(ctx);
 
 				while (true)
 				{
@@ -235,7 +223,7 @@ namespace meow { namespace libev {
 				buffer_chain_t& wchain = ctx->wchain_;
 				buffer_chain_t& plaintext_wchain = ctx->w_plaintext_chain;
 
-				if (!ctx_ssl_is_initialized(ctx))
+				if (NULL == ssl_from_context(ctx))
 				{
 					wchain.append_chain(plaintext_wchain);
 				}
@@ -269,7 +257,7 @@ namespace meow { namespace libev {
 			static wr_complete_status_t writev_bufs(ContextT *ctx)
 			{
 				int ssl_errno = move_from_plaintext_to_wchain(ctx);
-				if (SSL_ERROR_NONE != ssl_errno)
+				if (0 != ssl_errno)
 				{
 					//ctx->cb_write_closed(io_close_report(io_close_reason::ssl_error, ssl_errno));
 					ctx->cb_write_closed(io_close_report(io_close_reason::custom_close));
@@ -341,7 +329,7 @@ namespace meow { namespace libev {
 						return wr_complete_status::more;
 
 					wchain.pop_front();
-					return wr_complete_status::finished;						
+					return wr_complete_status::finished;
 				}
 
 				static size_t const writev_max_bufs = 8;
@@ -350,13 +338,15 @@ namespace meow { namespace libev {
 				struct iovec *bufs = iov;
 				size_t n_bufs = 0;
 
-				typedef buffer_chain_t::iterator b_iter_t;
-				b_iter_t b_i = wchain.begin();
-				b_iter_t end_i = wchain.end();
+				// this iterator is moved along the chain
+				//  and always points to the first buffer we don't have in iov yet
+				// NOTE: wchain is getting changed while writing, so care needs to be taken to not make iterator invalid
+				buffer_chain_t::iterator b_i = wchain.begin();
 
 				while (n_bufs > 0 || !wchain.empty())
 				{
 					// move the data to the beginning
+					//  as we need to make some space at end to insert more data
 					if (bufs != iov)
 					{
 						std::memmove(iov, bufs, n_bufs * sizeof(iov[0]));
@@ -364,21 +354,15 @@ namespace meow { namespace libev {
 					}
 
 					// fill up iovec as much as we can from the last known position
-					if (n_bufs < writev_max_bufs)
+					while (n_bufs < writev_max_bufs && b_i != wchain.end())
 					{
-						while (b_i != end_i)
-						{
-							buffer_t *b = *b_i;
+						buffer_t *b = *b_i;
 
-							bufs[n_bufs].iov_base = b->first;
-							bufs[n_bufs].iov_len = b->used_size();
+						bufs[n_bufs].iov_base = b->first;
+						bufs[n_bufs].iov_len = b->used_size();
 
-							++b_i;
-							++n_bufs;
-
-							if (n_bufs >= writev_max_bufs)
-								break;
-						}
+						++b_i;
+						++n_bufs;
 					}
 
 					IO_LOG_WRITE(ctx, line_mode::prefix, "::writev({0}, {1} : ", io_ctx->fd(), n_bufs);
