@@ -135,12 +135,6 @@ namespace meow { namespace libev {
 						}
 
 						// real error
-						int ssl_errno = ssl->error;
-						char err_buf[1024] = {};
-						CyaSSL_ERR_error_string_n(ssl_errno, err_buf, sizeof(err_buf));
-						SSL_LOG_WRITE(ctx, line_mode::single, "SSL_read(): {0} - {1}", ssl_errno, err_buf);
-						//TODO: ctx->ssl_cb_on_error(ssl_errno);
-
 						return tr_read::consume_buffer(ctx, buffer_ref(), read_status::error);
 					}
 					else
@@ -235,14 +229,7 @@ namespace meow { namespace libev {
 					int ssl_errno = write_buffer_to_ssl(ctx, b);
 
 					if (0 != ssl_errno)
-					{
-						char err_buf[1024] = {};
-						CyaSSL_ERR_error_string_n(ssl_errno, err_buf, sizeof(err_buf));
-						SSL_LOG_WRITE(ctx, line_mode::single, "SSL_write(): {0} - {1}", ssl_errno, err_buf);
-
-						//ctx->cb_write_closed(io_close_report(io_close_reason::ssl_error, ssl_errno));
 						return ssl_errno;
-					}
 
 					if (b->empty())
 						plaintext_wchain.pop_front();
@@ -259,7 +246,7 @@ namespace meow { namespace libev {
 				int ssl_errno = move_from_plaintext_to_wchain(ctx);
 				if (0 != ssl_errno)
 				{
-					//ctx->cb_write_closed(io_close_report(io_close_reason::ssl_error, ssl_errno));
+					SSL_LOG_WRITE(ctx, line_mode::single, "SSL_write(): {0}", ssl_errno);
 					ctx->cb_write_closed(io_close_report(io_close_reason::custom_close));
 					return wr_complete_status::closed;
 				}
