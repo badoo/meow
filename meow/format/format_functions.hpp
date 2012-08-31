@@ -53,7 +53,7 @@ namespace meow { namespace format {
 
 #define FMT_STRING_STAGE_FUNCTION_BODY(n) 										\
 	size_t const max_slices = get_max_slices_for_format(fmt); 					\
-	str_ref *slices = (str_ref*)alloca(max_slices * sizeof(str_ref));			\
+	str_ref slices[max_slices];													\
  																				\
 	static size_t const n_arg_slices = n; 										\
 	str_ref arg_slices[n_arg_slices]; 											\
