@@ -67,6 +67,13 @@ namespace meow { namespace libev {
 			return ctx->rw_ssl.get();
 		}
 
+		typedef meow::tmp_buffer<128> ssl_error_buf_t;
+		static str_ref ssl_strerror(int err_code, ssl_error_buf_t const& buf = ssl_error_buf_t())
+		{
+			CyaSSL_ERR_error_string_n(err_code, buf.get(), sizeof(buf.size()));
+			return str_ref(buf.get()); // strlen() call :(
+		}
+
 		struct read
 		{
 			typedef rw_context_t context_t;
@@ -118,8 +125,10 @@ namespace meow { namespace libev {
 
 					if (r <= 0)
 					{
+						// log internal cyassl error, not the openssl-compatible one
+						SSL_LOG_WRITE(ctx, line_mode::suffix, ", ssl_code: {0} - {1}", ssl->error, ssl_strerror(ssl->error));
+
 						int err_code = CyaSSL_get_error(ssl, r);
-						SSL_LOG_WRITE(ctx, line_mode::suffix, ", ssl_code: {0}", err_code);
 
 						// connection ssl was shut down by processing a message
 						if (SSL_ERROR_ZERO_RETURN == err_code)
@@ -171,14 +180,14 @@ namespace meow { namespace libev {
 				{
 					str_ref const buf_data = b->used_part();
 
-					SSL_LOG_WRITE(ctx, line_mode::single, "write_to_ssl: {{ {0}, {1} }"
-							, buf_data.size(), meow::format::as_hex_string(buf_data)
-							);
+					SSL_LOG_WRITE(ctx, line_mode::single, "{0}: {{ {1}, {2} }", __func__, buf_data.size(), meow::format::as_hex_string(buf_data));
 
 					int r = CyaSSL_write(ssl, buf_data.data(), buf_data.size());
 
 					if (r <= 0)
 					{
+						SSL_LOG_WRITE(ctx, line_mode::single, "SSL_write(): {0} - {1}", ssl->error, ssl_strerror(ssl->error));
+
 						int err_code = CyaSSL_get_error(ssl, r);
 
 						switch (err_code)
@@ -246,7 +255,6 @@ namespace meow { namespace libev {
 				int ssl_errno = move_from_plaintext_to_wchain(ctx);
 				if (0 != ssl_errno)
 				{
-					SSL_LOG_WRITE(ctx, line_mode::single, "SSL_write(): {0}", ssl_errno);
 					ctx->cb_write_closed(io_close_report(io_close_reason::custom_close));
 					return wr_complete_status::closed;
 				}

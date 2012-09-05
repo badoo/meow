@@ -14,7 +14,6 @@ namespace meow { namespace libev {
 
 	// low level io-related close reason
 	MEOW_DEFINE_SMART_ENUM(io_close_reason, ((io_error, 		"io_error"))
-											((ssl_error,        "ssl coding error"))
 											((peer_close, 		"peer closed connection"))
 											((write_close, 		"server write and close"))
 											((custom_close, 	"server immediate close"))
