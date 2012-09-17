@@ -442,7 +442,6 @@ namespace meow { namespace libev {
 
 		virtual buffer_ref           get_buffer(ssl_connection_t*) = 0;
 		virtual rd_consume_status_t  consume_buffer(ssl_connection_t*, buffer_ref, bool is_closed) = 0;
-		virtual void                 on_ssl_error(ssl_connection_t*, int ev_mask, int ssl_errno) = 0;
 		virtual void                 on_closed(ssl_connection_t*, io_close_report_t const&) = 0;
 	};
 
@@ -471,7 +470,6 @@ namespace meow { namespace libev {
 		>
 	struct ssl_connection_impl_t
 		: public generic_connection_impl_t<Interface, ssl_connection_repack_traits<Traits> >
-		, public cyassl_custom_io_ctx_t
 	{
 		typedef generic_connection_impl_t<Interface, ssl_connection_repack_traits<Traits> > impl_t;
 		typedef typename impl_t::events_t  events_t;
@@ -505,9 +503,10 @@ namespace meow { namespace libev {
 			if (NULL == ssl)
 				throw std::logic_error("CyaSSL_new() failed: make sure you've got certificate/private-key and memory");
 
+			CyaSSL_SetIOReadCtx(ssl, &ssl_io_ctx_);
+			CyaSSL_SetIOWriteCtx(ssl, &ssl_io_ctx_);
+
 			this->rw_ssl.reset(ssl);
-			CyaSSL_SetIOReadCtx(this->rw_ssl.get(), static_cast<cyassl_custom_io_ctx_t*>(this));
-			CyaSSL_SetIOWriteCtx(this->rw_ssl.get(), static_cast<cyassl_custom_io_ctx_t*>(this));
 		}
 
 		virtual bool ssl_is_initialized() const
@@ -517,50 +516,59 @@ namespace meow { namespace libev {
 
 	private:
 
-		virtual int cyassl_read(char *buf, int buf_sz)
+		struct ssl_io_ctx_t : public cyassl_custom_io_ctx_t
 		{
-			SSL_LOG_WRITE(this, line_mode::prefix, "{0}; to buf_sz: {1} ", __func__, buf_sz);
-
-			BOOST_ASSERT(buf_sz > 0);
-
-			buffer_move_ptr& b = this->ssl_rbuf;
-
-			if (!b)
+			virtual int cyassl_read(char *buf, int buf_sz)
 			{
-				SSL_LOG_WRITE(this, line_mode::suffix, "<-- IO_ERR_WANT_READ [no buf]");
-				return IO_ERR_WANT_READ;
+				ssl_connection_impl_t *c = connection_from_self();
+
+				SSL_LOG_WRITE(c, line_mode::prefix, "{0}; to buf_sz: {1} ", __func__, buf_sz);
+
+				BOOST_ASSERT(buf_sz > 0);
+				buffer_move_ptr& b = c->ssl_rbuf;
+
+				if (!b)
+				{
+					SSL_LOG_WRITE(c, line_mode::suffix, "<-- IO_ERR_WANT_READ [no buf]");
+					return IO_ERR_WANT_READ;
+				}
+
+				if (b->empty())
+				{
+					b->clear();
+					SSL_LOG_WRITE(c, line_mode::suffix, "<-- IO_ERR_WANT_READ [empty]");
+					return IO_ERR_WANT_READ;
+				}
+
+				size_t const sz = MIN((size_t)buf_sz, b->used_size());
+				std::memcpy(buf, b->first, sz);
+				b->advance_first(sz);
+
+				SSL_LOG_WRITE(c, line_mode::suffix, "<-- {{ {0}, {1} }", sz, meow::format::as_hex_string(str_ref(buf, sz)));
+				return sz;
 			}
 
-			if (b->empty())
+			virtual int cyassl_write(char *buf, int buf_sz)
 			{
-				b->clear();
-				SSL_LOG_WRITE(this, line_mode::suffix, "<-- IO_ERR_WANT_READ [empty]");
-				return IO_ERR_WANT_READ;
+				ssl_connection_impl_t *c = connection_from_self();
+
+				SSL_LOG_WRITE(c, line_mode::single, "{0}; buf: {{ {1}, {2} }", __func__, buf_sz, meow::format::as_hex_string(str_ref(buf, buf_sz)));
+
+				if (buf_sz <= 0)
+					return 0;
+
+				buffer_move_ptr b = buffer_create_with_data(buf, buf_sz);
+				c->wchain_.push_back(move(b));
+
+				return buf_sz;
 			}
-
-			size_t const sz = MIN((size_t)buf_sz, b->used_size());
-			std::memcpy(buf, b->first, sz);
-			b->advance_first(sz);
-
-			SSL_LOG_WRITE(this, line_mode::suffix, "<-- {{ {0}, {1} }", sz, meow::format::as_hex_string(str_ref(buf, sz)));
-			return sz;
+		private:
+			ssl_connection_impl_t* connection_from_self() { return MEOW_SELF_FROM_MEMBER(ssl_connection_impl_t, ssl_io_ctx_, this); }
 		}
-
-		virtual int cyassl_write(char *buf, int buf_sz)
-		{
-			SSL_LOG_WRITE(this, line_mode::single, "{0}; buf: {{ {1}, {2} }", __func__, buf_sz, meow::format::as_hex_string(str_ref(buf, buf_sz)));
-
-			if (buf_sz <= 0)
-				return 0;
-
-			buffer_move_ptr b = buffer_create_with_data(buf, buf_sz);
-			this->wchain_.push_back(move(b));
-
-			return buf_sz;
-		}
-
-		#undef SSL_LOG_WRITE
+		ssl_io_ctx_;
 	};
+
+	#undef SSL_LOG_WRITE
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 }} // namespace meow { namespace libev {
