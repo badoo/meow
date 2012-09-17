@@ -3,8 +3,8 @@
 // (c) 2011 Anton Povarov <anton.povarov@gmail.com>
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef BMA_PROXY__STR_COPY_HPP_
-#define BMA_PROXY__STR_COPY_HPP_
+#ifndef MEOW__STR_COPY_HPP_
+#define MEOW__STR_COPY_HPP_
 
 #include <memory> // std::uninitialized_copy
 #include <limits> // std::numeric_limits<>
@@ -233,5 +233,4 @@ namespace meow { namespace format {
 }} // namespace meow { namespace format {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#endif // BMA_PROXY__STR_COPY_HPP_
-
+#endif // MEOW__STR_COPY_HPP_

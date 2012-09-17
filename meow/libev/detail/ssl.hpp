@@ -28,13 +28,13 @@ namespace meow {
 		virtual int cyassl_read(char *buf, int buf_sz) = 0;
 		virtual int cyassl_write(char *buf, int buf_sz) = 0;
 
-		static int cyassl_real_read_cb(char *buf, int buf_sz, void *ctx)
+		static int cyassl_real_read_cb(CYASSL*, char *buf, int buf_sz, void *ctx)
 		{
 			cyassl_custom_io_ctx_t *self = static_cast<cyassl_custom_io_ctx_t*>(ctx);
 			return self->cyassl_read(buf, buf_sz);
 		}
 
-		static int cyassl_real_write_cb(char *buf, int buf_sz, void *ctx)
+		static int cyassl_real_write_cb(CYASSL*, char *buf, int buf_sz, void *ctx)
 		{
 			cyassl_custom_io_ctx_t *self = static_cast<cyassl_custom_io_ctx_t*>(ctx);
 			return self->cyassl_write(buf, buf_sz);

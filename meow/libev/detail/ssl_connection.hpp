@@ -515,18 +515,6 @@ namespace meow { namespace libev {
 			return !!this->rw_ssl;
 		}
 
-		virtual void ssl_connect()
-		{
-			BOOST_ASSERT(this->ssl_is_initialized());
-			CyaSSL_set_connect_state(this->rw_ssl.get());
-		}
-
-		virtual void ssl_accept()
-		{
-			BOOST_ASSERT(this->ssl_is_initialized());
-			CyaSSL_set_accept_state(this->rw_ssl.get());
-		}
-
 	private:
 
 		virtual int cyassl_read(char *buf, int buf_sz)
@@ -568,24 +556,6 @@ namespace meow { namespace libev {
 			buffer_move_ptr b = buffer_create_with_data(buf, buf_sz);
 			this->wchain_.push_back(move(b));
 
-#if 0
-			static size_t const wr_buffer_size = 8 * 1024;
-
-			buffer_chain_t& wchain = this->wchain_;
-
-			for (size_t remaining_sz = buf_sz; remaining_sz > 0; /**/)
-			{
-				if (wchain.empty() || wchain.back()->full())
-					wchain.push_back(create_buffer(wr_buffer_size));
-
-				buffer_t *b = this->wchain_.back();
-
-				size_t const sz = MIN(remaining_sz, b->free_size());
-				copy_to_buffer(*b, buf, sz);
-
-				remaining_sz -= sz;
-			}
-#endif
 			return buf_sz;
 		}
 
