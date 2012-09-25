@@ -64,7 +64,7 @@ namespace meow { namespace format {
 								, slices, max_slices 							\
 								, arg_slices, n_arg_slices 						\
 								); 												\
-	sink::sink_write<S>::call(sink, fi.total_length, slices, fi.n_slices); 		\
+	write_to_sink(sink, fi.total_length, slices, fi.n_slices); 					\
 	return sink;
 /**/
 
