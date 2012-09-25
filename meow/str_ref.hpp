@@ -45,7 +45,7 @@ namespace meow {
 
 	public:
 		string_ref() : p_(0), n_(0) {}
-		string_ref(char_type* p) : p_(p), n_(traits_type::length(p)) {}
+		string_ref(char_type* p) : p_(p), n_(p ? traits_type::length(p) : 0) {}
 		string_ref(char_type* p, size_type n) : p_(p), n_(n) {}
 		string_ref(char_type* begin, char_type* end) : p_(begin), n_(end - begin) {}
 		string_ref(string_type const& str) : p_(str.data()), n_(str.size()) {} // assume string data is contiguous
