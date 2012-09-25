@@ -39,6 +39,13 @@ namespace meow { namespace logging {
 			writer_(total_len, slices, n_slices);
 		}
 
+	public:
+
+		virtual log_level_t level() const { return level_; }
+		virtual log_level_t set_level(log_level_t l) { return level_ = l; }
+
+		virtual bool does_accept(log_level_t l) const { return l <= level_; }
+
 		virtual void write(
 						  log_level_t 	lvl
 						, line_mode_t 	lmode
@@ -59,7 +66,7 @@ namespace meow { namespace logging {
 	public:
 
 		explicit logger_impl_t(log_level_t lvl = log_level::off)
-			: base_t(lvl)
+			: level_(lvl)
 			, writer_()
 		{
 		}
@@ -71,6 +78,7 @@ namespace meow { namespace logging {
 		}
 
 	private:
+		log_level_t level_;
 		prefix_t 	prefix_;
 		writer_fn_t writer_;
 	};

@@ -24,16 +24,16 @@ namespace meow { namespace logging {
 		typedef CharT 						char_t;
 		typedef string_ref<char_t const> 	str_t;
 
-	public: // level is built into every logger regardless
+	public:
 
-		log_level_t level() const { return level_; }
-		log_level_t set_level(log_level_t l) { return level_ = l; }
+		virtual log_level_t level() const = 0;
+		virtual log_level_t set_level(log_level_t l) = 0;
 
-		bool does_accept(log_level_t l) const { return l <= level_; }
+		virtual bool does_accept(log_level_t l) const = 0;
 
 	public:
 
-		// the virtual part, actually writing the thing
+		// actually writing the thing
 		//  log level is here only for informational purposes
 		//  so logger is not required to check if it accepts it at all
 		virtual void write(
@@ -44,17 +44,7 @@ namespace meow { namespace logging {
 						, size_t 		n_slices
 						) = 0;
 
-	public:
-
-		logger_base_t(log_level_t lvl)
-			: level_(lvl)
-		{
-		}
-
 		virtual ~logger_base_t() {}
-
-	private:
-		log_level_t level_;
 	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
