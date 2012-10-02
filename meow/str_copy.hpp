@@ -6,9 +6,9 @@
 #ifndef MEOW__STR_COPY_HPP_
 #define MEOW__STR_COPY_HPP_
 
-#include <memory> // std::uninitialized_copy
 #include <limits> // std::numeric_limits<>
 #include <string> // std::char_traits, std::string
+#include <cstring> // memset, memcpy
 
 #include <boost/assert.hpp>
 #include <boost/static_assert.hpp>
@@ -16,6 +16,7 @@
 #include <boost/type_traits/is_convertible.hpp>
 #include <boost/type_traits/is_same.hpp>
 #include <boost/type_traits/remove_const.hpp>
+#include <boost/type_traits/has_trivial_assign.hpp>
 #include <boost/utility/enable_if.hpp>
 
 #include <meow/str_ref.hpp>
@@ -23,6 +24,15 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow {
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+	template<class StringCopyT>
+	struct string_copy_mover
+	{
+		StringCopyT *source;
+		string_copy_mover(StringCopyT& src) : source(&src) {}
+	};
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	template<
@@ -50,6 +60,9 @@ namespace meow {
 		// antoxa: char_type can't be const for the sake of my sanity
 		BOOST_STATIC_ASSERT(!boost::is_const<char_type>::value);
 
+		// antoxa: can't be bothered supporting non trivially-copyable types
+		BOOST_STATIC_ASSERT(boost::has_trivial_assign<value_type>::value);
+
 		template<class U>
 		struct can_copy_from
 		{
@@ -63,14 +76,28 @@ namespace meow {
 	public: // ctor/dtor/assign
 
 		string_copy() : p_(), n_(0) {}
+		string_copy(char_type const *p) { this->init_copy(p, p ? traits_type::length(p) : 0); }
 		string_copy(char_type const *p, size_type n) { this->init_copy(p, n); }
 		string_copy(char_type const *b, char_type const *e) { BOOST_ASSERT(b <= e); this->init_copy(b, (e - b)); }
 		string_copy(string_type const& s) { this->init_copy(s.data(), s.size()); }
+
+		explicit string_copy(size_type n) { this->reset_and_resize_to(n); }
+		string_copy(size_type n, char_type fill_c) { this->reset_and_resize_to(n); this->fill(fill_c); }
 
 		explicit string_copy(string_ref<char_type_nc> const& s) { this->init_copy((char_type*)s.data(), s.size()); }
 		explicit string_copy(string_ref<char_type_nc const> const& s) { this->init_copy((char_type*)s.data(), s.size()); }
 
 		string_copy(self_t const& other) { this->init_copy(other.data(), other.size()); }
+
+		string_copy(string_copy_mover<self_t> mover)
+		{
+			self_t *other = mover.source;
+
+			p_ = move(other->p_);
+			n_ = other->n_;
+
+			other->n_ = 0;
+		}
 
 		template<class U>
 		string_copy(
@@ -84,15 +111,14 @@ namespace meow {
 		template<class U>
 		self_t& operator=(string_ref<U> const& other)
 		{
-			self_t tmp(other);
-			p_.swap(tmp.p_);
-			std::swap(n_, tmp.n_);
+			self_t(other).swap(*this);
 			return *this;
 		}
 
 		self_t& operator=(self_t const& other)
 		{
-			return ((*this) = other.ref());
+			self_t(other).swap(*this);
+			return *this;
 		}
 
 		template<class U>
@@ -101,6 +127,33 @@ namespace meow {
 		{
 			return ((*this) = other.ref());
 		}
+
+		void swap(self_t& other)
+		{
+			p_.swap(other.p_);
+			std::swap(n_, other.n_);
+		}
+
+	public: // modifiers
+
+		void reset_and_resize_to(size_type const new_size)
+		{
+			move_pointer_t pp(reinterpret_cast<char_type*>(new char[new_size * sizeof(char_type)]));
+			p_.swap(pp);
+			n_ = new_size;
+		}
+
+		void fill(char_type fill_c, size_type n = -1)
+		{
+			if (-1 == n)
+				n = n_;
+
+			BOOST_ASSERT(n <= n_);
+			memset(p_.get(), fill_c, n);
+		}
+
+		void reset() { p_.reset(); n_ = 0; }
+		void clear() { reset(); }
 
 	public: // iterators
 
@@ -125,11 +178,6 @@ namespace meow {
 		size_type size() const { return n_; }
 		size_type length() const { return n_; }
 		int c_length() const { BOOST_ASSERT(n_ < size_type(std::numeric_limits<int>::max)); return n_; }
-
-	public: // modifiers
-
-		void reset() { p_.reset(); n_ = 0; }
-		void clear() { reset(); }
 
 	public: // operators
 
@@ -169,10 +217,8 @@ namespace meow {
 				return;
 			}
 
-			move_pointer_t pp(reinterpret_cast<char_type*>(new char[n * sizeof(char_type)]));
-			std::uninitialized_copy(p, p + n, pp.get());
-			p_.swap(pp);
-			n_ = n;
+			this->reset_and_resize_to(n);
+			memcpy(p_.get(), p, n);
 		}
 
 	private:
@@ -181,6 +227,29 @@ namespace meow {
 	};
 
 	typedef string_copy<char> str_copy;
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+// move helper
+
+	template<class CharT, class Traits>
+	inline
+	string_copy_mover<string_copy<CharT, Traits> >
+	move(string_copy<CharT, Traits>& str)
+	{
+		return string_copy_mover<string_copy<CharT, Traits> >(str);
+	}
+
+	// move-from-const catcher
+	struct string_copy_cant_be_moved_from_const {};
+
+	template<class CharT, class Traits>
+	inline
+	string_copy_cant_be_moved_from_const
+	move(string_copy<CharT, Traits> const& str)
+	{
+		BOOST_ASSERT(!"never called");
+		return string_copy_cant_be_moved_from_const();
+	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
