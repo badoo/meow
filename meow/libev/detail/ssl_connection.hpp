@@ -10,15 +10,12 @@
 
 #include <stdexcept> // std::logic_error
 
-#include <cyassl/ssl.h>
-#include <cyassl/internal.h>
-
 #include <meow/format/format.hpp>
 #include <meow/format/format_tmp.hpp> // used for log_writer
-#include <meow/format/format_to_string.hpp> // used for ssl_log_writer
+#include <meow/format/format_to_str_copy.hpp> // used for ssl_log_writer
 #include <meow/format/inserter/hex_string.hpp>
 
-#include "ssl.hpp"
+#include "ssl_cyassl.hpp"
 #include "generic_connection.hpp"
 #include "generic_connection_impl.hpp"
 
@@ -39,7 +36,7 @@ namespace meow { namespace libev {
 
 		#define SSL_LOG_WRITE(ctx, lmode, fmt, ...) 				\
 			do { if (ssl_log_writer::is_allowed(ctx))				\
-				ssl_log_writer::write(ctx, lmode, meow::format::fmt_str(fmt, ##__VA_ARGS__));	\
+				ssl_log_writer::write(ctx, lmode, meow::format::fmt_str_copy(fmt, ##__VA_ARGS__));	\
 			} while(0)												\
 		/**/
 
@@ -62,7 +59,7 @@ namespace meow { namespace libev {
 		};
 
 		template<class ContextT>
-		static CYASSL* ssl_from_context(ContextT *ctx)
+		static ssl_t* ssl_from_context(ContextT *ctx)
 		{
 			return ctx->rw_ssl.get();
 		}
@@ -95,7 +92,7 @@ namespace meow { namespace libev {
 			template<class ContextT>
 			static rd_consume_status_t consume_buffer(ContextT *ctx, buffer_ref read_part, read_status_t r_status)
 			{
-				CYASSL *ssl = ssl_from_context(ctx);
+				ssl_t *ssl = ssl_from_context(ctx);
 
 				if (NULL == ssl)
 					return tr_read::consume_buffer(ctx, read_part, r_status);
@@ -174,7 +171,7 @@ namespace meow { namespace libev {
 			template<class ContextT>
 			static int write_buffer_to_ssl(ContextT *ctx, buffer_t *b)
 			{
-				CYASSL *ssl = ssl_from_context(ctx);
+				ssl_t *ssl = ssl_from_context(ctx);
 
 				while (!b->empty())
 				{
@@ -499,14 +496,14 @@ namespace meow { namespace libev {
 
 		virtual void ssl_init(CYASSL_CTX *ssl_ctx)
 		{
-			CYASSL *ssl = CyaSSL_new(ssl_ctx);
-			if (NULL == ssl)
+			ssl_move_ptr ssl = ssl_create(ssl_ctx);
+			if (!ssl)
 				throw std::logic_error("CyaSSL_new() failed: make sure you've got certificate/private-key and memory");
 
-			CyaSSL_SetIOReadCtx(ssl, &ssl_io_ctx_);
-			CyaSSL_SetIOWriteCtx(ssl, &ssl_io_ctx_);
+			CyaSSL_SetIOReadCtx(ssl.get(), &ssl_io_ctx_);
+			CyaSSL_SetIOWriteCtx(ssl.get(), &ssl_io_ctx_);
 
-			this->rw_ssl.reset(ssl);
+			this->rw_ssl = move(ssl);
 		}
 
 		virtual bool ssl_is_initialized() const

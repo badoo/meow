@@ -1,12 +1,13 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // vim: set filetype=cpp autoindent noexpandtab tabstop=4 shiftwidth=4 foldmethod=marker :
-// (c) 2010 Anton Povarov <anton.povarov@gmail.com>
+// (c) 2012 Anton Povarov <anton.povarov@gmail.com>
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef MEOW_LIBEV_DETAIL__SSL_HPP_
-#define MEOW_LIBEV_DETAIL__SSL_HPP_
+#ifndef MEOW_LIBEV_DETAIL__SSL_CYASSL_HPP_
+#define MEOW_LIBEV_DETAIL__SSL_CYASSL_HPP_
 
 #include <cyassl/ssl.h>
+#include <cyassl/internal.h> // just to be able to get ssl->error unconverted to openssl compat thingy
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow {
@@ -19,6 +20,11 @@ namespace meow {
 		void operator()(ssl_t *ssl) { CyaSSL_free(ssl); }
 	};
 	typedef boost::static_move_ptr<ssl_t, CYASSL_deleter_t> ssl_move_ptr;
+
+	inline ssl_move_ptr ssl_create(ssl_ctx_t *ctx)
+	{
+		return ssl_move_ptr(CyaSSL_new(ctx));
+	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -72,5 +78,5 @@ namespace meow {
 } // namespace meow {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#endif // MEOW_LIBEV_DETAIL__SSL_HPP_
+#endif // MEOW_LIBEV_DETAIL__SSL_CYASSL_HPP_
 
