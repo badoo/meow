@@ -50,7 +50,9 @@ namespace meow {
 
 		typedef typename boost::remove_const<char_type>::type char_type_nc;
 
-		typedef string_ref<char_type> string_ref_t;
+		typedef string_ref<char_type_nc>       buffer_ref_t;
+		typedef string_ref<char_type_nc const> string_ref_t;
+
 		typedef boost::static_move_ptr<char_type[]> move_pointer_t;
 
 	private:
@@ -172,6 +174,8 @@ namespace meow {
 	public: // simple getters
 
 		char_type* data() const { return p_.get(); }
+
+		buffer_ref_t ref()       { return buffer_ref_t(begin(), end()); }
 		string_ref_t ref() const { return string_ref_t(begin(), end()); }
 
 		bool empty() const { return !n_; }
@@ -187,6 +191,16 @@ namespace meow {
 				? 0
 				: &unspecified_bool_helper::dummy
 				;
+		}
+
+		operator buffer_ref_t()
+		{
+			return ref();
+		}
+
+		operator string_ref_t() const
+		{
+			return ref();
 		}
 
 		friend bool operator<(self_t const& l, self_t const& r)
@@ -295,7 +309,7 @@ namespace meow { namespace format {
 	template<class CharT, class Traits>
 	struct type_tunnel<string_copy<CharT, Traits> >
 	{
-		static string_ref<CharT> call(string_copy<CharT, Traits> const& s) { return s.ref(); }
+		static string_ref<CharT const> call(string_copy<CharT, Traits> const& s) { return s.ref(); }
 	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////

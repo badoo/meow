@@ -6,7 +6,7 @@
 #ifndef MEOW_FORMAT__FORMAT_TO_STR_COPY_HPP_
 #define MEOW_FORMAT__FORMAT_TO_STR_COPY_HPP_
 
-#include "sink/std_string.hpp"
+#include <meow/str_copy.hpp>
 #include "format_functions.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -15,11 +15,11 @@ namespace meow { namespace format {
 
 	namespace sink {
 
-		template<class CharT>
-		struct sink_write<string_copy<CharT> >
+		template<class CharT, class Traits>
+		struct sink_write<string_copy<CharT, Traits> >
 		{
 			static void call(
-					  string_copy<CharT>& sink
+					  string_copy<CharT, Traits>& sink
 					, size_t total_len
 					, string_ref<CharT const> const *slices
 					, size_t n_slices
