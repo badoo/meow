@@ -81,7 +81,7 @@ namespace meow {
 		};
 		static uint16_t const *real_codes = reinterpret_cast<uint16_t const*>(codes_2);
 
-		*(uint16_t*)p = real_codes[b];
+		memcpy(p, real_codes + b, sizeof(uint16_t));
 		p += sizeof(uint16_t);
 
 		return p;
