@@ -76,9 +76,6 @@ namespace meow { namespace libev {
 
 			// get changeable event object to use for io
 			static io_context_t* io_context_ptr(context_t *ctx) {}
-
-			// get context from the io, mirroring io_context_ptr()
-			static context_t* context_from_io(io_context_t *io_ctx) {}
 		};
 
 		struct read
@@ -394,7 +391,8 @@ namespace meow { namespace libev {
 
 		static void libev_cb(evloop_t *loop, evio_t *ev, int revents)
 		{
-			context_t *ctx = tr_base::context_from_io(io_context_t::cast_from_event(ev));
+			io_context_t *io_ctx = io_context_t::cast_from_event(ev);
+			context_t *ctx = static_cast<context_t*>(io_ctx->event()->data);
 			self_t::cb(ctx, revents);
 		}
 
@@ -529,7 +527,10 @@ namespace meow { namespace libev {
 		static void prepare_context(context_t *ctx)
 		{
 			io_context_t *io_ctx = tr_base::io_context_ptr(ctx);
-			ev_io_init(io_ctx->event(), &self_t::libev_cb, io_ctx->fd(), EV_NONE);
+			evio_t *ev = io_ctx->event();
+
+			ev_io_init(ev, &self_t::libev_cb, io_ctx->fd(), EV_NONE);
+			ev->data = ctx;
 
 			tr_activity::init(ctx);
 		}
@@ -554,6 +555,7 @@ namespace meow { namespace libev {
 			ev_io_stop(tr_base::ev_loop(ctx), ev);
 
 			// just for good measure
+			ev->data = NULL;
 			ev_io_set(ev, io_ctx->fd(), EV_NONE);
 		}
 

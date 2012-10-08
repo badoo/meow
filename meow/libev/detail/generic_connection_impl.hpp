@@ -33,7 +33,7 @@ namespace meow { namespace libev {
 		typedef generic_connection_impl_t 		base_t; // macro at the bottom uses it
 		typedef EventsT							events_t;
 
-		typedef generic_connection_traits<self_t, Traits> default_traits;
+		typedef generic_connection_traits<Traits> default_traits;
 
 		struct traits_t
 		{
