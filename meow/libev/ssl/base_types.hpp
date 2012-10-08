@@ -14,12 +14,6 @@
 namespace meow { namespace libev {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	MEOW_DEFINE_SMART_ENUM(ssl_error_state,	((zero_return,  "zero_return"))
-											((real_error,   "real_error"))
-											((want_read,    "want_read"))
-											((want_write,   "want_write"))
-											);
-
 	struct ssl_log_writer_traits__default
 	{
 		template<class ContextT> static bool is_allowed(ContextT *ctx) { return false; }

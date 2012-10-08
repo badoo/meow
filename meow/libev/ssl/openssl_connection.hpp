@@ -157,10 +157,13 @@ namespace meow { namespace libev {
 
 					if (r <= 0)
 					{
-						int ssl_code = SSL_get_error(ssl, r);
 						int err_code = ERR_get_error();
-						SSL_LOG_WRITE(ctx, line_mode::suffix, ", ssl_code: {0} - {1}", err_code, openssl_get_error_string(err_code));
+						if (err_code)
+							SSL_LOG_WRITE(ctx, line_mode::suffix, ", ssl_code: {0} - {1}", err_code, openssl_get_error_string(err_code));
+						else
+							SSL_LOG_WRITE(ctx, line_mode::suffix, "");
 
+						int ssl_code = SSL_get_error(ssl, r);
 						switch (ssl_code)
 						{
 							case SSL_ERROR_ZERO_RETURN:
@@ -217,10 +220,13 @@ namespace meow { namespace libev {
 
 					if (r <= 0)
 					{
-						int ssl_code = SSL_get_error(ssl, r);
 						int err_code = ERR_get_error();
-						SSL_LOG_WRITE(ctx, line_mode::single, "SSL_write(): {0} - {1}", err_code, openssl_get_error_string(err_code));
+						if (err_code)
+							SSL_LOG_WRITE(ctx, line_mode::single, "SSL_write(): {0} - {1}", err_code, openssl_get_error_string(err_code));
+						else
+							SSL_LOG_WRITE(ctx, line_mode::suffix, "");
 
+						int ssl_code = SSL_get_error(ssl, r);
 						switch (ssl_code)
 						{
 							// can recieve ssl shutdown message while in the middle of a handshake
