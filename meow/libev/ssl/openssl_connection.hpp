@@ -47,7 +47,7 @@ namespace meow { namespace libev {
 		return openssl_move_ptr(SSL_new(ctx));
 	}
 
-	inline int openssl_get_error_code(openssl_t *ssl)
+	inline int openssl_last_error_code()
 	{
 		return ERR_get_error();
 	}
@@ -58,6 +58,11 @@ namespace meow { namespace libev {
 		format::sink::char_buffer_sink_t sink(buf.get(), buf.size());
 		format::write(sink, ERR_func_error_string(err_code), ": ", ERR_reason_error_string(err_code));
 		return sink.used_part();
+	}
+
+	inline str_ref openssl_get_last_error_string(openssl_err_buf_t const& buf = openssl_err_buf_t())
+	{
+		return openssl_get_error_string(openssl_last_error_code(), buf);
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
