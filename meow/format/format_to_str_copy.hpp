@@ -58,7 +58,7 @@ BOOST_PP_REPEAT_FROM_TO(0, 32, MEOW_FORMAT_DEFINE_FMT_STR_COPY, _);
 
 #define MEOW_FORMAT_DEFINE_WRITE_STR_COPY(z, n, d)						\
 	template<FMT_TEMPLATE_PARAMS_W(n)>									\
-	inline str_copy write_str(FMT_DEF_PARAMS_W(n)) 						\
+	inline str_copy write_str_copy(FMT_DEF_PARAMS_W(n)) 				\
 	{																	\
 		str_copy result;												\
 		write(result FMT_CALL_SITE_ARGS(n));							\
