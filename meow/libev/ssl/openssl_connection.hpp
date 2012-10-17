@@ -35,6 +35,15 @@ namespace meow { namespace libev {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
+	typedef SSL_SESSION openssl_session_t;
+
+	struct SSL_SESSION_deleter_t {
+		void operator()(openssl_session_t *sess) { SSL_SESSION_free(sess); }
+	};
+	typedef boost::static_move_ptr<openssl_session_t> openssl_session_move_ptr;
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
 	typedef SSL openssl_t;
 
 	struct SSL_deleter_t {
