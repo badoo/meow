@@ -181,16 +181,21 @@ namespace meow { namespace libev {
 						switch (ssl_code)
 						{
 							case SSL_ERROR_ZERO_RETURN:
+								SSL_shutdown(ssl);
 								return tr_read::consume_buffer(ctx, buffer_ref(), read_status::closed);
 
 							case SSL_ERROR_WANT_READ:
 							case SSL_ERROR_WANT_WRITE:
 								if (read_status::closed == r_status)
+								{
+									SSL_shutdown(ssl);
 									return tr_read::consume_buffer(ctx, buffer_ref(), r_status);
+								}
 								else
 									return rd_consume_status::loop_break;
 
 							default:
+								// no shutdown, session will be removed from cache
 								return tr_read::consume_buffer(ctx, buffer_ref(), read_status::error);
 						}
 					}
@@ -219,8 +224,10 @@ namespace meow { namespace libev {
 
 		struct write : public generic_connection_traits__write<base>
 		{
+			enum write_result_t { wr_closed, wr_error, wr_okay };
+
 			template<class ContextT>
-			static int write_buffer_to_ssl(ContextT *ctx, buffer_t *b)
+			static write_result_t write_buffer_to_ssl(ContextT *ctx, buffer_t *b)
 			{
 				ssl_t *ssl = ssl_from_context(ctx);
 
@@ -228,7 +235,8 @@ namespace meow { namespace libev {
 				{
 					str_ref const buf_data = b->used_part();
 
-					SSL_LOG_WRITE(ctx, line_mode::single, "{0}: {{ {1}, {2} }", __func__, buf_data.size(), meow::format::as_hex_string(buf_data));
+					SSL_LOG_WRITE(ctx, line_mode::single, "{0}: {{ {1}, {2} }"
+							, __func__, buf_data.size(), meow::format::as_hex_string(buf_data));
 
 					int r = SSL_write(ssl, buf_data.data(), buf_data.size());
 
@@ -245,18 +253,19 @@ namespace meow { namespace libev {
 						{
 							// can recieve ssl shutdown message while in the middle of a handshake
 							case SSL_ERROR_ZERO_RETURN:
-								return 0;
+								SSL_shutdown(ssl);
+								return wr_closed;
 
 							// it's fine, the writer might want to read, in case we're in the middle of a handshake
 							case SSL_ERROR_WANT_READ:
-								return 0;
+								return wr_okay;
 
 							// should never happen, our write callback always accepts everything passed to it
 							case SSL_ERROR_WANT_WRITE:
-								return 0;
+								return wr_okay;
 
 							default:
-								return -1;
+								return wr_error;
 						}
 					}
 					else
@@ -265,27 +274,27 @@ namespace meow { namespace libev {
 					}
 				}
 
-				return 0;
+				return wr_okay;
 			}
 
 			template<class ContextT>
-			static int move_wchain_buffers_from_to(ContextT *ctx, buffer_chain_t& from, buffer_chain_t *to)
+			static write_result_t move_wchain_buffers_from_to(ContextT *ctx, buffer_chain_t& from, buffer_chain_t *to)
 			{
 				// ssl not enabled
 				if (NULL == ssl_from_context(ctx))
 				{
 					to->append_chain(from);
-					return 0;
+					return wr_okay;
 				}
 
 				// write as much as possible to ssl
 				while (!from.empty())
 				{
 					buffer_t *b = from.front();
-					int r = write_buffer_to_ssl(ctx, b);
+					write_result_t wr = write_buffer_to_ssl(ctx, b);
 
-					if (0 != r)
-						return r;
+					if (wr_okay != wr)
+						return wr;
 
 					if (b->empty())
 						from.pop_front();
@@ -293,20 +302,30 @@ namespace meow { namespace libev {
 						break;
 				}
 
-				return 0;
+				return wr_okay;
 			}
 
 			template<class ContextT>
 			static wr_complete_status_t writev_bufs(ContextT *ctx)
 			{
-				int ssl_errno = move_wchain_buffers_from_to(ctx, ctx->w_plaintext_chain, &ctx->wchain_);
-				if (0 != ssl_errno)
+				write_result_t wr = move_wchain_buffers_from_to(ctx, ctx->w_plaintext_chain, &ctx->wchain_);
+
+				switch (wr)
 				{
-					ctx->cb_write_closed(io_close_report(io_close_reason::custom_close));
-					return wr_complete_status::closed;
+					case wr_error:
+						ctx->cb_write_closed(io_close_report(io_close_reason::custom_close));
+						return wr_complete_status::closed;
+
+					case wr_closed:
+						ctx->cb_write_closed(io_close_report(io_close_reason::peer_close));
+						return wr_complete_status::closed;
+
+					case wr_okay:
+					default:
+						return writev_from_wchain(ctx, ctx->wchain_);
 				}
 
-				return writev_from_wchain(ctx, ctx->wchain_);
+				BOOST_ASSERT(!"can't be reached");
 			}
 		};
 	};
@@ -352,7 +371,7 @@ namespace meow { namespace libev {
 
 	public:
 
-		virtual void ssl_init(ssl_ctx_t *ssl_ctx)
+		void ssl_init(ssl_ctx_t *ssl_ctx)
 		{
 			ssl_move_ptr ssl = openssl_create(ssl_ctx);
 			if (!ssl)
@@ -381,9 +400,14 @@ namespace meow { namespace libev {
 			this->rw_ssl = move(ssl);
 		}
 
-		virtual bool ssl_is_initialized() const
+		bool ssl_is_initialized() const
 		{
 			return !!this->rw_ssl;
+		}
+
+		openssl_t* ssl_get() const
+		{
+			return this->rw_ssl.get();
 		}
 
 	private:
