@@ -61,17 +61,20 @@ namespace os_unix {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-	// if (NULL == host) -> assumes everything i.e. INADDR_ANY for IPv4
-	// returns: addrinfo call result, empty pointer if not found
-	// throws: api_call_error_ex on real errors
-	inline os_addrinfo_list_ptr getaddrinfo_ex(
-			  char const *host
-			, char const *port
-			, int proto_family
-			, int socktype
-			, int proto = 0
+	// returns: the getaddrinfo() error code
+	//       == 0 -> ok, ai_list outparameter is now filled with stuff
+	//       != 0 -> error, call gai_strerror() to get error string
+	inline int getaddrinfo_ex(
+				  os_addrinfo_list_ptr *ai_list // outparameter
+				, char const *host
+				, char const *port
+				, int proto_family
+				, int socktype
+				, int proto = 0
 			)
 	{
+		BOOST_ASSERT(NULL != ai_list);
+
 		struct addrinfo hints = {};
 		hints.ai_family = proto_family;
 		hints.ai_socktype = socktype;
@@ -86,24 +89,38 @@ namespace os_unix {
 		struct addrinfo *result = NULL;
 		int r = ::getaddrinfo(host, port, &hints, &result);
 
-		if (0 != r)
+		if (0 == r)
 		{
-#if 0
-#ifdef EAI_NODATA
-			if (EAI_NODATA == r)
-				return os_addrinfo_list_ptr();
-#endif
-			if (EAI_NONAME == r)
-				return os_addrinfo_list_ptr();
-#endif // 0
+			BOOST_ASSERT(NULL != result); // success, so result cant be empty
+			ai_list->reset(result);
+		}
+
+		return r;
+	}
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+	// if (NULL == host) -> assumes everything i.e. INADDR_ANY for IPv4
+	// returns: addrinfo call result, empty pointer if not found
+	// throws: api_call_error_ex on real errors
+	inline os_addrinfo_list_ptr getaddrinfo_ex(
+			  char const *host
+			, char const *port
+			, int proto_family
+			, int socktype
+			, int proto = 0
+			)
+	{
+		os_addrinfo_list_ptr ai_list;
+
+		int r = getaddrinfo_ex(&ai_list, host, port, proto_family, socktype, proto);
+		if (0 != r)
 			throw meow::api_call_error_ex<getaddrinfo_error_printer_t>(
 					  r, "getaddrinfo_ex('%s', '%s', PF = %d, socktype = %d, proto = %d)"
 					, host, port, proto_family, socktype, proto
 				);
-		}
 
-		BOOST_ASSERT(NULL != result); // success, so result cant be empty
-		return os_addrinfo_list_ptr(result);
+		return move(ai_list);
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
