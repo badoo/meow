@@ -322,7 +322,7 @@ namespace meow { namespace libev {
 
 					case wr_okay:
 					default:
-						return writev_from_wchain(ctx, ctx->wchain_);
+						return write::writev_from_wchain(ctx, ctx->wchain_);
 				}
 
 				BOOST_ASSERT(!"can't be reached");
