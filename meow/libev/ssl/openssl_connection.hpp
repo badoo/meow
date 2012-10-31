@@ -40,7 +40,7 @@ namespace meow { namespace libev {
 	struct SSL_SESSION_deleter_t {
 		void operator()(openssl_session_t *sess) { SSL_SESSION_free(sess); }
 	};
-	typedef boost::static_move_ptr<openssl_session_t> openssl_session_move_ptr;
+	typedef boost::static_move_ptr<openssl_session_t, SSL_SESSION_deleter_t> openssl_session_move_ptr;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
