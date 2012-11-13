@@ -19,7 +19,7 @@ namespace meow { namespace format {
 
 	typedef tmp_buffer<128> evmask_tmp_buffer_t;
 
-	str_ref as_evmask(int revents, evmask_tmp_buffer_t const& b = evmask_tmp_buffer_t())
+	inline str_ref as_evmask(int revents, evmask_tmp_buffer_t const& b = evmask_tmp_buffer_t())
 	{
 		sink::char_buffer_sink_t sink(b.get(), b.size());
 
