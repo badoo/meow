@@ -31,6 +31,9 @@
 #define MEOW_UNIX_ADDRINFO_LIST_FOR_EACH(var, list) \
 		for (os_addrinfo_t *var = get_pointer(list); var; var = var -> ai_next)
 
+#define MEOW_UNIX_ADDRINFO_LIST_P_FOR_EACH(var, list) \
+		for (os_addrinfo_t *var = list; var; var = var -> ai_next)
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 	inline size_t os_addrinfo_list_size(os_addrinfo_list_ptr const& al)
