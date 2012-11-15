@@ -271,7 +271,7 @@ namespace meow { namespace libev {
 					return false;
 
 				if (ctx->flags->write_before_close)
-					return ctx->wchain_.empty();
+					return !ctx->has_buffers_to_send();
 
 				return true;
 			}

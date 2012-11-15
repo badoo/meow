@@ -110,7 +110,7 @@ namespace meow { namespace libev {
 		struct rw_context_t : public tr_read::context_t
 		{
 			buffer_move_ptr  ssl_rbuf;
-			buffer_chain_t   w_plaintext_chain;
+			buffer_chain_t   ssl_wchain;
 			ssl_move_ptr     rw_ssl;
 		};
 
@@ -308,7 +308,7 @@ namespace meow { namespace libev {
 			template<class ContextT>
 			static wr_complete_status_t writev_bufs(ContextT *ctx)
 			{
-				write_result_t wr = move_wchain_buffers_from_to(ctx, ctx->w_plaintext_chain, &ctx->wchain_);
+				write_result_t wr = move_wchain_buffers_from_to(ctx, ctx->wchain_, &ctx->ssl_wchain);
 
 				switch (wr)
 				{
@@ -322,7 +322,7 @@ namespace meow { namespace libev {
 
 					case wr_okay:
 					default:
-						return write::writev_from_wchain(ctx, ctx->wchain_);
+						return write::writev_from_wchain(ctx, ctx->ssl_wchain);
 				}
 
 				BOOST_ASSERT(!"can't be reached");
@@ -356,17 +356,9 @@ namespace meow { namespace libev {
 		{
 		}
 
-		virtual void queue_buf(buffer_move_ptr buf)
+		virtual bool has_buffers_to_send() const
 		{
-			if (!buf || buf->empty())
-				return;
-
-			this->w_plaintext_chain.push_back(move(buf));
-		}
-
-		virtual void queue_chain(buffer_chain_t& chain)
-		{
-			this->w_plaintext_chain.append_chain(chain);
+			return !(this->wchain_.empty() && this->ssl_wchain.empty());
 		}
 
 	public:
@@ -424,7 +416,7 @@ namespace meow { namespace libev {
 					return 0;
 
 				buffer_move_ptr b = buffer_create_with_data(buf, buf_sz);
-				c->wchain_.push_back(move(b));
+				c->ssl_wchain.push_back(move(b));
 
 				return buf_sz;
 			}

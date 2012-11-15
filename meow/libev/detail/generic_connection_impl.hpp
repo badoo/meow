@@ -173,6 +173,11 @@ namespace meow { namespace libev {
 			this->w_activate();
 		}
 
+		virtual bool has_buffers_to_send() const
+		{
+			return !wchain_.empty();
+		}
+
 	public:
 
 		virtual buffer_chain_t& wchain_ref() { return wchain_; }

@@ -164,7 +164,7 @@ namespace meow { namespace libev {
 				}
 			}
 
-			return rd_consume_status::closed;
+			return rd_consume_status::loop_break;
 		}
 	};
 
