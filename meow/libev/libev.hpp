@@ -6,7 +6,6 @@
 #ifndef MEOW_LIBEV__LIBEV_HPP_
 #define MEOW_LIBEV__LIBEV_HPP_
 
-#include <ev.h>
 #include "libev_fwd.hpp"
 
 #include <meow/movable_handle.hpp>
