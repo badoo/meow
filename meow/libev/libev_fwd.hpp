@@ -18,6 +18,7 @@ namespace meow { namespace libev {
 	typedef struct ::ev_timer 	evtimer_t;
 	typedef struct ::ev_signal 	evsignal_t;
 	typedef struct ::ev_child   evchild_t;
+	typedef struct ::ev_async   evasync_t;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 }} // namespace meow { namespace libev {
