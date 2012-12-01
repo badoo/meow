@@ -31,6 +31,7 @@ namespace meow { namespace format { namespace sink {
 		template<class CharT>
 		static void call(fd_sink_t& sink, size_t total_len, string_ref<CharT const> const *slices, size_t n_slices)
 		{
+#if defined(MEOW_FORMAT_FD_SINK_NO_WRITEV) && (0 != MEOW_FORMAT_FD_SINK_NO_WRITEV)
 			char buf[total_len];
 			size_t offset = 0;
 			for (size_t i = 0; i < n_slices; ++i)
@@ -51,7 +52,7 @@ namespace meow { namespace format { namespace sink {
 			}
 
 			return;
-
+#else
 			typedef struct iovec os_iovec_t;
 
 			os_iovec_t iov[n_slices];
@@ -87,6 +88,7 @@ namespace meow { namespace format { namespace sink {
 					}
 				}
 			}
+#endif
 		}
 	};
 
