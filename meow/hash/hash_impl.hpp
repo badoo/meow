@@ -45,8 +45,8 @@ namespace detail {
 		return hash_default_impl::hash_blob(blob, size, initval);
 	}
 
-	template<class T>
-	inline hash_result_t hash_object(T const& obj);
+	//template<class T>
+	//inline hash_result_t hash_object(T const& obj);
 	// THIS_FUNCTION_IS_NOT_FIT_FOR_GENERIC_OBJECTS_PLEASE_DEFINE_YOUR_OWN_THING
 
 	inline hash_result_t hash_object(char const *s, hash_result_t const initval = detail::hash_def_initval)

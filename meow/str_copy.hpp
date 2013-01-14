@@ -147,7 +147,7 @@ namespace meow {
 
 		void fill(char_type fill_c, size_type n = -1)
 		{
-			if (-1 == n)
+			if (size_type(-1) == n)
 				n = n_;
 
 			BOOST_ASSERT(n <= n_);
