@@ -30,6 +30,20 @@ inline str_ref fmt_tmp( 										\
 
 BOOST_PP_REPEAT_FROM_TO(0, 32, MEOW_FORMAT_DEFINE_FMT_TMP, _);
 
+#define MEOW_FORMAT_DEFINE_WRITE_TMP(z, n, d) 					\
+template<size_t N FMT_TEMPLATE_PARAMS(n)> 						\
+inline str_ref write_tmp( 										\
+		  FMT_DEF_PARAMS_W(n) 									\
+		, tmp_buffer<N> const& buf = tmp_buffer<N>()) 			\
+{ 																\
+	sink::char_buffer_sink_t sink(buf.get(), buf.size()); 		\
+	write(sink FMT_CALL_SITE_ARGS(n)); 							\
+	return sink.used_part(); 									\
+} 																\
+/**/
+
+BOOST_PP_REPEAT_FROM_TO(1, 32, MEOW_FORMAT_DEFINE_WRITE_TMP, _);
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 }} // namespace meow { namespace format {
 ////////////////////////////////////////////////////////////////////////////////////////////////
