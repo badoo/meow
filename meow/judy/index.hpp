@@ -10,6 +10,7 @@
 #include <boost/static_assert.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/utility/enable_if.hpp>
+#include <boost/iterator/iterator_facade.hpp>
 
 #include <boost/bind.hpp>
 
@@ -70,10 +71,10 @@ namespace judy {
 			return (judy::j_error_p != r) ? static_cast<value_t*>(r) : NULL;
 		}
 
-		// @descr: deletes a value with a given key
+		// @descr: deletes a value with a given k_
 		// @return:
-		//  true: key has been found and deleted
-		//  false: key not found
+		//  true: k_ has been found and deleted
+		//  false: k_ not found
 		bool del(key_t const& k)
 		{
 			return (1 == j_ops::del(j_, (typename j_ops::key_t)(k)));
@@ -98,6 +99,77 @@ namespace judy {
 		};
 
 		MEOW_DEFINE_NESTED_TYPE_CHECKER(check_iteration, iteration);
+
+		class iterator_t : public boost::iterator_facade<
+							 						  iterator_t
+													, value_t
+													, boost::bidirectional_traversal_tag
+													>
+		{
+			typedef iterator_t self_t;
+
+			handle_t& j_;
+			key_t     k_;
+			void*     v_;
+
+		public:
+
+			iterator_t(handle_t& j)
+				: j_(j)
+				, k_(0)
+				, v_(NULL)
+			{
+				BOOST_STATIC_ASSERT(check_iteration<j_ops>::value);
+			}
+
+			key_t    key() const { return k_; }
+			value_t& value() const { return *(value_t*)v_; }
+
+			self_t& set_first()
+			{
+				k_ = 0;
+				v_ = (value_t*)j_ops::iteration::first(j_, &k_);
+				return *this;
+			}
+
+			self_t& set_last()
+			{
+				k_ = -1;
+				v_ = (value_t*)j_ops::iteration::last(j_, &k_);
+				return *this;
+			}
+
+		private:
+
+			friend class boost::iterator_core_access;
+
+			void increment()
+			{
+				v_ = (value_t*)j_ops::iteration::next(j_, &k_);
+			}
+
+			void decrement()
+			{
+				v_ = (value_t*)j_ops::iteration::prev(j_, &k_);
+			}
+
+			value_t& dereference()
+			{
+				return value();
+			}
+
+			template<class J>
+			bool equal(J const& other) const
+			{
+				return v_ == other.v_;
+			}
+		};
+		typedef iterator_t iterator;
+
+		iterator begin() { return iterator(j_).set_first(); }
+		iterator end() { return iterator(j_); }
+
+	public:
 
 		template<class Function>
 		void for_each(Function const& function)

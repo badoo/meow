@@ -7,6 +7,28 @@
 #define MEOW_JUDY__JUDY_HPP_
 
 extern "C" {
+
+#ifndef JUDYERROR_NOTEST
+
+#include <stdio.h>  // fprintf()
+#include <stdlib.h> // abort()
+
+// only fail on internal judy errors, as detected by the library
+// * let it crash in case there is an internal judy error
+// * caller is supposed to handle OOM conditions gracefully
+#define JUDYERROR(CallerFile, CallerLine, JudyFunc, JudyErrno, JudyErrID) \
+{                                                                         \
+	if ((JudyErrno) != JU_ERRNO_NOMEM) /* ! a malloc() failure */         \
+	{                                                                     \
+		(void) fprintf(stderr, "File '%s', line %d: %s(), "               \
+			"JU_ERRNO_* == %d, ID == %d\n",                               \
+			CallerFile, CallerLine,                                       \
+			JudyFunc, JudyErrno, JudyErrID);                              \
+		abort();                                                          \
+	}                                                                     \
+}
+#endif // JUDYERROR_NOTEST
+
 #include <Judy.h>
 }
 
@@ -21,9 +43,9 @@ namespace judy {
 	typedef Pvoid_t 	judy_t;
 
 	namespace {
-		int const 		j_error = 		  JERR;
-		void* const		j_error_p = 	 PJERR;
-		void** const	j_error_pp = 	PPJERR;
+		int const     j_error =     JERR;
+		void* const   j_error_p =   PJERR;
+		void** const  j_error_pp =  PPJERR;
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -120,10 +142,10 @@ namespace judy {
 
 		struct iteration
 		{
-			template<class J> static void* first(J& j, key_t const k) { void *v; JLF(v, get_handle(j), k); return v; }
-			template<class J> static void* last(J& j, key_t const k) { void *v; JLL(v, get_handle(j), k); return v; }
-			template<class J> static void* next(J& j, key_t const k) { void *v; JLN(v, get_handle(j), k); return v; }
-			template<class J> static void* prev(J& j, key_t const k) { void *v; JLP(v, get_handle(j), k); return v; }
+			template<class J> static void* first(J& j, key_t *k) { void *v; JLF(v, get_handle(j), *k); return v; }
+			template<class J> static void* last(J& j, key_t *k) { void *v; JLL(v, get_handle(j), *k); return v; }
+			template<class J> static void* next(J& j, key_t *k) { void *v; JLN(v, get_handle(j), *k); return v; }
+			template<class J> static void* prev(J& j, key_t *k) { void *v; JLP(v, get_handle(j), *k); return v; }
 
 			template<class J, class Function>
 			static void for_each(J& j, Function const& function)
@@ -151,16 +173,17 @@ namespace judy {
 
 	struct judy_ops_SL
 	{
-		typedef uint8_t const* 	key_t;
+		typedef char const* 	key_t;
+		typedef uint8_t const*  j_key_t; // key type used by judy internally
 		typedef judy_SL_t 		handle_t;
 
-		static void* get(judy_t const& j, key_t const k) { void *v; JSLG(v, j, k); return v; }
+		static void* get(judy_t const& j, key_t const k) { void *v; JSLG(v, j, (j_key_t)k); return v; }
 		static void* get(handle_t const& j, key_t const k) { return get(get_handle(j), k); }
 
-		static void* get_or_create(judy_t& j, key_t const k) { void *v; JSLI(v, j, k); return v; }
+		static void* get_or_create(judy_t& j, key_t const k) { void *v; JSLI(v, j, (j_key_t)k); return v; }
 		static void* get_or_create(handle_t& j, key_t const k) { return get_or_create(get_handle(j), k); }
 
-		static int del(judy_t& j, key_t const k) { int r; JSLD(r, j, k); return r; }
+		static int del(judy_t& j, key_t const k) { int r; JSLD(r, j, (j_key_t)k); return r; }
 		static int del(handle_t& j, key_t const k) { return del(get_handle(j), k); }
 
 		static int free_array(judy_t& j) { int n; JSLFA(n, j); return n; }
