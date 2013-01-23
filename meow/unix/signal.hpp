@@ -15,7 +15,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#ifdef linux
+#ifdef __linux__
 	extern const char *const sys_sigabbrev[];
 #else
 	extern const char *const sys_signame[];
@@ -30,7 +30,7 @@ namespace os_unix {
 	inline char const* signal_name_from_id(int sig)
 	{
 		BOOST_ASSERT(sig > 0 && sig < NSIG);
-#ifdef linux
+#ifdef __linux__
 		return ::sys_sigabbrev[sig];
 #else
 		return ::sys_signame[sig];
