@@ -68,7 +68,7 @@ namespace meow { namespace logging {
 				write(sink, "[", log_name_, "]");
 
 			if (pf_ & prefix_field::log_level)
-				write(sink, "[", enum_as_str_ref(lvl), "]");
+				write(sink, "[", log_level::enum_as_str_ref(lvl), "]");
 
 			if (prefix_field::_null != pf_)
 				write(sink, " ");
