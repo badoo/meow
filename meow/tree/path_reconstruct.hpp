@@ -11,6 +11,7 @@
 #include <meow/tmp_buffer.hpp>
 #include <meow/format/format.hpp>
 #include <meow/format/sink/char_buffer.hpp>
+#include <meow/format/sink/std_string.hpp>
 
 #include "tree.hpp"
 

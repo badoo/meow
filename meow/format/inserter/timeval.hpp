@@ -16,6 +16,7 @@
 #include <meow/tmp_buffer.hpp>
 
 #include <meow/format/metafunctions.hpp>
+#include <meow/format/detail/integer_to_string.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace format {
