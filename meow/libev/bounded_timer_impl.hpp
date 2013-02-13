@@ -6,9 +6,10 @@
 #ifndef MEOW_LIBEV__BOUNDED_TIMER_IMPL_HPP_
 #define MEOW_LIBEV__BOUNDED_TIMER_IMPL_HPP_
 
+#include <functional> // bind
+
 #include <boost/array.hpp>
 #include <boost/assert.hpp>
-#include <boost/bind.hpp>
 
 #include <meow/libev/bounded_timer.hpp>
 #include <meow/libev/libev.hpp>
@@ -51,7 +52,7 @@ namespace meow { namespace libev {
 			, ticker_(loop)
 		{
 			os_timeval_t tv = os_unix::make_timeval(tick_interval_ms / 1000, (tick_interval_ms % 1000) * 1000 );
-			ticker_.start(tv, boost::bind(&self_t::on_tick, this, _1, _2));
+			ticker_.start(tv, std::bind(&self_t::on_tick, this, std::placeholders::_1, std::placeholders::_2));
 		}
 
 		~bounded_timer_impl_t()

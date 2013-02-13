@@ -124,7 +124,7 @@ namespace judy {
 
 		void clear()
 		{
-			i_.for_each(&self_t::delete_wrapper_kv);
+			for_each(&self_t::delete_wrapper_kv);
 			i_.clear();
 		}
 
@@ -133,7 +133,10 @@ namespace judy {
 		template<class Function>
 		void for_each(Function const& function)
 		{
-			i_.for_each(function);
+			for (auto i = i_.begin(), e = i_.end(); i != e; ++i)
+			{
+				function(i.key(), i.value());
+			}
 		}
 
 	public:

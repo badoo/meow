@@ -94,7 +94,14 @@ namespace judy {
 			typedef iterator_t self_t;
 
 			handle_t& j_;
-			key_t     k_;
+
+			// word_t, and not key_t, since there is no automatic conversion for pointers
+			//  word_t can convert to int in return but
+			//  int* can't convert to word_t* in calls to j_ops::iteration:: functions
+			word_t    k_;
+
+			// the value pointer, cached from inside judy leaf, to not have to look up
+			//  on dereference
 			void*     v_;
 
 		public:
