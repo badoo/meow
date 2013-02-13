@@ -8,11 +8,9 @@
 
 #include <cctype> 	// isdigit et. al.
 #include <cstring> 	// memchr
+#include <cassert>
 
-#include <boost/bind.hpp>
-#include <boost/assert.hpp>
-#include <boost/static_assert.hpp>
-
+#include <meow/std_bind.hpp>
 #include <meow/mapping/actor.hpp>
 #include <meow/mapping/http_headers.hpp>
 #include <meow/mapping/kv_mapping.hpp>
@@ -77,7 +75,7 @@ namespace detail {
 	template<size_t max_len, class CharT, class T>
 	inline CharT* read_number(CharT *head, CharT *hend, T& v)
 	{
-		BOOST_STATIC_ASSERT(max_len >= 1);
+		static_assert(max_len > 0, "number is >0 characters long as string");
 
 		if (__builtin_expect(hend < head + max_len, 0))
 			hend = head + max_len;
@@ -122,7 +120,7 @@ namespace detail {
 		// requet has the form
 		// VERB<+space><random_crap_uri><+space>HTTP/<number>.<number>\r\n
 
-		BOOST_STATIC_ASSERT(1 == sizeof(CharT));
+		static_assert(1 == sizeof(CharT), "only works for simple character types");
 
 		// find first space to get the VERB
 		CharT *vend = (CharT*)std::memchr(head, ' ', hend - head);
@@ -186,14 +184,14 @@ namespace detail {
 		// requet has the form
 		// HTTP/<number>.<number><+space><number><+space><random_message>\r\n
 
-		BOOST_STATIC_ASSERT(1 == sizeof(CharT));
+		static_assert(1 == sizeof(CharT), "only works for simple character types");
 
 		// prefix
 		static str_ref const prefix = ref_lit("HTTP/");
 		static size_t const prefix_len = sizeof("HTTP/x.x") - 1;
 
 		// check full length right at start
-		BOOST_ASSERT(head < hend);
+		assert(head < hend);
 		if (__builtin_expect(size_t(hend - head) < prefix_len, 0))
 			return false;
 
@@ -250,7 +248,7 @@ namespace detail {
 	template<class CharT, class Function>
 	inline bool map_http_headers(CharT *& head, CharT * const hend, Function const& header_fn)
 	{
-		BOOST_STATIC_ASSERT(1 == sizeof(CharT));
+		static_assert(1 == sizeof(CharT), "only works for simple character types");
 
 		while (head != hend)
 		{
@@ -303,7 +301,7 @@ namespace detail {
 	inline bool map_http_request(CharT *& head, CharT * const hend, MappingT const& m, ContextT *ctx)
 	{
 		return map_http_request_line(head, hend, *ctx)
-			&& map_http_headers(head, hend, boost::bind(kv_mapping_executor_t(), &m, ctx, _1, _2))
+			&& map_http_headers(head, hend, std::bind(kv_mapping_executor_t(), &m, ctx, _1, _2))
 			;
 	}
 
@@ -318,7 +316,7 @@ namespace detail {
 	inline bool map_http_response(CharT *& head, CharT * const hend, MappingT const& m, ContextT *ctx)
 	{
 		return map_http_response_line(head, hend, *ctx)
-			&& map_http_headers(head, hend, boost::bind(kv_mapping_executor_t(), &m, ctx, _1, _2))
+			&& map_http_headers(head, hend, std::bind(kv_mapping_executor_t(), &m, ctx, _1, _2))
 			;
 	}
 
