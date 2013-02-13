@@ -27,17 +27,20 @@ namespace meow { namespace libev {
 	};
 #endif
 
+	MEOW_DEFINE_SMART_ENUM_STRUCT(bin_msg_read_state,
+									((header, "header"))
+									((body,   "body"))
+									);
+
+
 	template<class Traits>
 	struct bin_msg_connection_repack_traits : public Traits
 	{
 		struct read
 		{
 			typedef typename Traits::bin_msg_read tr;
-
-			MEOW_DEFINE_SMART_ENUM_STRUCT_T(read_state, 
-											((header, "header"))
-											((body, "body"))
-											);
+			typedef bin_msg_read_state            read_state;
+			typedef bin_msg_read_state_t          read_state_t;
 
 			struct context_t
 			{
