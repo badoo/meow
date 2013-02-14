@@ -39,16 +39,14 @@ namespace meow { namespace format { namespace sink {
 		typedef buffer_sink_impl_t 		self_t;
 		typedef buffer_impl_t<CharT> 	buf_t;
 
-		typedef boost::static_move_ptr<buf_t> buf_move_ptr;
-
-		buf_move_ptr buf_;
+		buffer_move_ptr buf_;
 
 		explicit buffer_sink_impl_t(size_t initial_sz)
 			: buf_(new buf_t(initial_sz))
 		{
 		}
 
-		buf_move_ptr grab_buffer() { return move(buf_); }
+		buffer_move_ptr grab_buffer() { return move(buf_); }
 
 		void write(size_t total_len, meow::string_ref<CharT const> const* slices, size_t n_slices)
 		{

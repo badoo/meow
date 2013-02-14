@@ -9,14 +9,14 @@
 #include <cstring> // memcpy
 #include <cstdlib> // malloc
 
-#include <exception>
+#include <exception>   // bad_alloc
+#include <type_traits> // remove_const
 
 #include <boost/assert.hpp>
 #include <boost/noncopyable.hpp>
-#include <boost/type_traits/remove_const.hpp>
 
 #include <meow/str_ref.hpp>
-#include <meow/move_ptr/static_move_ptr.hpp>
+#include <meow/std_unique_ptr.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow {
@@ -25,8 +25,8 @@ namespace meow {
 	template<class CharT>
 	struct buffer_impl_t : private boost::noncopyable
 	{
-		typedef buffer_impl_t 								self_t;
-		typedef typename boost::remove_const<CharT>::type 	char_t;
+		typedef buffer_impl_t                           self_t;
+		typedef typename std::remove_const<CharT>::type char_t;
 
 	private:
 		// physical dimensions
@@ -114,9 +114,9 @@ namespace meow {
 		void invariant_check() { BOOST_ASSERT((begin_ <= first) && (first <= last) && (first <= end_)); }
 	};
 
-	typedef buffer_impl_t<char> 				buffer_t;
-	typedef buffer_impl_t<wchar_t> 				w_buffer_t;
-	typedef boost::static_move_ptr<buffer_t> 	buffer_move_ptr;
+	using buffer_t        = buffer_impl_t<char>;
+	using w_buffer_t      = buffer_impl_t<wchar_t>;
+	using buffer_move_ptr = std::unique_ptr<buffer_t>;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 

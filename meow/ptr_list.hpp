@@ -10,7 +10,7 @@
 #include <boost/intrusive/list.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 
-#include <meow/move_ptr/static_move_ptr.hpp>
+#include <meow/std_unique_ptr.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow {
@@ -21,8 +21,8 @@ namespace meow {
 	template<class T>
 	struct ptr_list_traits_default
 	{
-		typedef T value_t;
-		typedef boost::static_move_ptr<value_t> value_move_ptr;
+		typedef T                         value_t;
+		typedef std::unique_ptr<value_t>  value_move_ptr;
 
 		typedef ptr_list_hook_t list_hook_t;
 		static bool const constant_time_size = true;
@@ -36,8 +36,8 @@ namespace meow {
 	template<class T>
 	struct ptr_list_traits_auto_unlink
 	{
-		typedef T value_t;
-		typedef boost::static_move_ptr<value_t> value_move_ptr;
+		typedef T                         value_t;
+		typedef std::unique_ptr<value_t>  value_move_ptr;
 
 		typedef ptr_list_auto_hook_t list_hook_t;
 		static bool const constant_time_size = false;

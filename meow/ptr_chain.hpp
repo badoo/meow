@@ -6,13 +6,13 @@
 #ifndef MEOW__PTR_CHAIN_HPP_
 #define MEOW__PTR_CHAIN_HPP_
 
+#include <type_traits>
+
 #include <boost/noncopyable.hpp>
 #include <boost/intrusive/slist.hpp>
-#include <boost/type_traits/is_base_and_derived.hpp>
-
 #include <boost/iterator/iterator_facade.hpp>
 
-#include <meow/move_ptr/static_move_ptr.hpp>
+#include <meow/std_unique_ptr.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow {
@@ -21,8 +21,8 @@ namespace meow {
 	template<class T>
 	struct ptr_chain_traits_default
 	{
-		typedef T value_t;
-		typedef boost::static_move_ptr<value_t> value_move_ptr;
+		typedef T                        value_t;
+		typedef std::unique_ptr<value_t> value_move_ptr;
 
 		static bool const constant_time_size = true;
 		static bool const linear = false;
@@ -69,7 +69,7 @@ namespace meow {
 
 			static value_t* value_pointer(item_t const& i)
 			{
-				return get_pointer(i.value);
+				return i.value.get();
 			}
 
 			static value_move_ptr value_move(item_t& i)
@@ -94,7 +94,7 @@ namespace meow {
 		template<class V>
 		struct self_traits_t<V, ptr_chain_intrusive<true> >
 		{
-			BOOST_STATIC_ASSERT((boost::is_base_and_derived<hook_t, value_t>::value));
+			BOOST_STATIC_ASSERT((std::is_base_of<hook_t, value_t>::value));
 			typedef value_t item_t;
 
 			static value_t* value_pointer(item_t const& i)

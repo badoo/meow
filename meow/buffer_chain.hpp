@@ -8,6 +8,7 @@
 
 #include <meow/buffer.hpp>
 #include <meow/ptr_chain.hpp>
+#include <meow/std_unique_ptr.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow {
@@ -15,8 +16,8 @@ namespace meow {
 
 	struct ptr_chain_traits_buffer
 	{
-		typedef buffer_t value_t;
-		typedef boost::static_move_ptr<value_t> value_move_ptr;
+		typedef buffer_t         value_t;
+		typedef buffer_move_ptr  value_move_ptr;
 
 		static bool const constant_time_size = false;
 		static bool const linear = true;
@@ -29,7 +30,7 @@ namespace meow {
 				>
 				buffer_chain_t;
 
-	typedef boost::static_move_ptr<buffer_chain_t> buffer_chain_move_ptr;
+	typedef std::unique_ptr<buffer_chain_t> buffer_chain_move_ptr;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 } // namespace meow {

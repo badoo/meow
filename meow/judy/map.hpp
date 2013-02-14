@@ -6,15 +6,14 @@
 #ifndef MEOW_JUDY__MAP_HPP_
 #define MEOW_JUDY__MAP_HPP_
 
+#include <type_traits>
+
 #include <boost/assert.hpp>
 #include <boost/noncopyable.hpp>
 
-#include <boost/type_traits/is_integral.hpp>
-
 #include <meow/judy/judy.hpp>
 #include <meow/judy/index.hpp>
-
-#include <meow/move_ptr/static_move_ptr.hpp>
+#include <meow/std_unique_ptr.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace judy {
@@ -28,7 +27,7 @@ namespace judy {
 	template<
 		  class K
 		, class V
-		, class ValuePtr = boost::static_move_ptr<V>
+		, class ValuePtr = std::unique_ptr<V>
 		>
 	struct map_t : private boost::noncopyable
 	{
