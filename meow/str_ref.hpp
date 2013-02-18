@@ -10,9 +10,6 @@
 #include <string>		// for std::string and std::char_traits and stuff
 #include <type_traits>
 
-#ifndef BOOST_ASSERT_HPP
-#define BOOST_ASSERT_HPP // disable, BOOST_ASSERT_MSG
-#endif
 #include <boost/assert.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
