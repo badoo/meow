@@ -7,8 +7,7 @@
 #define MEOW_LIBEV__MMC_CONNECTION_HPP_
 
 #include <meow/str_ref.hpp>
-#include <meow/move_ptr/static_move_ptr.hpp>
-
+#include <meow/std_unique_ptr.hpp>
 #include <meow/libev/io_close_report.hpp>
 #include <meow/libev/detail/generic_connection.hpp>
 
@@ -32,7 +31,7 @@ namespace meow { namespace libev {
 	{
 	};
 
-	typedef boost::static_move_ptr<mmc_connection_t> mmc_connection_ptr;
+	typedef std::unique_ptr<mmc_connection_t> mmc_connection_ptr;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 }} // namespace meow { namespace libev {

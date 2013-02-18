@@ -6,7 +6,7 @@
 #ifndef MEOW_FORMAT__METAFUNCTIONS_HPP_
 #define MEOW_FORMAT__METAFUNCTIONS_HPP_
 
-#include <cstdlib>
+#include <cstddef>
 #include <meow/str_ref.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////

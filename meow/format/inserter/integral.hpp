@@ -6,9 +6,8 @@
 #ifndef MEOW_FORMAT_INSERTER_INTEGRAL_HPP_
 #define MEOW_FORMAT_INSERTER_INTEGRAL_HPP_
 
-#include <boost/utility/enable_if.hpp>
-#include <boost/type_traits/is_enum.hpp>
-#include <boost/type_traits/is_integral.hpp>
+#include <utility> // enable_if
+#include <type_traits>
 
 #include <meow/str_ref.hpp>
 #include <meow/tmp_buffer.hpp>
@@ -64,7 +63,7 @@ namespace meow { namespace format {
 	template<class T>
 	struct type_tunnel<
 			  T
-			, typename boost::enable_if<boost::is_integral<T> >::type
+			, typename std::enable_if<std::is_integral<T>::value>::type
 			>
 	{
 		enum { radix = 10 };
@@ -101,7 +100,7 @@ namespace meow { namespace format {
 	template<class T>
 	struct type_tunnel<
 			  T
-			, typename boost::enable_if<boost::is_enum<T> >::type
+			, typename std::enable_if<std::is_enum<T>::value>::type
 			>
 	{
 		enum { radix = 10 };

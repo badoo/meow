@@ -6,21 +6,16 @@
 #ifndef MEOW__STR_COPY_HPP_
 #define MEOW__STR_COPY_HPP_
 
-#include <limits> // std::numeric_limits<>
-#include <string> // std::char_traits, std::string
-#include <cstring> // memset, memcpy
+#include <cstring>      // memset, memcpy
+#include <limits>       // std::numeric_limits<>
+#include <string>       // std::char_traits, std::string
+#include <type_traits>
 
 #include <boost/assert.hpp>
 #include <boost/static_assert.hpp>
-#include <boost/type_traits/is_const.hpp>
-#include <boost/type_traits/is_convertible.hpp>
-#include <boost/type_traits/is_same.hpp>
-#include <boost/type_traits/remove_const.hpp>
-#include <boost/type_traits/has_trivial_assign.hpp>
-#include <boost/utility/enable_if.hpp>
 
 #include <meow/str_ref.hpp>
-#include <meow/move_ptr/static_move_ptr.hpp>
+#include <meow/std_unique_ptr.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow {
@@ -37,7 +32,7 @@ namespace meow {
 
 	template<
 		  class CharT
-		, class Traits = std::char_traits<typename boost::remove_const<CharT>::type>
+		, class Traits = std::char_traits<typename std::remove_const<CharT>::type>
 		>
 	struct string_copy
 	{
@@ -48,29 +43,31 @@ namespace meow {
 		typedef Traits		traits_type;
 		typedef std::basic_string<typename traits_type::char_type, traits_type> string_type;
 
-		typedef typename boost::remove_const<char_type>::type char_type_nc;
+		typedef typename std::remove_const<char_type>::type char_type_nc;
 
 		typedef string_ref<char_type_nc>       buffer_ref_t;
 		typedef string_ref<char_type_nc const> string_ref_t;
 
-		typedef boost::static_move_ptr<char_type[]> move_pointer_t;
+		typedef std::unique_ptr<char_type[]> move_pointer_t;
 
 	private:
 		struct unspecified_bool_helper { int dummy; };
 		typedef int unspecified_bool_helper::* unspecified_bool_type;
 
 		// antoxa: char_type can't be const for the sake of my sanity
-		BOOST_STATIC_ASSERT(!boost::is_const<char_type>::value);
+		BOOST_STATIC_ASSERT(!std::is_const<char_type>::value);
 
-		// antoxa: can't be bothered supporting non trivially-copyable types
-		BOOST_STATIC_ASSERT(boost::has_trivial_assign<value_type>::value);
+		// antoxa: can't be bothered supporting fancy types
+		// FIXME: gcc 4.7.2 is missing for std::is_trivially_copyable<>
+		// using is_standard_layout for now
+		BOOST_STATIC_ASSERT(std::is_standard_layout<char_type>::value);
 
 		template<class U>
 		struct can_copy_from
 		{
 			enum {
-				  convert = boost::is_convertible<U, char_type>::value
-				, same = boost::is_same<U, char_type>::value
+				  convert = std::is_convertible<U, char_type>::value
+				, same = std::is_same<U, char_type>::value
 				, value = convert || same
 			};
 		};
@@ -104,7 +101,7 @@ namespace meow {
 		template<class U>
 		string_copy(
 				  string_copy<U> const& other
-				, typename boost::enable_if_c<can_copy_from<U>::value, self_t>::type * = 0
+				, typename std::enable_if<can_copy_from<U>::value, self_t>::type * = 0
 				)
 		{
 			this->init_copy(other.data(), other.size());
@@ -124,7 +121,7 @@ namespace meow {
 		}
 
 		template<class U>
-		typename boost::enable_if_c<can_copy_from<U>::value, self_t>::type&
+		typename std::enable_if<can_copy_from<U>::value, self_t>::type&
 		operator=(string_copy<U> const& other)
 		{
 			return ((*this) = other.ref());

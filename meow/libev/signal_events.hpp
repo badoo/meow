@@ -6,11 +6,11 @@
 #ifndef MEOW_LIBEV__SIGNAL_EVENTS_HPP_
 #define MEOW_LIBEV__SIGNAL_EVENTS_HPP_
 
-#include <boost/function.hpp>
+#include <functional> // function
 #include <boost/noncopyable.hpp>
 
+#include <meow/std_unique_ptr.hpp>
 #include <meow/libev/libev_fwd.hpp>
-#include <meow/move_ptr/static_move_ptr.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace libev {
@@ -25,7 +25,7 @@ namespace meow { namespace libev {
 		enum { max_signals = MEOW_INTERNAL_LIBEV_NSIG };
 
 		typedef signal_events_t 					self_t;
-		typedef boost::function<void(self_t*, int)>	callback_t;
+		typedef std::function<void(self_t*, int)>	callback_t;
 
 	public:
 
@@ -40,7 +40,7 @@ namespace meow { namespace libev {
 		virtual ~signal_events_t() {}
 	};
 
-	typedef boost::static_move_ptr<signal_events_t> signal_events_move_ptr;
+	typedef std::unique_ptr<signal_events_t> signal_events_move_ptr;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 }} // namespace meow { namespace libev {

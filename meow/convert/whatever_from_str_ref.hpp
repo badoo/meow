@@ -6,13 +6,14 @@
 #ifndef MEOW_CONVERT__WHATEVER_FROM_STR_REF_HPP_
 #define MEOW_CONVERT__WHATEVER_FROM_STR_REF_HPP_
 
-#include <boost/lexical_cast.hpp> // blergh
+#include <string>
+#include <type_traits>
+
+#include <boost/lexical_cast.hpp> // blergh, HUGE 
 
 #include <meow/str_ref.hpp>
-#include <meow/str_ref_to_ostream.hpp>
-
-#include "number_from_string.hpp"
-#include "whatever_cast.hpp"
+#include <meow/convert/number_from_string.hpp>
+#include <meow/convert/whatever_cast.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow {
@@ -43,7 +44,7 @@ namespace meow {
 	struct whatever_caster_t<
 			  T
 			, str_ref
-			, typename boost::enable_if<boost::is_arithmetic<T> >::type
+			, typename std::enable_if<std::is_arithmetic<T>::value>::type
 			>
 	{
 		void operator()(T& to, str_ref const& from) const { to = number_from_string<T>(from); }
@@ -72,7 +73,7 @@ namespace meow {
 	struct whatever_caster_t<
 		  T
 		, string_ref<CharT>
-		, typename boost::disable_if<boost::is_arithmetic<T> >::type
+		, typename std::enable_if<!boost::is_arithmetic<T>::value>::type
 		>
 	{
 		void operator()(T& to, string_ref<CharT const> const& from) const { to = boost::lexical_cast<T>(from); }

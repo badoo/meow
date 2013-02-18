@@ -7,14 +7,13 @@
 #define MEOW_LIBXML2__CORE_HPP_
 
 #include <cstdio>				// for snprintf
+#include <exception>
 
 #include <libxml/tree.h>		// for xmlDoc
 #include <libxml/xmlerror.h>	// for xmlError
 #include <libxml/xmlstring.h>	// for xmlChar
 
-#include <exception>
-
-#include <meow/move_ptr/static_move_ptr.hpp>
+#include <meow/std_unique_ptr.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace libxml2 {
@@ -81,7 +80,7 @@ namespace meow { namespace libxml2 {
 // libxml object smart pointers
 
 	template<class T>
-	struct as_move_ptr { typedef typename boost::static_move_ptr<T, deleter_t> type; };
+	struct as_move_ptr { typedef typename std::unique_ptr<T, deleter_t> type; };
 
 	template<class T>
 	inline typename as_move_ptr<T>::type acquire_move_ptr(T *p)

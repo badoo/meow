@@ -6,7 +6,7 @@
 #ifndef MEOW__MOVABLE_HANDLE_HPP_
 #define MEOW__MOVABLE_HANDLE_HPP_
 
-#include <algorithm> // for std::swap
+#include <utility> // for std::swap, since C++11
 
 #include <boost/call_traits.hpp>
 

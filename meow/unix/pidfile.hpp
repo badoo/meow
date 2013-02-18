@@ -7,8 +7,8 @@
 #define MEOW_UNIX__PIDFILE_HPP_
 
 #include <fcntl.h> // open
-#include <cstdio> // fprintf
 
+#include <cstdio> // fprintf
 #include <string>
 
 #include <meow/api_call_error.hpp>

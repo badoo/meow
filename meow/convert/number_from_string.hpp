@@ -6,13 +6,9 @@
 #ifndef MEOW_CONVERT__NUMBER_FROM_STRING_HPP_
 #define MEOW_CONVERT__NUMBER_FROM_STRING_HPP_
 
-#include <typeinfo> 	// std::bad_cast
-
-#include <boost/utility/enable_if.hpp>
-
-#include <boost/type_traits/is_integral.hpp>
-#include <boost/type_traits/is_signed.hpp>
-#include <boost/type_traits/is_unsigned.hpp>
+#include <typeinfo>  // std::bad_cast
+#include <utility>   // enable_if
+#include <type_traits>
 
 #include <meow/str_ref.hpp>
 
@@ -38,9 +34,9 @@ namespace detail {
 	template<class T>
 	struct number_from_string_caster_t<
 			  T
-			, typename boost::enable_if_c<
-				   boost::is_integral<T>::value
-				&& boost::is_signed<T>::value
+			, typename std::enable_if<
+				   std::is_integral<T>::value
+				&& std::is_signed<T>::value
 				&& (sizeof(T) <= sizeof(long))
 			>::type
 			>
@@ -51,9 +47,9 @@ namespace detail {
 	template<class T>
 	struct number_from_string_caster_t<
 			  T
-			, typename boost::enable_if_c<
-				   boost::is_integral<T>::value
-				&& boost::is_unsigned<T>::value
+			, typename std::enable_if<
+				   std::is_integral<T>::value
+				&& std::is_unsigned<T>::value
 				&& (sizeof(T) <= sizeof(long))
 			>::type
 			>

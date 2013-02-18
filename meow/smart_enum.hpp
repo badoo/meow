@@ -7,7 +7,6 @@
 #define MEOW__SMART_ENUM_HPP_
 
 #include <boost/assert.hpp>
-#include <boost/static_assert.hpp>
 #include <boost/preprocessor/repetition/enum.hpp>
 #include <boost/preprocessor/seq.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>

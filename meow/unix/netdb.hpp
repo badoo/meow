@@ -12,7 +12,7 @@
 #include <cstdio>						// for snprintf
 #include <boost/assert.hpp>
 
-#include <meow/move_ptr/static_move_ptr.hpp>
+#include <meow/std_unique_ptr.hpp>
 #include <meow/api_call_error.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -24,12 +24,12 @@
 	};
 
 	// addrinfo list handle, don't try to use with list elements
-	typedef boost::static_move_ptr<os_addrinfo_t, addrinfo_deleter_t> os_addrinfo_list_ptr;
+	typedef std::unique_ptr<os_addrinfo_t, addrinfo_deleter_t> os_addrinfo_list_ptr;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define MEOW_UNIX_ADDRINFO_LIST_FOR_EACH(var, list) \
-		for (os_addrinfo_t *var = get_pointer(list); var; var = var -> ai_next)
+		for (os_addrinfo_t *var = list.get(); var; var = var -> ai_next)
 
 #define MEOW_UNIX_ADDRINFO_LIST_P_FOR_EACH(var, list) \
 		for (os_addrinfo_t *var = list; var; var = var -> ai_next)

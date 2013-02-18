@@ -8,9 +8,9 @@
 
 #include <csignal>
 #include <boost/assert.hpp>
-#include <meow/libev/libev.hpp>
 
-#include "signal_events.hpp"
+#include <meow/libev/libev.hpp>
+#include <meow/libev/signal_events.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace libev {

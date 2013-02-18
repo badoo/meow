@@ -6,7 +6,7 @@
 #ifndef MEOW_LIBEV__LISTENER_IMPL_HPP_
 #define MEOW_LIBEV__LISTENER_IMPL_HPP_
 
-#include <boost/function.hpp>
+#include <functional> // function
 
 #include <meow/api_call_error.hpp>
 #include <meow/utility/offsetof.hpp>
@@ -127,7 +127,7 @@ namespace meow { namespace libev { namespace detail {
 		typedef listener_dynamic_impl_t self_t;
 		typedef listener_static_impl_t<listener_dynamic_impl_t> base_t;
 
-		typedef boost::function<void(listener_t*, int)> callback_t;
+		typedef std::function<void(listener_t*, int)> callback_t;
 
 		listener_dynamic_impl_t(libev::evloop_t *loop, callback_t const& cb)
 			: base_t(loop)

@@ -6,8 +6,7 @@
 #ifndef MEOW_HASH__HASH_FWD_HPP_
 #define MEOW_HASH__HASH_FWD_HPP_
 
-#include <stdint.h>
-#include <boost/utility/enable_if.hpp>
+#include <cstdint>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow {

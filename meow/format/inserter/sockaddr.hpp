@@ -17,7 +17,6 @@
 #include <meow/str_ref.hpp>
 #include <meow/tmp_buffer.hpp>
 #include <meow/config/endian.hpp>
-
 #include <meow/format/metafunctions.hpp>
 #include <meow/format/inserter/integral.hpp>
 

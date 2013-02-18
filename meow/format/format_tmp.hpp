@@ -6,10 +6,10 @@
 #ifndef MEOW_FORMAT__FORMAT_TMP_HPP_
 #define MEOW_FORMAT__FORMAT_TMP_HPP_
 
+#include <meow/tmp_buffer.hpp>
+
 #include "sink/char_buffer.hpp"
 #include "format_functions.hpp"
-
-#include <meow/tmp_buffer.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace format {

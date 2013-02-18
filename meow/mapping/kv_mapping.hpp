@@ -9,9 +9,8 @@
 #include <list>
 #include <vector>
 #include <utility> // for std::pair
+#include <functional> // function
 
-#include <boost/foreach.hpp>
-#include <boost/function.hpp>
 #include <boost/noncopyable.hpp>
 
 #ifdef MEOW_KV_MAPPING_ENABLE_JUDY_MAP
@@ -90,8 +89,8 @@ namespace meow { namespace mapping {
 	{
 		typedef kv_mapping_t 	self_t;
 		typedef self_t 			base_t; // for wrappers to use
-		typedef boost::function<void(ContextT&, str_ref)> 			handler_t;
-		typedef boost::function<void(ContextT&, str_ref, str_ref)> 	header_handler_t;
+		typedef std::function<void(ContextT&, str_ref)>           handler_t;
+		typedef std::function<void(ContextT&, str_ref, str_ref)>  header_handler_t;
 
 	private:
 		std::list<handler_t> 			handlers_;

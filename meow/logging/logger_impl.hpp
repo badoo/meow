@@ -6,7 +6,7 @@
 #ifndef MEOW_LOGGING__LOGGER_IMPL_HPP_
 #define MEOW_LOGGING__LOGGER_IMPL_HPP_
 
-#include <boost/function.hpp>
+#include <functional> // function
 
 #include <meow/format/format.hpp>
 #include <meow/format/metafunctions.hpp>
@@ -24,7 +24,7 @@ namespace meow { namespace logging {
 		typedef logger_base_t<CharT> 	base_t;
 		typedef PrefixT 				prefix_t;
 		typedef typename base_t::str_t 	str_t;
-		typedef boost::function<void(size_t, str_t const*, size_t)> writer_fn_t;
+		typedef std::function<void(size_t, str_t const*, size_t)> writer_fn_t;
 
 	public:
 

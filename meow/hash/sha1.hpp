@@ -10,7 +10,7 @@
 // which borrowed it from Steve Reid <steve@edmweb.com>
 //  original comments are still in the code sometimes where it improves clarity
 
-#include <stdint.h>
+#include <cstdint>
 #include <meow/str_ref.hpp> // for convenience funcs
 
 // implementation only

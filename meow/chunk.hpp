@@ -6,11 +6,10 @@
 #ifndef MEOW__CHUNK_HPP_
 #define MEOW__CHUNK_HPP_
 
-#include <stdint.h>
+#include <cstdint>
 
-#include <stdexcept>
-#include <algorithm>
-#include <iterator>
+#include <stdexcept> // std::range_error
+#include <iterator>  // std::reverse_iterator
 
 #include <boost/assert.hpp>
 #include <boost/noncopyable.hpp>

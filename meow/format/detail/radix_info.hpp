@@ -6,9 +6,8 @@
 #ifndef MEOW_FORMAT_DETAIL__RADIX_INFO_HPP_
 #define MEOW_FORMAT_DETAIL__RADIX_INFO_HPP_
 
-#include <cstdlib>
+#include <cstddef> // size_t
 #include <boost/assert.hpp>
-#include <boost/static_assert.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace format { namespace detail {

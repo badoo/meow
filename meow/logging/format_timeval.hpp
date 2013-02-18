@@ -9,8 +9,6 @@
 #include <cstdio>
 #include <ctime>
 
-#include <boost/assert.hpp>
-
 #include <meow/tmp_buffer.hpp>
 #include <meow/format/metafunctions.hpp>
 #include <meow/format/inserter/integral.hpp>

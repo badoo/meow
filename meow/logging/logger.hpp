@@ -9,8 +9,8 @@
 #include <boost/noncopyable.hpp>
 
 #include <meow/str_ref.hpp>
+#include <meow/std_unique_ptr.hpp>
 #include <meow/utility/line_mode.hpp>
-#include <meow/move_ptr/static_move_ptr.hpp>
 
 #include "log_level.hpp"
 
@@ -52,8 +52,8 @@ namespace meow { namespace logging {
 	typedef logger_base_t<char> 	logger_t;
 	typedef logger_base_t<wchar_t>	w_logger_t;
 
-	typedef boost::static_move_ptr<logger_t> 	logger_move_ptr;
-	typedef boost::static_move_ptr<w_logger_t> 	w_logger_move_ptr;
+	typedef std::unique_ptr<logger_t>    logger_move_ptr;
+	typedef std::unique_ptr<w_logger_t>  w_logger_move_ptr;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 }} // namespace meow { namespace logging {

@@ -10,19 +10,14 @@
 #include <stdexcept> // std::logic_error
 
 #include <boost/assert.hpp>
-#include <boost/foreach.hpp>
 #include <boost/static_assert.hpp>
 #include <boost/range/iterator_range.hpp>
-#include <boost/type_traits/is_base_and_derived.hpp>
 
 #include <meow/smart_enum.hpp>
 #include <meow/str_ref.hpp>
 #include <meow/str_ref_algo.hpp>
-
 #include <meow/tree/tree.hpp>
 #include <meow/tree/tree_ops.hpp>
-
-#include <meow/move_ptr/static_move_ptr.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace tree {
@@ -99,7 +94,7 @@ namespace meow { namespace tree {
 		path_parts_t r;
 		r.reserve(parts.size());
 
-		BOOST_FOREACH(str_ref const& s, parts)
+		for(str_ref const& s : parts)
 		{
 			path_node_type_t const ntype = path_get_node_type(s);
 
@@ -132,7 +127,7 @@ namespace meow { namespace tree {
 		if (path_is_absolute(path))
 			r.append("/");
 
-		BOOST_FOREACH(str_ref const& s, new_parts)
+		for(str_ref const& s : new_parts)
 		{
 			bool const is_first = (&s == &new_parts[0]);
 			if (!is_first)
@@ -151,7 +146,7 @@ namespace meow { namespace tree {
 	{
 		path_parts_range_t const parts_r = path_into_parts(path);
 
-		BOOST_FOREACH(str_ref const& name, parts_r)
+		for(str_ref const& name : parts_r)
 		{
 			if (!function(root, parts_r, name))
 				break;
@@ -191,7 +186,7 @@ namespace meow { namespace tree {
 
 	inline node_t* get_path(node_t *root, path_parts_range_t const& parts_r)
 	{
-		BOOST_FOREACH(str_ref const& name, parts_r)
+		for(str_ref const& name : parts_r)
 		{
 			if (!do_path_get(root, parts_r, name))
 				break;
@@ -265,7 +260,7 @@ namespace meow { namespace tree {
 
 	inline directory_t* tree_create_dir(directory_t *root, path_parts_range_t const& parts_r)
 	{
-		BOOST_FOREACH(str_ref const& name, parts_r)
+		for(str_ref const& name : parts_r)
 		{
 			do_create_directories(root, name);
 		}
@@ -291,7 +286,7 @@ namespace meow { namespace tree {
 		directory_t::child_t *child = root->get_child(parts.back());
 		if (NULL == child)
 		{
-			root->add_child(parts.back(), get_pointer(file));
+			root->add_child(parts.back(), file.get());
 			return file.release();
 		}
 		else

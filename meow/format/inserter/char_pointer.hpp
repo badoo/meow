@@ -6,12 +6,6 @@
 #ifndef MEOW_FORMAT_INSERTER__CHAR_POINTER_HPP_
 #define MEOW_FORMAT_INSERTER__CHAR_POINTER_HPP_
 
-#include <boost/utility/enable_if.hpp>
-#include <boost/type_traits/is_pointer.hpp>
-#include <boost/type_traits/remove_cv.hpp>
-#include <boost/type_traits/remove_pointer.hpp>
-#include <boost/type_traits/is_same.hpp>
-
 #include <meow/str_ref.hpp>
 #include <meow/format/metafunctions.hpp>
 

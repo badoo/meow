@@ -6,8 +6,9 @@
 #ifndef MEOW_LIBEV__IO_MACHINE_HPP_
 #define MEOW_LIBEV__IO_MACHINE_HPP_
 
-#include <cerrno>
 #include <poll.h>
+#include <cerrno>
+#include <type_traits> // type checks inside call thunks
 
 #include <boost/assert.hpp>
 #include <boost/noncopyable.hpp>
@@ -20,8 +21,6 @@
 
 #include <meow/format/format.hpp>
 #include <meow/format/format_tmp.hpp>
-#include <meow/format/inserter/integral.hpp>
-#include <meow/format/inserter/pointer.hpp>
 
 #include "io_context.hpp"
 
@@ -174,7 +173,7 @@ namespace meow { namespace libev {
 	template<bool enabled, class Tr> struct type_thunk_t; 					\
 	template<class Tr> struct type_thunk_t<true, Tr> { 						\
 		typedef typename Tr::nested_name type; 								\
-		enum { is_enabled = !boost::is_same<void, type>::value };			\
+		enum { is_enabled = !std::is_same<void, type>::value };			\
 	};																		\
 	template<class Tr> struct type_thunk_t<false, Tr> {						\
 		typedef Tr type;													\

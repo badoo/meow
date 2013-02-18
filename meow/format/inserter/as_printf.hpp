@@ -7,7 +7,7 @@
 #define MEOW_FORMAT_INSERTER__AS_PRINTF_HPP_
 
 #include <cstdarg> // va_arg
-#include <cstdlib> // size_t
+#include <cstddef> // size_t
 #include <cstdio>  // vsnprintf
 
 #include <boost/assert.hpp>

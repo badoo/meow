@@ -8,9 +8,9 @@
 
 #include <boost/noncopyable.hpp>
 
+#include <meow/std_unique_ptr.hpp>
 #include <meow/libev/libev_fwd.hpp>
 #include <meow/unix/ipv4_address.hpp>
-#include <meow/move_ptr/static_move_ptr.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace libev {
@@ -30,7 +30,7 @@ namespace meow { namespace libev {
 		virtual void 			shutdown() = 0;
 	};
 
-	typedef boost::static_move_ptr<listener_t> listener_move_ptr;
+	typedef std::unique_ptr<listener_t> listener_move_ptr;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 }} // namespace meow { namespace libev {

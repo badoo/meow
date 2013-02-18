@@ -6,11 +6,10 @@
 #ifndef MEOW_FORMAT_DETAIL__INTEGER_TO_STRING_HPP_
 #define MEOW_FORMAT_DETAIL__INTEGER_TO_STRING_HPP_
 
-#include <cstdlib>
+#include <utility> // enable_if
+#include <type_traits>
+
 #include <boost/assert.hpp>
-#include <boost/utility/enable_if.hpp>
-#include <boost/type_traits/is_signed.hpp>
-#include <boost/type_traits/is_unsigned.hpp>
 
 #include "radix_info.hpp"
 
@@ -35,7 +34,7 @@ namespace meow { namespace format { namespace detail {
 			  CharT *buf
 			, size_t const buf_sz
 			, T value
-			, typename boost::enable_if<boost::is_unsigned<T> >::type* = 0
+			, typename std::enable_if<std::is_unsigned<T>::value>::type* = 0
 			)
 	{
 		CharT *p = buf + buf_sz; // PRE last char
@@ -51,7 +50,7 @@ namespace meow { namespace format { namespace detail {
 			  CharT *buf
 			, size_t const buf_sz
 			, T value
-			, typename boost::enable_if<boost::is_signed<T> >::type* = 0
+			, typename std::enable_if<std::is_signed<T>::value>::type* = 0
 			)
 	{
 		CharT *p = buf + buf_sz;

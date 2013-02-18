@@ -32,7 +32,7 @@
 #ifndef MEOW_HASH__MURMUR3_HPP_
 #define MEOW_HASH__MURMUR3_HPP_
 
-#include <stdint.h>
+#include <cstdint>
 #include <meow/config/compiler_features.hpp> // MEOW_FORCE_INLINE
 #include <meow/config/platform_bits.hpp> // MEOW_PLATFORM_BITS
 

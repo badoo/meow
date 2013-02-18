@@ -6,12 +6,13 @@
 #ifndef MEOW_LIBEV__BOUNDED_TIMER_HPP_
 #define MEOW_LIBEV__BOUNDED_TIMER_HPP_
 
-#include <boost/function.hpp>
+#include <functional> // std::function
+
 #include <boost/noncopyable.hpp>
 #include <boost/intrusive/list.hpp>
 
+#include <meow/std_unique_ptr.hpp>
 #include <meow/libev/libev_fwd.hpp>
-#include <meow/move_ptr/static_move_ptr.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace libev {
@@ -23,7 +24,7 @@ namespace meow { namespace libev {
 		typedef double           timestamp_t;
 
 		struct node_t;
-		typedef boost::function<void(self_t*, node_t*, timestamp_t)> callback_t;
+		typedef std::function<void(self_t*, node_t*, timestamp_t)> callback_t;
 
 		typedef boost::intrusive::list_base_hook<
 					  boost::intrusive::link_mode<boost::intrusive::auto_unlink>
@@ -51,8 +52,8 @@ namespace meow { namespace libev {
 	typedef bounded_timer_t::callback_t   bounded_timer_callback_t;
 	typedef bounded_timer_t::timestamp_t  bounded_timer_timestamp_t;
 
-	typedef boost::static_move_ptr<bounded_timer_t>       bounded_timer_ptr;
-	typedef boost::static_move_ptr<bounded_timer_node_t>  bounded_timer_node_ptr;
+	typedef std::unique_ptr<bounded_timer_t>       bounded_timer_ptr;
+	typedef std::unique_ptr<bounded_timer_node_t>  bounded_timer_node_ptr;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 }} // namespace meow { namespace libev {

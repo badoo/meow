@@ -8,11 +8,8 @@
 
 #include "tree.hpp"
 
-#include <meow/format/format.hpp>
-#include <meow/format/metafunctions.hpp>
-#include <meow/format/inserter/pointer.hpp>
-
 #include <meow/gcc/demangle.hpp>
+#include <meow/format/format.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace tree {

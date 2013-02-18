@@ -6,9 +6,9 @@
 #ifndef MEOW_LIBEV__BOUNDED_TIMER_IMPL_HPP_
 #define MEOW_LIBEV__BOUNDED_TIMER_IMPL_HPP_
 
+#include <array>
 #include <functional> // bind
 
-#include <boost/array.hpp>
 #include <boost/assert.hpp>
 
 #include <meow/libev/bounded_timer.hpp>
@@ -38,7 +38,7 @@ namespace meow { namespace libev {
 					, boost::intrusive::constant_time_size<false>
 					> timer_list_t;
 
-		typedef boost::array<timer_list_t, max_timeout_in_ticks> holder_t;
+		typedef std::array<timer_list_t, max_timeout_in_ticks> holder_t;
 
 		enum {
 			  max_timeout = max_timeout_in_ticks

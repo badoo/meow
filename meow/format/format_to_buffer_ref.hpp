@@ -6,10 +6,10 @@
 #ifndef MEOW_FORMAT__FORMAT_TO_BUFFER_REF_HPP_
 #define MEOW_FORMAT__FORMAT_TO_BUFFER_REF_HPP_
 
+#include <meow/str_ref.hpp>
+
 #include "sink/char_buffer.hpp"
 #include "format_functions.hpp"
-
-#include <meow/str_ref.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace format {

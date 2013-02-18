@@ -6,13 +6,12 @@
 #ifndef MEOW_LOGGING__LOG_PREFIX_HPP_
 #define MEOW_LOGGING__LOG_PREFIX_HPP_
 
-#include <inttypes.h> // uint32_t
+#include <cstdint> // uint32_t
 
 #include <meow/format/format.hpp>
+#include <meow/format/sink/char_buffer.hpp>
 #include <meow/unix/time.hpp>
 #include <meow/utility/bitmask.hpp>
-
-#include <meow/format/sink/char_buffer.hpp>
 
 #include "format_timeval.hpp"
 #include "log_level.hpp"

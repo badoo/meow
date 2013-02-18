@@ -6,27 +6,26 @@
 #ifndef MEOW_LIBEV__FD_CONNECTOR_HPP_
 #define MEOW_LIBEV__FD_CONNECTOR_HPP_
 
-#include <boost/function.hpp>
+#include <functional>
+
 #include <boost/noncopyable.hpp>
 
-#include <meow/unix/socket.hpp>
-#include <meow/unix/time.hpp> 	// os_timeval_t
-
-#include <meow/move_ptr/static_move_ptr.hpp>
-
+#include <meow/std_unique_ptr.hpp>
 #include <meow/libev/libev_fwd.hpp>
 #include <meow/libev/io_context.hpp>
+#include <meow/unix/socket.hpp>
+#include <meow/unix/time.hpp> 	// os_timeval_t
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace libev {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	typedef boost::static_move_ptr<io_context_t> io_context_ptr;
+	typedef std::unique_ptr<io_context_t> io_context_ptr;
 
 	struct fd_connector_t : private boost::noncopyable
 	{
 		typedef void* token_t;
-		typedef boost::function<void(io_context_ptr& io_ctx, int err)> callback_t;
+		typedef std::function<void(io_context_ptr& io_ctx, int err)> callback_t;
 
 		virtual ~fd_connector_t() {}
 
@@ -46,7 +45,7 @@ namespace meow { namespace libev {
 			) = 0;
 	};
 
-	typedef boost::static_move_ptr<fd_connector_t> fd_connector_move_ptr;
+	typedef std::unique_ptr<fd_connector_t> fd_connector_move_ptr;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 }} // namespace meow { namespace libev {

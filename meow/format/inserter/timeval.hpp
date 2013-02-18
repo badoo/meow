@@ -10,11 +10,8 @@
 
 #include <cstdio>
 
-#include <boost/utility/enable_if.hpp>
-
 #include <meow/str_ref.hpp>
 #include <meow/tmp_buffer.hpp>
-
 #include <meow/format/metafunctions.hpp>
 #include <meow/format/detail/integer_to_string.hpp>
 

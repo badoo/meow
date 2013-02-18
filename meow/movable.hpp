@@ -6,7 +6,7 @@
 #ifndef MEOW__MOVABLE_HPP_
 #define MEOW__MOVABLE_HPP_
 
-#include <boost/type_traits/is_base_and_derived.hpp>
+#include <type_traits>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace movable {
@@ -60,7 +60,7 @@ namespace movable {
 
 	template<class T>
 	struct is_move_enabled
-		: public boost::is_base_and_derived<move_enabled<T>, T>
+		: public std::is_base_of<move_enabled<T>, T>
 	{
 	};
 

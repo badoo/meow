@@ -8,10 +8,9 @@
 
 #include <boost/intrusive/list.hpp>
 
+#include <meow/std_unique_ptr.hpp>
 #include <meow/format/format.hpp>
 #include <meow/format/inserter/sockaddr.hpp>
-
-#include <meow/convert/union_cast.hpp>
 #include <meow/libev/libev.hpp>
 #include <meow/logging/logger.hpp>
 #include <meow/logging/log_write.hpp>
@@ -72,7 +71,7 @@ namespace meow { namespace libev {
 			void store_connector_ptr(self_t *self) { io_timer()->data = self; }
 			self_t* get_connector_ptr() { return static_cast<self_t*>(io_timer()->data); }
 		};
-		typedef boost::static_move_ptr<item_t> item_move_ptr;
+		typedef std::unique_ptr<item_t> item_move_ptr;
 
 		typedef logging::logger_t logger_t;
 

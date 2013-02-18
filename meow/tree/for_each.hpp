@@ -6,7 +6,7 @@
 #ifndef MEOW_TREE__FOR_EACH_HPP_
 #define MEOW_TREE__FOR_EACH_HPP_
 
-#include <boost/foreach.hpp>
+#include <boost/assert.hpp>
 
 #include <meow/tree/tree.hpp>
 
@@ -75,7 +75,7 @@ namespace meow { namespace tree {
 
 				if (new_d)
 				{
-					BOOST_FOREACH(directory_t::child_t& child, d->get_children())
+					for(directory_t::child_t& child : d->get_children())
 					{
 						node_ptr new_node = tree_map(child.ptr, directory_fn, file_fn, level + 1);
 						new_d->add_child(child.name.ref(), move(new_node));
@@ -127,7 +127,7 @@ namespace meow { namespace tree {
 
 				directory_fn(dir, name, level);
 
-				BOOST_FOREACH(directory_t::child_t& child_r, dir->get_children())
+				for(directory_t::child_t& child_r : dir->get_children())
 				{
 					tree_for_each(child_r.ptr, directory_fn, file_fn, child_r.name.ref(), level + 1);
 				}

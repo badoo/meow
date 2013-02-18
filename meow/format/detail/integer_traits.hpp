@@ -6,7 +6,7 @@
 #ifndef MEOW_FORMAT_DETAIL__INTEGER_TRAITS_HPP_
 #define MEOW_FORMAT_DETAIL__INTEGER_TRAITS_HPP_
 
-#include <cstdlib>
+#include <cstddef> // size_t
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace format { namespace detail {

@@ -8,8 +8,7 @@
 
 #include <algorithm> // std::sort, std::less, std::greater
 
-#include <boost/bind.hpp>
-
+#include <meow/std_bind.hpp>
 #include <meow/tree/tree.hpp>
 #include <meow/tree/for_each.hpp>
 
@@ -55,7 +54,7 @@ namespace meow { namespace tree {
 	{
 		tree_for_each(
 				  d
-				, boost::bind(tree_sort_detail_::sorter_t(), boost::cref(comp), _1, _2, _3)
+				, std::bind(tree_sort_detail_::sorter_t(), std::cref(comp), _1, _2, _3)
 				, &tree_sort_detail_::sorter_t::on_file_noop
 				);
 	}

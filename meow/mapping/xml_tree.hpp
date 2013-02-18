@@ -7,15 +7,15 @@
 #define MEOW_MAPPING__XML_TREE_HPP_
 
 #include <vector>
-#include <stdexcept> // for std::runtime_error
+#include <functional> // function
+#include <stdexcept>  // for std::runtime_error
+#include <type_traits>
 
-#include <boost/bind.hpp>
-#include <boost/function.hpp>
 #include <boost/assert.hpp>
 #include <boost/static_assert.hpp>
-#include <boost/type_traits/is_convertible.hpp>
 
 #include <meow/str_ref.hpp>
+#include <meow/std_bind.hpp>
 
 #include <meow/libxml2/core.hpp>
 #include <meow/libxml2/tree.hpp>
@@ -47,8 +47,8 @@ namespace meow { namespace libxml2 {
 	template<class ContextT>
 	class xml_node_t
 	{
-		typedef	xml_node_t									self_t;
-		typedef boost::function<void(ContextT&, str_ref)>	handler_func_t;
+		typedef	xml_node_t                               self_t;
+		typedef std::function<void(ContextT&, str_ref)>	 handler_func_t;
 
 	public: // ctors
 
@@ -68,9 +68,9 @@ namespace meow { namespace libxml2 {
 		template<class Function, class Caster>
 		self_t& node(char const* xpath_expr, Function const& function, Caster const& cast)
 		{
-			BOOST_STATIC_ASSERT((boost::is_convertible<Function, handler_func_t>::value));
+			BOOST_STATIC_ASSERT((std::is_convertible<Function, handler_func_t>::value));
 
-			typedef typename boost::remove_reference<typename Caster::template result<ContextT>::type>::type ctx_type;
+			typedef typename std::remove_reference<typename Caster::template result<ContextT>::type>::type ctx_type;
 			return this->node(xpath_expr, cast, xml_node_t<ctx_type>(function));
 		}
 
@@ -80,7 +80,7 @@ namespace meow { namespace libxml2 {
 			BOOST_ASSERT(NULL != xpath_expr);
 
 			typedef typename Caster::template result<ContextT>::type cast_result_type;
-			sub_nodes_.push_back(node_info_t(xpath_expr, boost::bind<void>(sub_node, boost::bind<cast_result_type>(cast, _1), _2, _3)));
+			sub_nodes_.push_back(node_info_t(xpath_expr, std::bind<void>(sub_node, std::bind<cast_result_type>(cast, _1), _2, _3)));
 			return *this;
 		}
 
@@ -143,7 +143,7 @@ namespace meow { namespace libxml2 {
 
 		struct node_info_t
 		{
-			typedef boost::function<void(ContextT&, xmlXPathContextPtr, xmlNodePtr)> trampoline_t;
+			typedef std::function<void(ContextT&, xmlXPathContextPtr, xmlNodePtr)> trampoline_t;
 
 			char const		*xpath_expr;
 			trampoline_t	trampoline;
@@ -167,7 +167,7 @@ namespace meow { namespace libxml2 {
 
 		xml_node_t<ContextT> real_root;
 		real_root.node(xpath_expr, meow::mapping::dont_cast(), root_node);
-		real_root(ctx, get_pointer(xpath_ctx));
+		real_root(ctx, xpath_ctx.get());
 	}
 
 	template<class ContextT>

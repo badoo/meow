@@ -6,10 +6,9 @@
 #ifndef MEOW_FORMAT_INSERTER__FLOATING_POINT_HPP_
 #define MEOW_FORMAT_INSERTER__FLOATING_POINT_HPP_
 
-#include <cstdio>
-
-#include <boost/utility/enable_if.hpp>
-#include <boost/type_traits/is_floating_point.hpp>
+#include <cstdio>  // snprintf
+#include <utility> // enable_if
+#include <type_traits>
 
 #include <meow/str_ref.hpp>
 #include <meow/tmp_buffer.hpp>
@@ -42,7 +41,7 @@ namespace meow { namespace format {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	template<class T>
-	struct type_tunnel<T, typename boost::enable_if<boost::is_floating_point<T> >::type>
+	struct type_tunnel<T, typename std::enable_if<std::is_floating_point<T>::value>::type>
 	{
 		enum { buffer_size = sizeof("-1.0123456789E+999") };
 		typedef meow::tmp_buffer<buffer_size> buffer_t;

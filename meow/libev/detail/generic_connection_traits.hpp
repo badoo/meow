@@ -8,8 +8,6 @@
 
 #include <sys/uio.h> // writev()
 
-#include <boost/foreach.hpp>
-
 #include <meow/utility/offsetof.hpp> 	// for MEOW_SELF_FROM_MEMBER
 
 #include <meow/buffer.hpp>

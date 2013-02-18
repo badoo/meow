@@ -6,7 +6,7 @@
 #ifndef MEOW_FORMAT_INSERTER__HEX_STRING_HPP_
 #define MEOW_FORMAT_INSERTER__HEX_STRING_HPP_
 
-#include <boost/type_traits/remove_const.hpp>
+#include <type_traits>
 
 #include <meow/str_ref.hpp>
 #include <meow/str_copy.hpp>
@@ -20,10 +20,10 @@ namespace meow { namespace format {
 
 	template<class CharT>
 	inline
-	meow::string_copy<typename boost::remove_const<CharT>::type>
+	meow::string_copy<typename std::remove_const<CharT>::type>
 	as_hex_string(meow::string_ref<CharT> const& s)
 	{
-		meow::string_copy<typename boost::remove_const<CharT>::type> result(s.size() * 2);
+		meow::string_copy<typename std::remove_const<CharT>::type> result(s.size() * 2);
 
 		CharT *ee = copy_bin2hex(s.begin(), s.end(), &*result.begin());
 		BOOST_ASSERT(ee == &*result.end());
@@ -45,10 +45,10 @@ namespace meow { namespace format {
 
 	template<class CharT>
 	inline
-	meow::string_copy<typename boost::remove_const<CharT>::type>
+	meow::string_copy<typename std::remove_const<CharT>::type>
 	as_escaped_hex_string(meow::string_ref<CharT> const& s)
 	{
-		meow::string_copy<typename boost::remove_const<CharT>::type> result(s.size() * 4);
+		meow::string_copy<typename std::remove_const<CharT>::type> result(s.size() * 4);
 
 		CharT *ee = copy_bin2hex_escaped(s.begin(), s.end(), &*result.begin());
 		BOOST_ASSERT(ee == &*result.end());

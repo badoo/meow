@@ -7,11 +7,8 @@
 #define MEOW_HASH__HASH_IMPL_HPP_
 
 #include <cstring> // std::strlen
-
-#include <boost/static_assert.hpp>
-#include <boost/type_traits/is_arithmetic.hpp>
-#include <boost/type_traits/is_convertible.hpp>
-#include <boost/type_traits/is_pointer.hpp>
+#include <utility> // enable_if
+#include <type_traits>
 
 #include <meow/str_ref.hpp>
 #include <meow/hash/hash_fwd.hpp>
@@ -96,8 +93,8 @@ namespace detail {
 
 	template<class ArithmeticT>
 	inline
-	typename boost::enable_if_c<
-		  boost::is_arithmetic<ArithmeticT>::value && (sizeof(ArithmeticT) >= sizeof(uint32_t))
+	typename std::enable_if<
+		  std::is_arithmetic<ArithmeticT>::value && (sizeof(ArithmeticT) >= sizeof(uint32_t))
 		, hash_result_t
 	>::type
 	hash_object(ArithmeticT value, hash_result_t const initval = detail::hash_def_initval)
@@ -111,8 +108,8 @@ namespace detail {
 
 	template<class ArithmeticT>
 	inline
-	typename boost::enable_if_c<
-		  boost::is_arithmetic<ArithmeticT>::value && (sizeof(ArithmeticT) < sizeof(uint32_t))
+	typename std::enable_if<
+		  std::is_arithmetic<ArithmeticT>::value && (sizeof(ArithmeticT) < sizeof(uint32_t))
 		, hash_result_t
 	>::type
 	hash_object(ArithmeticT value, hash_result_t const initval = detail::hash_def_initval)

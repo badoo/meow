@@ -6,14 +6,14 @@
 #ifndef MEOW_STR_REF_HPP_
 #define MEOW_STR_REF_HPP_
 
-#include <algorithm>	// for std::min
 #include <limits> 		// for std::numeric_limits<>
-
-// TODO: move this to separate header
 #include <string>		// for std::string and std::char_traits and stuff
+#include <type_traits>
 
+#ifndef BOOST_ASSERT_HPP
+#define BOOST_ASSERT_HPP // disable, BOOST_ASSERT_MSG
+#endif
 #include <boost/assert.hpp>
-#include <boost/type_traits/remove_const.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow {
@@ -34,7 +34,7 @@ namespace meow {
 		typedef std::reverse_iterator<iterator>			reverse_iterator;
 		typedef std::reverse_iterator<const_iterator>	const_reverse_iterator;
 
-		typedef typename boost::remove_const<char_type>::type char_type_nc;
+		typedef typename std::remove_const<char_type>::type char_type_nc;
 
 		typedef std::char_traits<char_type_nc> traits_type;
 		typedef std::basic_string<typename traits_type::char_type, traits_type> string_type;
@@ -100,7 +100,7 @@ namespace meow {
 				return false;
 			else if(!a.p_)
 				return true;
-			else if(int r = traits_type::compare(a.p_, b.p_, std::min(a.n_, b.n_)))
+			else if(int r = traits_type::compare(a.p_, b.p_, (a.n_ < b.n_) ? a.n_ : b.n_))
 				return r < 0;
 			else
 				return a.n_ < b.n_;

@@ -6,7 +6,7 @@
 #ifndef MEOW_FORMAT_SINK_CHAR_BUFFER_HPP_
 #define MEOW_FORMAT_SINK_CHAR_BUFFER_HPP_
 
-#include <cstdlib> 		// size_t
+#include <cstddef> 		// size_t
 #include <cstring> 		// memcpy
 #include <stdexcept> 	// std::runtime_error
 

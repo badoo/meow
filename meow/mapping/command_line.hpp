@@ -16,10 +16,10 @@
 #include <limits>
 #include <string>
 #include <vector>
+#include <functional>
 #include <exception>
 
 #include <boost/assert.hpp>
-#include <boost/function.hpp>
 
 #include <meow/str_ref.hpp>
 #include <meow/tmp_buffer.hpp>
@@ -158,7 +158,7 @@ namespace cmdline_detail {
 	{
 		typedef cmdline_mapping_t	self_t;
 		typedef ContextT			context_t;
-		typedef boost::function<void(ContextT&, str_ref)> handler_fn_t;
+		typedef std::function<void(ContextT&, str_ref)> handler_fn_t;
 
 		struct opt_trampoline_t : public optinfo_t
 		{

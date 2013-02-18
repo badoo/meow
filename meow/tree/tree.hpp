@@ -13,10 +13,10 @@
 #include <boost/range/iterator_range.hpp> // dir children range
 
 #include <meow/smart_enum.hpp>
+#include <meow/std_unique_ptr.hpp>
 #include <meow/str_ref.hpp>
 #include <meow/str_copy.hpp>
 #include <meow/utility/offsetof.hpp>
-#include <meow/move_ptr/static_move_ptr.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace tree {
@@ -32,13 +32,13 @@ namespace meow { namespace tree {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	struct node_t;
-	typedef boost::static_move_ptr<node_t> node_ptr;
+	typedef std::unique_ptr<node_t> node_ptr;
 
 	struct directory_t;
-	typedef boost::static_move_ptr<directory_t> directory_ptr;
+	typedef std::unique_ptr<directory_t> directory_ptr;
 
 	struct file_t;
-	typedef boost::static_move_ptr<file_t> file_ptr;
+	typedef std::unique_ptr<file_t> file_ptr;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -251,7 +251,7 @@ namespace meow { namespace tree {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	inline directory_t* create_directory_p() { return new directory_t; }
-	inline directory_ptr create_directory() { return boost::move_raw(create_directory_p()); }
+	inline directory_ptr create_directory() { return directory_ptr(create_directory_p()); }
 
 	template<class T>
 	inline file_t* create_file_p() { return new file_impl_t<T>(); }
@@ -260,10 +260,10 @@ namespace meow { namespace tree {
 	inline file_t* create_file_p(T const& v) { return new file_impl_t<T>(v); }
 
 	template<class T>
-	inline file_ptr create_file() { return boost::move_raw(create_file_p<T>()); }
+	inline file_ptr create_file() { return file_ptr(create_file_p<T>()); }
 
 	template<class T>
-	inline file_ptr create_file(T const& v) { return boost::move_raw(create_file_p<T>(v)); }
+	inline file_ptr create_file(T const& v) { return file_ptr(create_file_p<T>(v)); }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -6,7 +6,7 @@
 #ifndef MEOW_LIBEV__TICKER_HPP_
 #define MEOW_LIBEV__TICKER_HPP_
 
-#include <boost/function.hpp>
+#include <functional> // function
 #include <boost/noncopyable.hpp>
 
 #include <meow/unix/time.hpp>
@@ -19,7 +19,7 @@ namespace meow { namespace libev {
 	struct ticker_t : private boost::noncopyable
 	{
 		typedef ticker_t self_t;
-		typedef boost::function<void(self_t*, ev_tstamp)> callback_t;
+		typedef std::function<void(self_t*, ev_tstamp)> callback_t;
 
 		ticker_t(evloop_t *l)
 			: loop_(l)

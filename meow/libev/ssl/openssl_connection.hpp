@@ -10,12 +10,12 @@
 #include <openssl/err.h>
 
 #include <meow/str_ref.hpp>
+#include <meow/std_unique_ptr.hpp>
 #include <meow/tmp_buffer.hpp>
 #include <meow/format/format.hpp>
 #include <meow/format/inserter/hex_string.hpp>
-
-#include "base_types.hpp"
-#include "../detail/generic_connection.hpp"
+#include <meow/libev/ssl/base_types.hpp>
+#include <meow/libev/detail/generic_connection.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace libev {
@@ -26,7 +26,7 @@ namespace meow { namespace libev {
 	struct SSL_CTX_deleter_t {
 		void operator()(openssl_ctx_t *ssl_ctx) { SSL_CTX_free(ssl_ctx); }
 	};
-	typedef boost::static_move_ptr<openssl_ctx_t, SSL_CTX_deleter_t> openssl_ctx_move_ptr;
+	typedef std::unique_ptr<openssl_ctx_t, SSL_CTX_deleter_t> openssl_ctx_move_ptr;
 
 	inline openssl_ctx_move_ptr openssl_ctx_create(SSL_METHOD const *method)
 	{
@@ -40,7 +40,7 @@ namespace meow { namespace libev {
 	struct SSL_SESSION_deleter_t {
 		void operator()(openssl_session_t *sess) { SSL_SESSION_free(sess); }
 	};
-	typedef boost::static_move_ptr<openssl_session_t, SSL_SESSION_deleter_t> openssl_session_move_ptr;
+	typedef std::unique_ptr<openssl_session_t, SSL_SESSION_deleter_t> openssl_session_move_ptr;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -49,7 +49,7 @@ namespace meow { namespace libev {
 	struct SSL_deleter_t {
 		void operator()(openssl_t *ssl) { SSL_free(ssl); }
 	};
-	typedef boost::static_move_ptr<openssl_t, SSL_deleter_t> openssl_move_ptr;
+	typedef std::unique_ptr<openssl_t, SSL_deleter_t> openssl_move_ptr;
 
 	inline openssl_move_ptr openssl_create(openssl_ctx_t *ctx)
 	{

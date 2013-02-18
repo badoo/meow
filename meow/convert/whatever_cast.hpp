@@ -6,8 +6,8 @@
 #ifndef MEOW_CONVERT__WHATEVER_CAST_HPP_
 #define MEOW_CONVERT__WHATEVER_CAST_HPP_
 
-#include <boost/type_traits/is_convertible.hpp>
-#include <boost/utility/enable_if.hpp>
+#include <utility>
+#include <type_traits>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow {
@@ -17,7 +17,7 @@ namespace meow {
 	struct whatever_caster_t;
 
 	template<class To, class From>
-	struct whatever_caster_t<To, From, typename boost::enable_if<boost::is_convertible<From, To> >::type>
+	struct whatever_caster_t<To, From, typename std::enable_if<std::is_convertible<From, To>::value>::type>
 	{
 		void operator()(To& to, From const& from) const { to = from; }
 	};

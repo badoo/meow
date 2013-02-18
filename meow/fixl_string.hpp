@@ -9,7 +9,6 @@
 #include <cstring> 					// for std::memcpy, std::strlen
 
 #include <boost/assert.hpp> 		// for BOOST_ASSERT
-#include <boost/static_assert.hpp> 	// for BOOST_STATIC_ASSERT
 #include <boost/integer.hpp> 		// for boost::uint_value_t<>
 
 #include <meow/str_ref.hpp> 				// for meow::str_ref
