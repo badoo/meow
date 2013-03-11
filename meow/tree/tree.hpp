@@ -194,7 +194,7 @@ namespace meow { namespace tree {
 
 		void impl_insert_child(str_ref name, node_t *node)
 		{
-			child_t const ch = { name: str_copy(name), ptr: node };
+			child_t const ch = { .name = str_copy(name), .ptr = node };
 			children_.push_back(ch);
 		}
 

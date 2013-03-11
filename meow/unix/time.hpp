@@ -49,8 +49,8 @@
 		double usec_d = modf(d, &sec_d);
 
 		os_timeval_t const tv = {
-			  tv_sec: static_cast<time_t>(sec_d)
-			, tv_usec: static_cast<suseconds_t>(usec_d * usec_in_sec)
+			.tv_sec = static_cast<time_t>(sec_d),
+			.tv_usec = static_cast<suseconds_t>(usec_d * usec_in_sec)
 		};
 		return tv;
 	}
@@ -143,7 +143,7 @@ namespace os_unix {
 	inline os_timeval_t make_timeval(time_t sec, suseconds_t usec)
 	{
 		BOOST_ASSERT(usec < usec_in_sec);
-		os_timeval_t tv = { tv_sec: sec, tv_usec: usec };
+		os_timeval_t tv = { .tv_sec = sec, .tv_usec = usec };
 		return tv;
 	}
 

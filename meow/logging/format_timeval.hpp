@@ -28,7 +28,7 @@ namespace meow { namespace format {
 
 	inline time_as_log_insert_wrapper_t as_log_ts(struct timeval const& tv)
 	{
-		time_as_log_insert_wrapper_t const r = { tv: tv };
+		time_as_log_insert_wrapper_t const r = { .tv = tv };
 		return r;
 	}
 

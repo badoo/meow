@@ -66,13 +66,23 @@ namespace meow {
 				throw std::bad_alloc();
 		}
 
+		buffer_impl_t(char_t *b, size_t sz, size_t first_off = 0, size_t last_off = size_t(-1))
+			: begin_(b)
+			, end_(begin_ + sz)
+			, first(begin_ + first_off)
+			, last(begin_ + ((size_t(-1) == last_off) ? sz : last_off))
+		{
+			BOOST_ASSERT(NULL != begin_);
+			invariant_check();
+		}
+
 		~buffer_impl_t()
 		{
 			self_t::do_free(begin_);
 		}
 
 	public:
-		
+
 		char_t* begin() const { return begin_; }
 		char_t* end() const { return end_; }
 
@@ -116,7 +126,9 @@ namespace meow {
 
 	using buffer_t        = buffer_impl_t<char>;
 	using w_buffer_t      = buffer_impl_t<wchar_t>;
-	using buffer_move_ptr = std::unique_ptr<buffer_t>;
+
+	using buffer_ptr      = std::unique_ptr<buffer_t>;
+	using buffer_move_ptr = buffer_ptr;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 

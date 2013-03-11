@@ -96,7 +96,7 @@ namespace meow { namespace format {
 
 	inline ipv4_address_just_ip_t addr_as_ip(ipv4::address_t const& a)
 	{
-		ipv4_address_just_ip_t const r = { addr: a };
+		ipv4_address_just_ip_t const r = { .addr = a };
 		return r;
 	}
 

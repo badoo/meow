@@ -73,7 +73,7 @@ namespace cmdline_detail {
 
 	inline optinfo_t make_mixed_option(char const *lname, char opt_char, argmode_t am)
 	{
-		optinfo_t opt = { opt_char: opt_char, name: lname, argmode: am };
+		optinfo_t opt = { .opt_char = opt_char, .name = lname, .argmode = am };
 		return opt;
 	}
 

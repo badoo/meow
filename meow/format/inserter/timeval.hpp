@@ -52,7 +52,7 @@ namespace meow { namespace format {
 
 	inline timestamp_as_abs_t as_abstime(time_t t)
 	{
-		timestamp_as_abs_t const r = { ts: t };
+		timestamp_as_abs_t const r = { .ts = t };
 		return r;
 	}
 
@@ -96,7 +96,7 @@ namespace meow { namespace format {
 
 	inline timestamp_as_rel_t as_reltime(time_t t)
 	{
-		timestamp_as_rel_t const r = { ts: t };
+		timestamp_as_rel_t const r = { .ts = t };
 		return r;
 	}
 
