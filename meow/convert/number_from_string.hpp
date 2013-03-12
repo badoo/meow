@@ -85,11 +85,18 @@ namespace detail {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	template<class To>
-	To number_from_string(char const *b, char const *e)
+	bool number_from_string(To *to, char const *b, char const *e)
 	{
 		char *p = NULL;
-		To const to = detail::number_from_string_caster_t<To>::cast(b, &p);
-		if (p != e)
+		*to = detail::number_from_string_caster_t<To>::cast(b, &p);
+		return (p == e);
+	}
+
+	template<class To>
+	To number_from_string(char const *b, char const *e)
+	{
+		To to {};
+		if (false == number_from_string(&to, b, e))
 			throw bad_number_from_string();
 		return to;
 	}
