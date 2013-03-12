@@ -6,110 +6,41 @@
 #ifndef MEOW_MAPPING__KV_MAPPING_HPP_
 #define MEOW_MAPPING__KV_MAPPING_HPP_
 
-#include <list>
+#include <string>
 #include <vector>
-#include <utility> // for std::pair
-#include <functional> // function
+#include <utility>      // pair
+#include <functional>   // function
+#include <unordered_map>
 
 #include <boost/noncopyable.hpp>
 
-#ifdef MEOW_KV_MAPPING_ENABLE_JUDY_MAP
-	#include <meow/judy/index.hpp>
-#endif // MEOW_KV_MAPPING_ENABLE_JUDY_MAP
-
-#include <boost/spirit/home/qi/parse.hpp>
-#include <boost/spirit/home/qi/string/symbols.hpp>
-
 #include <meow/str_ref.hpp>
+#include <meow/hash/hash.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace mapping {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#ifdef MEOW_KV_MAPPING_ENABLE_JUDY_MAP
-
-	struct kv_mapping_map_judy_t
+	template<class ContextT>
+	struct kv_mapping_t : private boost::noncopyable
 	{
-		typedef str_ref key_t;
-
-		typedef judy::index_t<key_t, void*> index_t;
-		index_t j_;
-
-		void map_add(key_t const& k, void *h)
-		{
-			void **hptr = j_.get_or_create(k);
-			if (!hptr)
-				throw std::bad_alloc();
-
-			*hptr = h;
-		}
-
-		void* map_find(key_t const& k) const
-		{
-			void **hptr = j_.get(k);
-			return (NULL != hptr) ? *hptr : NULL;
-		}
-	};
-
-#endif // MEOW_KV_MAPPING_ENABLE_JUDY_MAP
-
-	struct kv_mapping_map_spirit_parse_t
-	{
-		typedef str_ref key_t;
-
-		struct field_names_parser_t 
-			: public boost::spirit::qi::symbols<key_t::char_type, void*>
-		{
-		};
-		field_names_parser_t field_parser_;
-
-		void map_add(key_t const& k, void *h)
-		{
-			field_parser_.add(k.str(), h);
-		}
-
-		void* map_find(key_t const& k) const
-		{
-			str_ref::iterator begin = k.begin();
-			void *found_handler = NULL;
-			bool success = boost::spirit::qi::parse(begin, k.end(), field_parser_, found_handler);
-			return success ? found_handler : NULL;
-		}
-	};
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-
-	template<
-		  class ContextT
-		, class MapT = kv_mapping_map_spirit_parse_t
-		>
-	struct kv_mapping_t 
-		: private boost::noncopyable
-		, private MapT
-	{
-		typedef kv_mapping_t 	self_t;
-		typedef self_t 			base_t; // for wrappers to use
-		typedef std::function<void(ContextT&, str_ref)>           handler_t;
-		typedef std::function<void(ContextT&, str_ref, str_ref)>  header_handler_t;
+		using self_t            = kv_mapping_t;
+		using base_t            = self_t; // for wrappers to use
+		using handler_t         = std::function<void(ContextT&, str_ref)>;
+		using header_handler_t  = std::function<void(ContextT&, str_ref, str_ref)>;
+		using handlers_map_t    = std::unordered_map<str_ref, handler_t, meow::hash<str_ref> >;
 
 	private:
-		std::list<handler_t> 			handlers_;
+
+		handlers_map_t                  handlers_;
 		std::vector<header_handler_t> 	unknown_v_;
 		std::vector<header_handler_t> 	any_v_;
-
-	private:
-
-		handler_t* insert_handler(handler_t const& handler)
-		{
-			handlers_.push_back(handler);
-			return &handlers_.back();
-		}
 
 	public: // setters
 
 		self_t& on_name(str_ref name, handler_t const& h)
 		{
-			this->MapT::map_add(name, this->insert_handler(h));
+			handlers_[name] = h;
 			return *this;
 		}
 
@@ -134,18 +65,19 @@ namespace meow { namespace mapping {
 
 		void call_handler(ContextT& ctx, str_ref name, str_ref value) const
 		{
-			BOOST_FOREACH(header_handler_t const& h, any_v_)
+			for(header_handler_t const& h : any_v_)
 				h(ctx, name, value);
 
-			handler_t const *called_handler = (handler_t*)this->MapT::map_find(name);
-			if (NULL != called_handler)
+			auto i = handlers_.find(name);
+			if (handlers_.end() == i)
 			{
-				(*called_handler)(ctx, value);
+				for (header_handler_t const& h : unknown_v_)
+					h(ctx, name, value);
 			}
 			else
 			{
-				BOOST_FOREACH(header_handler_t const& h, unknown_v_)
-					h(ctx, name, value);
+				handler_t const& h = (*i).second;
+				h(ctx, value);
 			}
 		}
 	};

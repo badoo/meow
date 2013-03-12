@@ -20,16 +20,12 @@ namespace meow { namespace mapping {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // mapping object, that defines how headers are mapped into the structure
 
-	template<
-		  class ContextT
-		, class MapT = kv_mapping_map_spirit_parse_t
-	>
-	struct http_header_mapping_t : public kv_mapping_t<ContextT, MapT>
+	template<class ContextT>
+	struct http_header_mapping_t : public kv_mapping_t<ContextT>
 	{
-		typedef http_header_mapping_t 				self_t;
-		typedef kv_mapping_t<ContextT, MapT> 		base_t;
-
-		typedef ContextT                            context_t;
+		using self_t     = http_header_mapping_t;
+		using base_t     = self_t;
+		using context_t  = ContextT;
 
 	public: // setters for setting up the mapping
 
