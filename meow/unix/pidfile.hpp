@@ -49,7 +49,7 @@ namespace os_unix {
 
 			filename_ = filename;
 
-			int fd = ::open(filename_.c_str(), O_CREAT | O_EXCL | O_WRONLY);
+			int fd = ::open(filename_.c_str(), O_CREAT | O_EXCL | O_WRONLY, 0644);
 			if (-1 == fd)
 				throw meow::api_call_error("open(): %s", filename_.c_str());
 
