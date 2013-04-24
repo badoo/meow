@@ -51,9 +51,19 @@ namespace meow {
 		}
 	}
 
-	inline char const* gcc_demangle_name_tmp(char const *name, demangled_string_t str = demangled_string_t())
+	inline int gcc_demangle_name(demangled_string_t *result, char const *name)
 	{
-		str = gcc_demangle_name(name);
+		int status = 0;
+		result->reset(abi::__cxa_demangle(name, NULL, NULL, &status));
+		return status;
+	}
+
+	inline char const* gcc_demangle_name_tmp(char const *name, int *status = NULL, demangled_string_t str = demangled_string_t())
+	{
+		int s = gcc_demangle_name(&str, name);
+		if (status)
+			*status = s;
+
 		return get_handle(str);
 	}
 

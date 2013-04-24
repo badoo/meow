@@ -17,7 +17,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace format {
 ////////////////////////////////////////////////////////////////////////////////////////////////
-
+#if 0
 	template<class CharT>
 	inline
 	meow::string_copy<typename std::remove_const<CharT>::type>
@@ -26,6 +26,17 @@ namespace meow { namespace format {
 		meow::string_copy<typename std::remove_const<CharT>::type> result(s.size() * 2);
 
 		CharT *ee = copy_bin2hex(s.begin(), s.end(), &*result.begin());
+		BOOST_ASSERT(ee == &*result.end());
+
+		return result; // rely on NRVO here, simple return by value is faster than move()
+	}
+#endif
+
+	inline meow::str_copy as_hex_string(str_ref const& s)
+	{
+		str_copy result(s.size() * 2);
+
+		char *ee = copy_bin2hex(s.begin(), s.end(), &*result.begin());
 		BOOST_ASSERT(ee == &*result.end());
 
 		return result; // rely on NRVO here, simple return by value is faster than move()
