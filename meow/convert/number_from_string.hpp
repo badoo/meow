@@ -85,7 +85,7 @@ namespace detail {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	template<class To>
-	bool number_from_string(To *to, char const *b, char const *e)
+	inline bool number_from_string(To *to, char const *b, char const *e)
 	{
 		char *p = NULL;
 		*to = detail::number_from_string_caster_t<To>::cast(b, &p);
@@ -93,7 +93,7 @@ namespace detail {
 	}
 
 	template<class To>
-	To number_from_string(char const *b, char const *e)
+	inline To number_from_string(char const *b, char const *e)
 	{
 		To to {};
 		if (false == number_from_string(&to, b, e))
@@ -102,9 +102,15 @@ namespace detail {
 	}
 
 	template<class To>
-	To number_from_string(str_ref const& s)
+	inline To number_from_string(str_ref const& s)
 	{
 		return number_from_string<To>(s.begin(), s.end());
+	}
+
+	template<class To>
+	inline bool number_from_string(To *to, str_ref const& s)
+	{
+		return number_from_string<To>(to, s.begin(), s.end());
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
