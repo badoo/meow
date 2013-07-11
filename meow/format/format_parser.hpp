@@ -95,9 +95,14 @@ namespace meow { namespace format {
 					throw bad_argref_string_t(fmt);
 
 				if (__builtin_expect(arg_n >= n_arg_slices, 0))
-					throw bad_argref_number_t(arg_n);
-
-				push_slice(result, arg_slices[arg_n], slices, n_slices);
+				{
+					push_slice(result, ref_lit("<!ARG:"), slices, n_slices);
+					push_slice(result, str_ref(abegin, head-1), slices, n_slices);
+					push_slice(result, ref_lit(">"), slices, n_slices);
+					//throw bad_argref_number_t(arg_n);
+				}
+				else
+					push_slice(result, arg_slices[arg_n], slices, n_slices);
 			}
 		}
 
@@ -110,7 +115,10 @@ namespace meow { namespace format {
 	//  division by 2 and not 3 because we can have stuff between the markers
 	inline size_t get_max_slices_for_format(str_ref const& fmt)
 	{
-		return fmt.size() / 2 + 1;
+		static size_t const min_n_slices = 8;
+
+		size_t const n_slices = fmt.size() / 2 + 1;
+		return (n_slices < min_n_slices) ? min_n_slices : n_slices;
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////

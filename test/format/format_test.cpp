@@ -4,7 +4,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // cd meow/test/format/
-// g++ -O0 -g3 -o format_test -I ~/_Dev/meow/ -I ~/_Dev/_libs/boost/1.41.0 format_test.cpp
+// g++ -std=c++11 -O0 -g3 -o format_test -I ~/_Dev/meow/ -I ~/_Dev/_libs/boost/1.53.0 format_test.cpp
 //
 
 #include <meow/format/sink/FILE.hpp>
@@ -60,7 +60,7 @@ int main()
 	try { fmt(sink, "braces test2: "); fmt(sink, "{"); }	// bad string, should throw an exception
 	catch (ff::bad_format_string_t const&) { printf("braces test exception caught, works!\n"); }
 	fmt(sink, "braces test3: {{{0}}\n", "arg immediately");
-	try { fmt(sink, "extra arguments test: "); fmt(sink, "{1000}\n"); }
+	try { fmt(sink, "extra arguments test: "); fmt(sink, "{1}\n"); }
 	catch (ff::bad_argref_number_t const&) { printf("extra arg exception caught, works!\n"); }
 	try { fmt(sink, "bad argument string test: "); fmt(sink, "{HO}\n"); }
 	catch (ff::bad_argref_string_t const&) { printf("bad argument string exception caught, works!\n"); }
