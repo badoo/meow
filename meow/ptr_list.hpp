@@ -16,30 +16,29 @@
 namespace meow {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	typedef boost::intrusive::list_base_hook<> ptr_list_hook_t;
+	using ptr_list_hook_t = boost::intrusive::list_base_hook<>;
 
 	template<class T>
 	struct ptr_list_traits_default
 	{
-		typedef T                         value_t;
-		typedef std::unique_ptr<value_t>  value_move_ptr;
+		using value_t   = T;
+		using value_ptr = std::unique_ptr<value_t>;
+		using hook_t    = boost::intrusive::base_hook<ptr_list_hook_t>;
 
-		typedef ptr_list_hook_t list_hook_t;
 		static bool const constant_time_size = true;
 	};
 
-	typedef boost::intrusive::list_base_hook<
-						  boost::intrusive::link_mode<boost::intrusive::auto_unlink>
-						>
-						ptr_list_auto_hook_t;
+	using ptr_list_auto_hook_t = boost::intrusive::list_base_hook<
+									  boost::intrusive::link_mode<boost::intrusive::auto_unlink>
+									>;
 
 	template<class T>
 	struct ptr_list_traits_auto_unlink
 	{
-		typedef T                         value_t;
-		typedef std::unique_ptr<value_t>  value_move_ptr;
+		using value_t   = T;
+		using value_ptr = std::unique_ptr<value_t>;
+		using hook_t    = boost::intrusive::base_hook<ptr_list_auto_hook_t>;
 
-		typedef ptr_list_auto_hook_t list_hook_t;
 		static bool const constant_time_size = false;
 	};
 
@@ -54,12 +53,12 @@ namespace meow {
 		typedef ptr_list_t  self_t;
 
 		typedef typename Traits::value_t         value_t;
-		typedef typename Traits::value_move_ptr  value_move_ptr;
-		typedef typename Traits::list_hook_t     list_hook_t;
+		typedef typename Traits::value_ptr  value_ptr;
+		typedef typename Traits::hook_t          hook_t;
 
 		typedef boost::intrusive::list<
 					  value_t
-					, boost::intrusive::base_hook<list_hook_t>
+					, hook_t
 					, boost::intrusive::constant_time_size<Traits::constant_time_size>
 					>
 					list_t;
@@ -121,18 +120,18 @@ namespace meow {
 		value_t*       back()       { BOOST_ASSERT(!this->empty()); return &l_.back(); }
 		value_t const* back() const { BOOST_ASSERT(!this->empty()); return &l_.back(); }
 
-		value_move_ptr grab_front()
+		value_ptr grab_front()
 		{
 			value_t *v = this->front();
 			l_.pop_front();
 
-			return value_move_ptr(v);
+			return value_ptr(v);
 		}
 
-		value_move_ptr grab_by_ptr(value_t *v)
+		value_ptr grab_by_ptr(value_t *v)
 		{
 			l_.erase(l_.iterator_to(*v));
-			return value_move_ptr(v);
+			return value_ptr(v);
 		}
 
 		void pop_front()
@@ -146,7 +145,7 @@ namespace meow {
 			return v;
 		}
 
-		value_t* push_front(value_move_ptr v)
+		value_t* push_front(value_ptr v)
 		{
 			return push_front(v.release());
 		}
@@ -157,7 +156,7 @@ namespace meow {
 			return v;
 		}
 
-		value_t* push_back(value_move_ptr v)
+		value_t* push_back(value_ptr v)
 		{
 			return push_back(v.release());
 		}
