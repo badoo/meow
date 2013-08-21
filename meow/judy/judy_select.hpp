@@ -6,15 +6,10 @@
 #ifndef MEOW_JUDY__JUDY_SELECT_HPP_
 #define MEOW_JUDY__JUDY_SELECT_HPP_
 
-#include <boost/utility/enable_if.hpp>
-#include <boost/type_traits/is_convertible.hpp>
-#include <boost/type_traits/is_integral.hpp>
-#include <boost/type_traits/is_pointer.hpp>
-#include <boost/type_traits/is_fundamental.hpp>
+#include <type_traits>
 
 #include <meow/utility/nested_type_checker.hpp> 	// used to enable traits for judy_HS
-
-#include "judy.hpp"
+#include <meow/judy/judy.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace judy {
@@ -29,7 +24,7 @@ namespace judy {
 	};
 
 	template<class T>
-	struct judy_ops_select<T, typename boost::enable_if<boost::is_integral<T> >::type>
+	struct judy_ops_select<T, typename std::enable_if<std::is_integral<T>::value>::type>
 	{
 		typedef judy_ops_L type;
 	};
@@ -40,11 +35,11 @@ namespace judy {
 	template<class T>
 	struct judy_ops_select<
 		  T
-		, typename boost::enable_if_c<
-			(   boost::is_convertible<T, uint8_t const*>::value
-				|| boost::is_convertible<T, char const*>::value
-				|| boost::is_convertible<T, signed char const*>::value
-				|| boost::is_convertible<T, unsigned const*>::value
+		, typename std::enable_if<
+			(   std::is_convertible<T, uint8_t const*>::value
+				|| std::is_convertible<T, char const*>::value
+				|| std::is_convertible<T, signed char const*>::value
+				|| std::is_convertible<T, unsigned const*>::value
 				)
 			&& boost::is_pointer<T>::value
 		  >::type
@@ -60,7 +55,7 @@ namespace judy {
 	MEOW_DEFINE_NESTED_TYPE_CHECKER(judy_ops_check_nested_HS_key, key_t);
 
 	template<class T>
-	struct judy_ops_select<T, typename boost::enable_if_c<judy_ops_check_nested_HS_key<judy_ops_HS_traits<T> >::value>::type>
+	struct judy_ops_select<T, typename std::enable_if<judy_ops_check_nested_HS_key<judy_ops_HS_traits<T> >::value>::type>
 	{
 		typedef judy_ops_HS<T> type;
 	};

@@ -6,20 +6,18 @@
 #ifndef MEOW_JUDY__TABLE_INDEX_HPP_
 #define MEOW_JUDY__TABLE_INDEX_HPP_
 
-#include <cstdlib> 	// for malloc
-#include <cstring> 	// for memcpy
+#include <cstdlib>     // for malloc
+#include <cstring>     // for memcpy
 
-#include <memory> 	// for std::auto_ptr
-#include <vector> 	// for std::vector
+#include <memory>      // for std::unique_ptr
+#include <vector>      // for std::vector
+#include <type_traits> // alignof
 
-#include <boost/type_traits/alignment_of.hpp>
-#include <boost/range/iterator_range.hpp>
+#include <boost/range/iterator_range.hpp> // used in just one place, mhm
 
+#include <meow/utility/static_math.hpp> // TODO: rewrite with constexpr
 #include "judy.hpp"
 #include "index.hpp"
-
-#include <meow/utility/static_math.hpp>
-#include <meow/str_ref.hpp>
 
 /*
 it's essentialy a smoothly-growing hash table(JudyL) with chains for conflict resolution
@@ -93,7 +91,7 @@ namespace detail {
 		
 		static void assert_bitmasked_bits_are_zero(void *p)
 		{
-			BOOST_ASSERT(0 == ((uintptr_t)p & type_data_bitmask));
+			assert(0 == ((uintptr_t)p & type_data_bitmask));
 		}
 
 	public:
@@ -151,16 +149,17 @@ namespace detail {
 		template<class T>
 		struct alignment_helper<T, 0>
 		{
-			static size_t const alignment_sz = boost::alignment_of<T>::value;
+			static size_t const alignment_sz = alignof(T);
 		};
 
 		// number of bits we can use for own purposes in user-exposed pointers
+		// TODO: can rewrite all static math stuff with constexpr, faster compilation, less templates
 		static size_t const alignment_sz = alignment_helper<value_t, alignment_sz_arg>::alignment_sz;
 		static size_t const alignment_bits = meow::static_log2<alignment_sz, meow::lower_bound_tag>::value;
 
 		// TODO: implement the case for 1 too, this will mean
 		//  that we have no array nodes, only vector and direct ones
-		BOOST_STATIC_ASSERT(alignment_bits > 1);
+		static_assert(alignment_bits > 1, "cba implementng alignment_bits <= 1");
 
 		// special tpe information we'll be holding in lowest bits of user-sipplied pointers
 		static type_data_t const type_data_bitmask = (size_t(1) << alignment_bits) - 1;
@@ -183,7 +182,7 @@ namespace detail {
 
 	public:
 
-		index_leaf_t() : ptr_(NULL) { BOOST_ASSERT(sizeof(self_t) == sizeof(ptr_)); }
+		index_leaf_t() : ptr_(NULL) { assert(sizeof(self_t) == sizeof(ptr_)); }
 		~index_leaf_t() { this->clear(); }
 
 	public: // simple getters
@@ -218,7 +217,7 @@ namespace detail {
 
 		static value_vector_t* vector_create_from_ptr(value_t *value)
 		{
-			std::auto_ptr<value_vector_t> v(new value_vector_t);
+			std::unique_ptr<value_vector_t> v(new value_vector_t);
 			v->reserve(2);
 			v->push_back(value);
 			v->push_back((value_t*)NULL);
@@ -227,7 +226,7 @@ namespace detail {
 
 		static value_vector_t* vector_create_from_array(value_t ** const ptr, size_t sz)
 		{
-			std::auto_ptr<value_vector_t> v(new value_vector_t);
+			std::unique_ptr<value_vector_t> v(new value_vector_t);
 			v->reserve(sz + 1);
 
 			for (size_t i = 0; i < sz; ++i)
@@ -259,7 +258,7 @@ namespace detail {
 
 		static value_t** array_last_element_ptr(array_data_t const& arr)
 		{
-			BOOST_ASSERT(arr.size > 0);
+			assert(arr.size > 0);
 			return &arr.ptr[arr.size - 1];
 		}
 
@@ -348,7 +347,7 @@ namespace detail {
 
 		void assign_array_ptr(array_data_t const& arr)
 		{
-			BOOST_ASSERT(arr.size <= self_t::type_data_max);
+			assert(arr.size <= self_t::type_data_max);
 			ptr_ = arr.ptr;
 			ptr_.set_type(arr.size);
 		}
@@ -371,7 +370,7 @@ namespace detail {
 				; ++i
 				)
 			{
-				BOOST_ASSERT((NULL != *i) && "index_leaf_t value range element can't be NULL; forgot to initialize pointer you got from get_or_create() ?");
+				assert((NULL != *i) && "index_leaf_t value range element can't be NULL; forgot to initialize pointer you got from get_or_create() ?");
 				if (self_t::fn_equal(k, **i))
 					return i;
 			}
@@ -437,7 +436,7 @@ namespace detail {
 				break;
 			}
 
-			BOOST_ASSERT(!"must not be reached");
+			assert(!"must not be reached");
 		}
 
 		template<class K>
@@ -458,7 +457,7 @@ namespace detail {
 					value_vector_t *v = this->as_vector_ptr();
 
 					size_t const del_offset = found_v - &*v->begin();
-					BOOST_ASSERT(del_offset < v->size());
+					assert(del_offset < v->size());
 
 					// shrink to direct ptr (only in the case of no arrays possible, 1 bit alignment)
 					if (2 == v->size())
@@ -485,7 +484,7 @@ namespace detail {
 					array_data_t a = this->array_from_node();
 
 					size_t const del_offset = (found_v - a.ptr);
-					BOOST_ASSERT(del_offset < a.size);
+					assert(del_offset < a.size);
 
 					// only 2 elements left, 1 is going to be deleted, so 1 left -> direct node
 					if (2 == a.size)

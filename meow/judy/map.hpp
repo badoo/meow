@@ -8,7 +8,6 @@
 
 #include <type_traits>
 
-#include <boost/assert.hpp>
 #include <boost/noncopyable.hpp>
 
 #include <meow/judy/judy.hpp>

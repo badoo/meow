@@ -6,10 +6,7 @@
 #ifndef MEOW_JUDY__INDEX_HPP_
 #define MEOW_JUDY__INDEX_HPP_
 
-#include <boost/assert.hpp>
-#include <boost/static_assert.hpp>
 #include <boost/noncopyable.hpp>
-#include <boost/utility/enable_if.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 
 #include <meow/utility/nested_type_checker.hpp>
@@ -27,7 +24,7 @@ namespace judy {
 		typedef K key_t;
 		typedef V value_t;
 
-		BOOST_STATIC_ASSERT(sizeof(value_t) <= sizeof(word_t));
+		static_assert(sizeof(value_t) <= sizeof(word_t), "can't have keys larger than judy keys");
 
 		typedef judy::judy_select<key_t> 			select_t;
 		typedef typename select_t::operations_t 	j_ops;
@@ -50,7 +47,7 @@ namespace judy {
 		{
 			void *r = j_ops::get(j_, (typename j_ops::key_t)(k));
 
-			BOOST_ASSERT((judy::j_error_p != r) && "get can't produce a malloc failure");
+			assert((judy::j_error_p != r) && "get can't produce a malloc failure");
 			return static_cast<value_t*>(r);
 		}
 
@@ -64,7 +61,7 @@ namespace judy {
 		{
 			void *r = j_ops::get_or_create(j_, (typename j_ops::key_t)(k));
 
-			BOOST_ASSERT((NULL != r) && "NULL return must not happen when inserting new value to index");
+			assert((NULL != r) && "NULL return must not happen when inserting new value to index");
 			return (judy::j_error_p != r) ? static_cast<value_t*>(r) : NULL;
 		}
 
