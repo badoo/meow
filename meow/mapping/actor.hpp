@@ -7,13 +7,7 @@
 #define MEOW_MAPPING__ACTOR_HPP_
 
 #include <cstddef> // for size_t + let users use offsetof macro without including it manualy
-
-#include <boost/assert.hpp>
-#include <boost/type_traits/alignment_of.hpp>
-#include <boost/type_traits/add_reference.hpp>
-#include <boost/type_traits/remove_reference.hpp>
-
-#include <meow/str_ref.hpp>
+#include <type_traits>
 
 #include "detail/assign.hpp"
 
@@ -32,7 +26,7 @@ namespace meow { namespace mapping {
 	struct noop_modifier_t
 	{
 		template<class U>
-		struct result { typedef typename boost::add_reference<U>::type type; };
+		struct result { typedef typename std::add_lvalue_reference<U>::type type; };
 
 		template<class T>
 		typename result<T>::type operator()(T& ctx) const { return ctx; }
@@ -43,7 +37,7 @@ namespace meow { namespace mapping {
 	struct static_caster_t
 	{
 		template<class U>
-		struct result { typedef typename boost::add_reference<T>::type type; };
+		struct result { typedef typename std::add_lvalue_reference<T>::type type; };
 
 		template<class U>
 		typename result<T>::type operator()(U& ctx) const
@@ -60,7 +54,7 @@ namespace meow { namespace mapping {
 		member_ptr_t member_p;
 
 		template<class U>
-		struct result { typedef typename boost::add_reference<MT>::type type; };
+		struct result { typedef typename std::add_lvalue_reference<MT>::type type; };
 
 		explicit select_member_t(member_ptr_t p) : member_p(p) {}
 		typename result<T>::type operator()(T& obj) const { return obj.*member_p; }
@@ -73,7 +67,7 @@ namespace meow { namespace mapping {
 		int offset_;
 
 		template<class U>
-		struct result { typedef typename boost::add_reference<TargetT>::type type; };
+		struct result { typedef typename std::add_lvalue_reference<TargetT>::type type; };
 
 		explicit typed_offset_t(int offset) : offset_(offset) {}
 
@@ -85,7 +79,7 @@ namespace meow { namespace mapping {
 			// assert that alignment restrictions for target type are met
 			//  don't care about losing precision when converting ptr -> size_t
 			size_t ptr_as_int = reinterpret_cast<size_t>(p);
-			BOOST_ASSERT("target pointer is aligned for TargetT" && 0 == (ptr_as_int % boost::alignment_of<TargetT>::value));
+			assert("target pointer is aligned for TargetT" && 0 == (ptr_as_int % alignof(TargetT)));
 
 			return *reinterpret_cast<TargetT*>(p);
 		}
@@ -98,7 +92,7 @@ namespace meow { namespace mapping {
 	{
 		template<class U>
 		struct result {
-			typedef typename boost::remove_reference<U>::type::value_type obj_type;
+			typedef typename std::remove_reference<U>::type::value_type obj_type;
 			typedef obj_type& type;
 		};
 	};
@@ -150,7 +144,7 @@ namespace meow { namespace mapping {
 		template<class U>
 		struct result {
 			typedef typename InnerCast::template result<U>::type inner_result_type;
-			typedef typename boost::remove_reference<inner_result_type>::type inner_good_result;
+			typedef typename std::remove_reference<inner_result_type>::type inner_good_result;
 			typedef typename OuterCast::template result<inner_good_result>::type type;
 		};
 
