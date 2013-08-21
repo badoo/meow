@@ -8,7 +8,6 @@
 
 #include <cstring> 					// for std::memcpy, std::strlen
 
-#include <boost/assert.hpp> 		// for BOOST_ASSERT
 #include <boost/integer.hpp> 		// for boost::uint_value_t<>
 
 #include <meow/str_ref.hpp> 				// for meow::str_ref
@@ -96,7 +95,7 @@ namespace meow {
 
 		void assign(char const *str, size_t const length)
 		{
-			BOOST_ASSERT(length <= max_data_length);
+			assert(length <= max_data_length);
 
 			std::memcpy(data_, str, length);
 			this->set_length(length);

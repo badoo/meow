@@ -114,11 +114,11 @@ namespace meow {
 		bool empty() const { return l_.empty(); }
 		size_t size() const { return l_.size(); }
 
-		value_t*       front()       { BOOST_ASSERT(!this->empty()); return &l_.front(); }
-		value_t const* front() const { BOOST_ASSERT(!this->empty()); return &l_.front(); }
+		value_t*       front()       { assert(!this->empty()); return &l_.front(); }
+		value_t const* front() const { assert(!this->empty()); return &l_.front(); }
 
-		value_t*       back()       { BOOST_ASSERT(!this->empty()); return &l_.back(); }
-		value_t const* back() const { BOOST_ASSERT(!this->empty()); return &l_.back(); }
+		value_t*       back()       { assert(!this->empty()); return &l_.back(); }
+		value_t const* back() const { assert(!this->empty()); return &l_.back(); }
 
 		value_ptr grab_front()
 		{

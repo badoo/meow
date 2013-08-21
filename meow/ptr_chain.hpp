@@ -94,7 +94,7 @@ namespace meow {
 		template<class V>
 		struct self_traits_t<V, ptr_chain_intrusive<true> >
 		{
-			BOOST_STATIC_ASSERT((std::is_base_of<hook_t, value_t>::value));
+			static_assert(std::is_base_of<hook_t, value_t>::value, "intrusive ptr chain node must inherit from hook");
 			typedef value_t item_t;
 
 			static value_t* value_pointer(item_t const& i)
@@ -184,19 +184,19 @@ namespace meow {
 
 		value_t* front() const
 		{
-			BOOST_ASSERT(!this->empty());
+			assert(!this->empty());
 			return self_traits::value_pointer(l_.front());
 		}
 
 		value_t* back() const
 		{
-			BOOST_ASSERT(!this->empty());
+			assert(!this->empty());
 			return self_traits::value_pointer(l_.back());
 		}
 
 		value_move_ptr grab_front()
 		{
-			BOOST_ASSERT(!this->empty());
+			assert(!this->empty());
 
 			value_move_ptr result = self_traits::value_move(l_.front());
 			self_traits::list_pop_empty_front(l_);

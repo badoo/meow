@@ -6,10 +6,10 @@
 #ifndef MEOW_TREE__TREE_HPP_
 #define MEOW_TREE__TREE_HPP_
 
+#include <cassert>
 #include <vector> 	// directory children holder
 #include <typeinfo> // required for std::type_info
 
-#include <boost/assert.hpp>
 #include <boost/range/iterator_range.hpp> // dir children range
 
 #include <meow/smart_enum.hpp>
@@ -66,7 +66,7 @@ namespace meow { namespace tree {
 
 		void set_parent(node_t *new_p)
 		{
-			BOOST_ASSERT(!this->has_parent());
+			assert(!this->has_parent());
 			parent_ = new_p;
 		}
 
@@ -269,30 +269,30 @@ namespace meow { namespace tree {
 
 	inline directory_t* as_directory(node_t *node)
 	{
-		BOOST_ASSERT(NULL != node);
-		BOOST_ASSERT(node_type::directory == node->type());
+		assert(NULL != node);
+		assert(node_type::directory == node->type());
 		return static_cast<directory_t*>(node);
 	}
 
 	inline directory_t const* as_directory(node_t const *node)
 	{
-		BOOST_ASSERT(NULL != node);
-		BOOST_ASSERT(node_type::directory == node->type());
+		assert(NULL != node);
+		assert(node_type::directory == node->type());
 		return static_cast<directory_t const*>(node);
 	}
 
 	inline file_t* as_file(node_t *node)
 	{
-		BOOST_ASSERT(NULL != node);
-		BOOST_ASSERT(node_type::file == node->type());
+		assert(NULL != node);
+		assert(node_type::file == node->type());
 		return static_cast<file_t*>(node);
 	}
 
 	template<class T>
 	inline file_impl_t<T>* as_file_impl(node_t *node)
 	{
-		BOOST_ASSERT(NULL != node);
-		BOOST_ASSERT(node_type::file == node->type());
+		assert(NULL != node);
+		assert(node_type::file == node->type());
 		return static_cast<file_impl_t<T>*>(node);
 	}
 

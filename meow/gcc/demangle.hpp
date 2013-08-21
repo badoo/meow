@@ -11,8 +11,6 @@
 #include <cstdlib> 		// for std::free
 #include <stdexcept>
 
-#include <boost/assert.hpp>
-
 #include <meow/movable_handle.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -46,8 +44,8 @@ namespace meow {
 		{
 			case -1: throw std::runtime_error("gcc_demangle_name: memory allocation failure");
 			case -2: throw std::runtime_error("gcc_demangle_name: invalid mangled name");
-			case -3: BOOST_ASSERT(false && "gcc_demangle_name: invalid argument, MUST NOT HAPPEN");
-			default: BOOST_ASSERT(false && "gcc_demangle_name: unknown result status, MUST NOT HAPPEN");
+			case -3: assert(false && "gcc_demangle_name: invalid argument, MUST NOT HAPPEN");
+			default: assert(false && "gcc_demangle_name: unknown result status, MUST NOT HAPPEN");
 		}
 	}
 

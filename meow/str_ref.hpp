@@ -6,11 +6,10 @@
 #ifndef MEOW_STR_REF_HPP_
 #define MEOW_STR_REF_HPP_
 
+#include <cassert>
 #include <limits> 		// for std::numeric_limits<>
 #include <string>		// for std::string and std::char_traits and stuff
 #include <type_traits>
-
-#include <boost/assert.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow {
@@ -56,7 +55,7 @@ namespace meow {
 
 		self& assign(char_type *b, char_type *e)
 		{
-			BOOST_ASSERT(b <= e);
+			assert(b <= e);
 			p_ = b;
 			n_ = (e - b);
 			return *this;
@@ -70,7 +69,7 @@ namespace meow {
 
 		size_type size() const { return n_; }
 		size_type length() const { return n_; }
-		int c_length() const { BOOST_ASSERT(n_ < size_type(std::numeric_limits<int>::max)); return n_; }
+		int c_length() const { assert(n_ < size_type(std::numeric_limits<int>::max)); return n_; }
 
 		bool empty() const { return !n_; }
 		char_type* data() const { return p_; }
@@ -105,7 +104,7 @@ namespace meow {
 
 		char_type_nc operator[](size_t offset) const
 		{
-			BOOST_ASSERT(offset < length());
+			assert(offset < length());
 			return p_[offset];
 		}
 

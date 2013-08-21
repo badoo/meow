@@ -6,8 +6,6 @@
 #ifndef MEOW_TREE__FOR_EACH_HPP_
 #define MEOW_TREE__FOR_EACH_HPP_
 
-#include <boost/assert.hpp>
-
 #include <meow/tree/tree.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -89,7 +87,7 @@ namespace meow { namespace tree {
 				return file_fn(as_file(root), level);
 
 			default:
-				BOOST_ASSERT(!"can't be reached");
+				assert(!"can't be reached");
 				break;
 		}
 	}

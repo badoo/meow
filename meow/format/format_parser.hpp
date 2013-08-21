@@ -6,6 +6,7 @@
 #ifndef MEOW_FORMAT_FORMAT_PARSER_HPP_
 #define MEOW_FORMAT_FORMAT_PARSER_HPP_
 
+#include <cassert>
 #include <cstring> // std::memchr
 
 #include <meow/str_ref.hpp>
@@ -30,7 +31,7 @@ namespace meow { namespace format {
 
 		fi.total_length += new_slice.size();
 		slices[fi.n_slices++] = new_slice;
-		BOOST_ASSERT(fi.n_slices <= n_slices);
+		assert(fi.n_slices <= n_slices);
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////

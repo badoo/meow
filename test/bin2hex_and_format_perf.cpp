@@ -116,7 +116,7 @@ as_hex_string_string(meow::string_ref<CharT> const& s)
 	std::basic_string<typename boost::remove_const<CharT>::type> result(s.size() * 2, CharT());
 
 	CharT *ee = copy_bin2hex(&bin2hex_code, s.begin(), s.end(), &*result.begin());
-	BOOST_ASSERT(ee == &*result.end());
+	assert(ee == &*result.end());
 
 	return result;
 }
@@ -129,7 +129,7 @@ as_hex_string_str_copy(meow::string_ref<CharT> const& s)
 	meow::string_copy<typename boost::remove_const<CharT>::type> result(s.size() * 2);
 
 	CharT *ee = copy_bin2hex(&bin2hex_table_16, s.begin(), s.end(), &*result.begin());
-	BOOST_ASSERT(ee == &*result.end());
+	assert(ee == &*result.end());
 
 	return result;
 	//return move(result);

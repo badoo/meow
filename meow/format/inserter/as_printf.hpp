@@ -10,8 +10,6 @@
 #include <cstddef> // size_t
 #include <cstdio>  // vsnprintf
 
-#include <boost/assert.hpp>
-
 #include <meow/config/compiler_features.hpp>
 #include <meow/format/metafunctions.hpp>
 
@@ -28,13 +26,13 @@ namespace meow { namespace format {
 
 		va_start(ap, fmt);
 		ssize_t const real_buffer_size = ::vsnprintf(NULL, 0, fmt, ap) + 1 /* trailing 0x0 */;
-		BOOST_ASSERT(real_buffer_size > 0);
+		assert(real_buffer_size > 0);
 		va_end(ap);
 
 		va_start(ap, fmt);
 		std::string result(real_buffer_size, char());
 		ssize_t n = ::vsnprintf(&*result.begin(), result.size(), fmt, ap);
-		BOOST_ASSERT((n + 1) == real_buffer_size);
+		assert((n + 1) == real_buffer_size);
 		va_end(ap);
 
 		result.resize(n); // cut out the trailing null-char, don't want it there
@@ -71,7 +69,7 @@ namespace meow { namespace format {
 
 		va_start(ap, fmt);
 		ssize_t n = ::vsnprintf(result.data, N, fmt, ap);
-		BOOST_ASSERT(n <= N);
+		assert(n <= N);
 		va_end(ap);
 
 		result.length = n;

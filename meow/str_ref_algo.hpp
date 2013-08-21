@@ -110,8 +110,8 @@ namespace meow {
 								, typename string_ref<CharT>::size_type end
 								)
 	{
-		BOOST_ASSERT(begin <= end);
-		BOOST_ASSERT(end <= str.size());
+		assert(begin <= end);
+		assert(end <= str.size());
 		return string_ref<CharT>(str.begin() + begin, str.begin() + end);
 	}
 

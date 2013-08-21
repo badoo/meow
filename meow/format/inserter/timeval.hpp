@@ -74,7 +74,7 @@ namespace meow { namespace format {
 					, tm.tm_hour, tm.tm_min, tm.tm_sec
 				);
 
-			BOOST_ASSERT(n == (buffer_size - 1));
+			assert(n == (buffer_size - 1));
 			return buf.get();
 		}
 	};
@@ -118,7 +118,7 @@ namespace meow { namespace format {
 
 			ssize_t n = ::snprintf(buf.get(), buf.size(), "%05udays %02u:%02u:%02u", days % 100000, hours, mins, secs);
 
-			BOOST_ASSERT(n == (buffer_size - 1));
+			assert(n == (buffer_size - 1));
 			return buf.get();
 		}
 	};

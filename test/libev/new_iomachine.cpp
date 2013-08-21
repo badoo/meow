@@ -66,7 +66,7 @@ struct my_traits
 		template<class ContextT>
 		static bool parse_header(ContextT *ctx, header_t *result_h, str_ref header_s)
 		{
-			BOOST_ASSERT(sizeof(header_t) <= header_s.size());
+			assert(sizeof(header_t) <= header_s.size());
 
 			header_t const *h = reinterpret_cast<header_t const*>(header_s.begin());
 			result_h->data_length = ntohl(h->data_length);

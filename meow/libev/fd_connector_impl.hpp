@@ -168,7 +168,7 @@ namespace meow { namespace libev {
 			}
 			else // connection established immediately
 			{
-				BOOST_ASSERT((0 == n) && "connect() returns either -1 or 0");
+				assert((0 == n) && "connect() returns either -1 or 0");
 				ev_feed_event(loop_, item->io_event(), EV_CUSTOM);
 				item->err_code = 0;
 			}
@@ -189,7 +189,7 @@ namespace meow { namespace libev {
 
 		void item_do_callback(item_t *item, int err)
 		{
-			BOOST_ASSERT(this == item->get_connector_ptr());
+			assert(this == item->get_connector_ptr());
 
 			if (log_)
 			{

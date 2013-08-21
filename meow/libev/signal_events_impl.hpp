@@ -6,8 +6,8 @@
 #ifndef MEOW_LIBEV__SIGNAL_EVENTS_IMPL_HPP_
 #define MEOW_LIBEV__SIGNAL_EVENTS_IMPL_HPP_
 
+#include <cassert>
 #include <csignal>
-#include <boost/assert.hpp>
 
 #include <meow/libev/libev.hpp>
 #include <meow/libev/signal_events.hpp>
@@ -35,7 +35,7 @@ namespace meow { namespace libev {
 
 		item_t* item_get(int signo)
 		{
-			BOOST_ASSERT((0 <= signo) && (signo < max_signals));
+			assert((0 <= signo) && (signo < max_signals));
 			return &i_[signo];
 		}
 
@@ -48,7 +48,7 @@ namespace meow { namespace libev {
 		void cb(evsignal_t *w)
 		{
 			item_t *item = item_get(w->signum);
-			BOOST_ASSERT(&item->ev == w);
+			assert(&item->ev == w);
 
 			item->cb(this, w->signum);
 		}
@@ -65,7 +65,7 @@ namespace meow { namespace libev {
 			item_t *item = item_get(signo);
 			evsignal_t *ev = &item->ev;
 
-			BOOST_ASSERT(signo == ev->signum);
+			assert(signo == ev->signum);
 			item->cb = cb;
 
 			if (!ev_is_active(ev))

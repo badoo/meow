@@ -9,8 +9,6 @@
 #include <array>
 #include <functional> // bind
 
-#include <boost/assert.hpp>
-
 #include <meow/libev/bounded_timer.hpp>
 #include <meow/libev/libev.hpp>
 #include <meow/libev/ticker.hpp>
@@ -105,7 +103,7 @@ namespace meow { namespace libev {
 			uint64_t msec = tv.tv_sec * 1000 + tv.tv_usec / 1000;
 
 			size_t offset = msec / tick_interval_ms;
-			BOOST_ASSERT(offset < max_timeout_in_ticks);
+			assert(offset < max_timeout_in_ticks);
 
 			return offset;
 		}

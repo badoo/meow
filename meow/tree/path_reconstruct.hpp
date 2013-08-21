@@ -6,9 +6,8 @@
 #ifndef MEOW_TREE__PATH_RECONSTRUCT_HPP_
 #define MEOW_TREE__PATH_RECONSTRUCT_HPP_
 
+#include <cassert>
 #include <climits> // hopefuly PATH_MAX is there
-
-#include <boost/assert.hpp>
 
 #include <meow/tmp_buffer.hpp>
 #include <meow/format/format.hpp>
@@ -37,7 +36,7 @@ namespace meow { namespace tree {
 
 			// get and print our own name, have to scan the parent's children for that
 			directory_t::child_t *parent_to_node = parent->get_child(node);
-			BOOST_ASSERT((NULL != parent_to_node) && "if we have a parent, then parent must be able to find us");
+			assert((NULL != parent_to_node) && "if we have a parent, then parent must be able to find us");
 			meow::format::write(sink, "/", parent_to_node->name);
 
 			return sink;

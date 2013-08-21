@@ -37,12 +37,12 @@ int main()
 	{
 		char const *path = "/level_1_3/level_2_3/level_3_2";
 		file_t *f = get_path_as_file(r, path);
-		BOOST_ASSERT(NULL != f);
-		BOOST_ASSERT(f->type_info() == typeid(size_t));
+		assert(NULL != f);
+		assert(f->type_info() == typeid(size_t));
 
 		fmt(stdout, "found file: {0}, type: {1}\n", f, meow::gcc_demangle_name_tmp(f->type_info().name()));
 
-		BOOST_ASSERT(meow::str_ref(path) == reconstruct_path_tmp(f));
+		assert(meow::str_ref(path) == reconstruct_path_tmp(f));
 		fmt(stdout, "reconstructed path: {0}\n", reconstruct_path_tmp(f));
 	}
 

@@ -10,7 +10,6 @@
 #include <cerrno>
 #include <type_traits> // type checks inside call thunks
 
-#include <boost/assert.hpp>
 #include <boost/noncopyable.hpp>
 
 #include <meow/str_ref.hpp>
@@ -421,7 +420,7 @@ namespace meow { namespace libev {
 
 			while (true)
 			{
-				BOOST_ASSERT(curr_offset <= buf_len);
+				assert(curr_offset <= buf_len);
 
 				if (curr_offset == buf_len)
 					return read_result_t(read_status::full, curr_offset);
@@ -456,7 +455,7 @@ namespace meow { namespace libev {
 					return read_result_t(read_status::closed, curr_offset);
 				}
 
-				BOOST_ASSERT(n > 0);
+				assert(n > 0);
 
 				curr_offset += n;
 			}
@@ -480,7 +479,7 @@ namespace meow { namespace libev {
 
 			while (true)
 			{
-				BOOST_ASSERT(curr_offset <= buf_len);
+				assert(curr_offset <= buf_len);
 
 				if (curr_offset == buf_len)
 					return write_result_t(write_status::empty, curr_offset);
@@ -515,7 +514,7 @@ namespace meow { namespace libev {
 					return write_result_t(write_status::closed, curr_offset);
 				}
 
-				BOOST_ASSERT(n > 0);
+				assert(n > 0);
 
 				curr_offset += n;
 			}

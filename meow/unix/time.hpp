@@ -9,10 +9,9 @@
 #include <sys/types.h>
 #include <sys/time.h>			// for gettimeofday, settimeofday, timeval, etc.
 
+#include <cassert>
 #include <cmath>				// for modf
 #include <ctime>
-
-#include <boost/assert.hpp>
 
 #include <meow/api_call_error.hpp>
 #include <meow/tmp_buffer.hpp>
@@ -43,7 +42,7 @@
 
 	inline os_timeval_t os_timeval_from_double(double const d)
 	{
-		BOOST_ASSERT(d >= 0.0);
+		assert(d >= 0.0);
 
 		double sec_d = 0.0;
 		double usec_d = modf(d, &sec_d);
@@ -142,7 +141,7 @@ namespace os_unix {
 
 	inline os_timeval_t make_timeval(time_t sec, suseconds_t usec)
 	{
-		BOOST_ASSERT(usec < usec_in_sec);
+		assert(usec < usec_in_sec);
 		os_timeval_t tv = { .tv_sec = sec, .tv_usec = usec };
 		return tv;
 	}

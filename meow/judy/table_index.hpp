@@ -86,7 +86,7 @@ namespace detail {
 
 		static void assert_self_size()
 		{
-			BOOST_STATIC_ASSERT(sizeof(T*) == sizeof(self_t));
+			static_assert(sizeof(T*) == sizeof(self_t), "must mimic plain pointer");
 		}
 		
 		static void assert_bitmasked_bits_are_zero(void *p)

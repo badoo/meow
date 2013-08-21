@@ -7,8 +7,7 @@
 #ifndef MEOW_CONVERT_HEX_TO_FROM_BIN_HPP_
 #define MEOW_CONVERT_HEX_TO_FROM_BIN_HPP_
 
-#include <stdint.h>
-#include <boost/assert.hpp>
+#include <cstdint>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow {
@@ -95,7 +94,7 @@ namespace meow {
 	//  returns to + (e - b) / 2
 	inline char* copy_hex2bin(char const *b, char const *e, char *to)
 	{
-		BOOST_ASSERT((0 == ((e - b) % 2)) && "length of incoming hex-string must be even number");
+		assert((0 == ((e - b) % 2)) && "length of incoming hex-string must be even number");
 		for (; b != e; b += 2, ++to)
 			*to = hex2bin(b[0], b[1]);
 		return to;

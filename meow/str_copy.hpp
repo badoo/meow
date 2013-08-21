@@ -6,13 +6,11 @@
 #ifndef MEOW__STR_COPY_HPP_
 #define MEOW__STR_COPY_HPP_
 
+#include <cassert>
 #include <cstring>      // memset, memcpy
 #include <limits>       // std::numeric_limits<>
 #include <string>       // std::char_traits, std::string
 #include <type_traits>
-
-#include <boost/assert.hpp>
-#include <boost/static_assert.hpp>
 
 #include <meow/str_ref.hpp>
 #include <meow/std_unique_ptr.hpp>
@@ -21,6 +19,7 @@
 namespace meow {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
+	// FIXME: rewrite this with C++11 move
 	template<class StringCopyT>
 	struct string_copy_mover
 	{
@@ -55,12 +54,12 @@ namespace meow {
 		typedef int unspecified_bool_helper::* unspecified_bool_type;
 
 		// antoxa: char_type can't be const for the sake of my sanity
-		BOOST_STATIC_ASSERT(!std::is_const<char_type>::value);
+		static_assert(!std::is_const<char_type>::value, "cba implementing const version for this");
 
 		// antoxa: can't be bothered supporting fancy types
 		// FIXME: gcc 4.7.2 is missing for std::is_trivially_copyable<>
 		// using is_standard_layout for now
-		BOOST_STATIC_ASSERT(std::is_standard_layout<char_type>::value);
+		static_assert(std::is_standard_layout<char_type>::value, "cba supporting fancy types");
 
 		template<class U>
 		struct can_copy_from
@@ -77,7 +76,7 @@ namespace meow {
 		string_copy() : p_(), n_(0) {}
 		string_copy(char_type const *p) { this->init_copy(p, p ? traits_type::length(p) : 0); }
 		string_copy(char_type const *p, size_type n) { this->init_copy(p, n); }
-		string_copy(char_type const *b, char_type const *e) { BOOST_ASSERT(b <= e); this->init_copy(b, (e - b)); }
+		string_copy(char_type const *b, char_type const *e) { assert(b <= e); this->init_copy(b, (e - b)); }
 		string_copy(string_type const& s) { this->init_copy(s.data(), s.size()); }
 
 		explicit string_copy(size_type n) { this->reset_and_resize_to(n); }
@@ -147,7 +146,7 @@ namespace meow {
 			if (size_type(-1) == n)
 				n = n_;
 
-			BOOST_ASSERT(n <= n_);
+			assert(n <= n_);
 			memset(p_.get(), fill_c, n);
 		}
 
@@ -178,7 +177,7 @@ namespace meow {
 		bool empty() const { return !n_; }
 		size_type size() const { return n_; }
 		size_type length() const { return n_; }
-		int c_length() const { BOOST_ASSERT(n_ < size_type(std::numeric_limits<int>::max)); return n_; }
+		int c_length() const { assert(n_ < size_type(std::numeric_limits<int>::max)); return n_; }
 
 	public: // operators
 
@@ -214,7 +213,7 @@ namespace meow {
 
 		char_type operator[](size_t offset) const
 		{
-			BOOST_ASSERT(offset < size());
+			assert(offset < size());
 			return data()[offset];
 		}
 
@@ -258,7 +257,7 @@ namespace meow {
 	string_copy_cant_be_moved_from_const
 	move(string_copy<CharT, Traits> const& str)
 	{
-		BOOST_ASSERT(!"never called");
+		assert(!"never called");
 		return string_copy_cant_be_moved_from_const();
 	}
 

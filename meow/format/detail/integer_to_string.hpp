@@ -9,8 +9,6 @@
 #include <utility> // enable_if
 #include <type_traits>
 
-#include <boost/assert.hpp>
-
 #include "radix_info.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -41,7 +39,7 @@ namespace meow { namespace format { namespace detail {
 
 		MEOW_INT_TO_STRING_LOOP;
 
-		BOOST_ASSERT(buf <= p);
+		assert(buf <= p);
 		return p;
 	}
 
@@ -65,7 +63,7 @@ namespace meow { namespace format { namespace detail {
 			MEOW_INT_TO_STRING_LOOP;
 		}
 
-		BOOST_ASSERT(buf <= p);
+		assert(buf <= p);
 		return p;
 	}
 

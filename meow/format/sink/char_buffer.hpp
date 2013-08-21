@@ -64,7 +64,7 @@ namespace meow { namespace format { namespace sink {
 				offset_ += s.size();
 			}
 
-			BOOST_ASSERT(offset_ <= buf_sz_);
+			assert(offset_ <= buf_sz_);
 		}
 	};
 

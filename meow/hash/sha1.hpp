@@ -225,8 +225,6 @@ namespace meow {
 } // namespace meow {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include <boost/assert.hpp>
-
 #include <meow/format/metafunctions.hpp>
 #include <meow/convert/hex_to_from_bin.hpp>
 #include <meow/tmp_buffer.hpp>
@@ -244,7 +242,7 @@ namespace meow { namespace format {
 		{
 			char const *b = (char const*)d.data;
 			char const *ee = copy_bin2hex(b, b + sizeof(d.data), buf.get());
-			BOOST_ASSERT(ee == &*buf.end());
+			assert(ee == &*buf.end());
 
 			return str_ref(buf.begin(), buf.end());
 		}

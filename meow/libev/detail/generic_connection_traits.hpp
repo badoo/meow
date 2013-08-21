@@ -228,7 +228,7 @@ namespace meow { namespace libev {
 
 						// we assume that writev() never returns more than all the buffers
 						//  could hold, so n_bufs can't underflow here
-						BOOST_ASSERT(n_bufs > 0);
+						assert(n_bufs > 0);
 						n_bufs--;
 
 						// buf fully written
@@ -277,7 +277,7 @@ namespace meow { namespace libev {
 			template<class ContextT>
 			static custom_op_status_t custom_operation(ContextT *ctx)
 			{
-				BOOST_ASSERT(ctx->flags->is_closing);
+				assert(ctx->flags->is_closing);
 
 				io_close_reason_t close_reason =
 					(ctx->flags->write_before_close)

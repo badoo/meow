@@ -218,7 +218,7 @@ namespace meow { namespace libev {
 					}
 				}
 
-				BOOST_ASSERT(!"can't be reached");
+				assert(!"can't be reached");
 			}
 		};
 
@@ -325,7 +325,7 @@ namespace meow { namespace libev {
 						return write::writev_from_wchain(ctx, ctx->ssl_wchain);
 				}
 
-				BOOST_ASSERT(!"can't be reached");
+				assert(!"can't be reached");
 			}
 		};
 	};
@@ -427,7 +427,7 @@ namespace meow { namespace libev {
 
 				SSL_LOG_WRITE(c, line_mode::prefix, "{0}; to buf_sz: {1} ", __func__, buf_sz);
 
-				BOOST_ASSERT(buf_sz > 0);
+				assert(buf_sz > 0);
 				buffer_move_ptr& b = c->ssl_rbuf;
 
 				if (!b)

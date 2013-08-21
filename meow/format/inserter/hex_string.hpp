@@ -17,27 +17,13 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace format {
 ////////////////////////////////////////////////////////////////////////////////////////////////
-#if 0
-	template<class CharT>
-	inline
-	meow::string_copy<typename std::remove_const<CharT>::type>
-	as_hex_string(meow::string_ref<CharT> const& s)
-	{
-		meow::string_copy<typename std::remove_const<CharT>::type> result(s.size() * 2);
-
-		CharT *ee = copy_bin2hex(s.begin(), s.end(), &*result.begin());
-		BOOST_ASSERT(ee == &*result.end());
-
-		return result; // rely on NRVO here, simple return by value is faster than move()
-	}
-#endif
 
 	inline meow::str_copy as_hex_string(str_ref const& s)
 	{
 		str_copy result(s.size() * 2);
 
 		char *ee = copy_bin2hex(s.begin(), s.end(), &*result.begin());
-		BOOST_ASSERT(ee == &*result.end());
+		assert(ee == &*result.end());
 
 		return result; // rely on NRVO here, simple return by value is faster than move()
 	}
@@ -46,10 +32,10 @@ namespace meow { namespace format {
 	inline
 	str_ref as_hex_string(str_ref const& s, meow::tmp_buffer<N*2> const& b = meow::tmp_buffer<N*2>())
 	{
-		BOOST_ASSERT(s.size() <= N);
+		assert(s.size() <= N);
 
 		char const *ee = meow::copy_bin2hex(s.begin(), s.end(), b.begin());
-		BOOST_ASSERT(ee <= b.end());
+		assert(ee <= b.end());
 
 		return str_ref(b.begin(), ee);
 	}
@@ -62,7 +48,7 @@ namespace meow { namespace format {
 		meow::string_copy<typename std::remove_const<CharT>::type> result(s.size() * 4);
 
 		CharT *ee = copy_bin2hex_escaped(s.begin(), s.end(), &*result.begin());
-		BOOST_ASSERT(ee == &*result.end());
+		assert(ee == &*result.end());
 
 		return result; // rely on NRVO here, simple return by value is faster than move()
 	}

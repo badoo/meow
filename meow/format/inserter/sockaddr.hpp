@@ -12,8 +12,6 @@
 #include <cstring>
 #include <cstdio>
 
-#include <boost/assert.hpp>
-
 #include <meow/str_ref.hpp>
 #include <meow/tmp_buffer.hpp>
 #include <meow/config/endian.hpp>
@@ -46,12 +44,12 @@ namespace meow { namespace format {
 
 		if (print_port)
 		{
-			BOOST_ASSERT(buf.size() >= INET_ADDRSTRLEN + port_strlen);
+			assert(buf.size() >= INET_ADDRSTRLEN + port_strlen);
 			p = detail::integer_to_string(begin, p - begin, ntohs(sa->sin_port)); *--p = ':';
 		}
 		else
 		{
-			BOOST_ASSERT(buf.size() >= INET_ADDRSTRLEN);
+			assert(buf.size() >= INET_ADDRSTRLEN);
 		}
 
 		p = detail::integer_to_string(begin, p - begin, b[_3]); *--p = '.';
@@ -65,11 +63,11 @@ namespace meow { namespace format {
 	{
 		if (print_port)
 		{
-			BOOST_ASSERT(buf.size() >= INET6_ADDRSTRLEN + port_strlen);
+			assert(buf.size() >= INET6_ADDRSTRLEN + port_strlen);
 		}
 		else
 		{
-			BOOST_ASSERT(buf.size() >= INET6_ADDRSTRLEN);
+			assert(buf.size() >= INET6_ADDRSTRLEN);
 		}
 
 		char const *res = inet_ntop(AF_INET6, &sa->sin6_addr, buf.data(), buf.size());

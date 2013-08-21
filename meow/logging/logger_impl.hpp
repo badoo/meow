@@ -35,7 +35,7 @@ namespace meow { namespace logging {
 
 		void do_write(size_t total_len, str_t const *slices, size_t n_slices)
 		{
-			BOOST_ASSERT(writer_);
+			assert(writer_);
 			writer_(total_len, slices, n_slices);
 		}
 
@@ -102,7 +102,7 @@ namespace meow { namespace logging {
 						, size_t 		n_slices
 						)
 		{
-			BOOST_ASSERT(target_);
+			assert(target_);
 
 			if (target_->does_accept(lvl))
 				target_->write(lvl, lmode, total_len, slices, n_slices);
@@ -142,7 +142,7 @@ namespace meow { namespace logging {
 						, size_t 		n_slices
 						)
 		{
-			BOOST_ASSERT(target_);
+			assert(target_);
 
 			if (!target_->does_accept(lvl))
 				return;

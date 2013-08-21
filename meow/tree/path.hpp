@@ -6,11 +6,10 @@
 #ifndef MEOW_TREE__PATH_HPP_
 #define MEOW_TREE__PATH_HPP_
 
+#include <cassert>
 #include <vector>
 #include <stdexcept> // std::logic_error
 
-#include <boost/assert.hpp>
-#include <boost/static_assert.hpp>
 #include <boost/range/iterator_range.hpp>
 
 #include <meow/smart_enum.hpp>
@@ -46,14 +45,14 @@ namespace meow { namespace tree {
 
 	inline path_node_type_t path_get_node_type(str_ref const& part)
 	{
-		BOOST_ASSERT(!part.empty());
+		assert(!part.empty());
 
 		char const *p = part.begin();
 
 		switch (*p++)
 		{
 			case '/':
-				BOOST_ASSERT(!"slash can't be here!");
+				assert(!"slash can't be here!");
 				break;
 
 			case '.': // possible self
@@ -85,7 +84,7 @@ namespace meow { namespace tree {
 
 	inline bool path_is_absolute(str_ref const& path)
 	{
-		BOOST_ASSERT(!path.empty());
+		assert(!path.empty());
 		return ('/' == path[0]);
 	}
 
@@ -178,7 +177,7 @@ namespace meow { namespace tree {
 			break;
 
 			default:
-				BOOST_ASSERT(!"can't be reached");
+				assert(!"can't be reached");
 		}
 
 		return (NULL != root);
@@ -254,7 +253,7 @@ namespace meow { namespace tree {
 			break;
 
 			default:
-				BOOST_ASSERT(!"can't be reached");
+				assert(!"can't be reached");
 		}
 	}
 

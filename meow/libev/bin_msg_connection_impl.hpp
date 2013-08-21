@@ -73,14 +73,14 @@ namespace meow { namespace libev {
 				switch (ctx->r_state)
 				{
 					case read_state::header:
-						BOOST_ASSERT(b->used_size() <= tr::header_size);
+						assert(b->used_size() <= tr::header_size);
 						return buffer_ref(b->last, b->first + tr::header_size);
 
 					case read_state::body:
 						return b->free_part();
 				};
 
-				BOOST_ASSERT(!"can't be reached");
+				assert(!"can't be reached");
 			}
 
 			template<class ConnectionT>

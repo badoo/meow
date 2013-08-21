@@ -6,7 +6,6 @@
 #ifndef MEOW__SMART_ENUM_HPP_
 #define MEOW__SMART_ENUM_HPP_
 
-#include <boost/assert.hpp>
 #include <boost/preprocessor/repetition/enum.hpp>
 #include <boost/preprocessor/seq.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>
@@ -50,12 +49,12 @@ namespace request_type {
 			, "update"
 		};
 		enum { names_size = (sizeof(names) / sizeof(names[0])) };
-		BOOST_STATIC_ASSERT(request_type::max == names_size);
+		static_assert(request_type::max == names_size, "");
 	}
 
 	inline char const* enum_as_string(type t)
 	{
-		BOOST_ASSERT(t < request_type::max);
+		assert(t < request_type::max);
 		return detail::names[t];
 	}
 
@@ -115,29 +114,29 @@ namespace request_type {
 		return BOOST_PP_TUPLE_ELEM(2, 0, item); 				\
 /**/
 
-#define MEOW_SMART_ENUM_GEN_FUNCTIONS(decl_prefix, ns_name, enum_seq, has_none)		\
-	decl_prefix meow::str_ref enum_as_str_ref(type t) { 			\
-		switch (t) { 											\
-			BOOST_PP_SEQ_FOR_EACH( 								\
-					  MEOW_SMART_ENUM_SWITCH_ITEM 			\
-					, ns_name 									\
-					, enum_seq 									\
-				) 												\
-			default: 											\
-				BOOST_ASSERT(!"invalid enum value"); 			\
-		} 														\
-	} 															\
-	decl_prefix char const* enum_as_string(type t) { 			\
-		return enum_as_str_ref(t).data(); 						\
-	} 															\
-	decl_prefix type enum_from_str_ref( 						\
-			  meow::str_ref const& s 							\
-			, type not_found_res BOOST_PP_IF(has_none, = ns_name::_none, )	\
-		) 														\
-	{ 															\
-		BOOST_PP_SEQ_FOR_EACH(MEOW_SMART_ENUM_FROM_IF_ITEM, ns_name, enum_seq) \
-		return not_found_res; 									\
-	} 															\
+#define MEOW_SMART_ENUM_GEN_FUNCTIONS(decl_prefix, ns_name, enum_seq, has_none) \
+	decl_prefix meow::str_ref enum_as_str_ref(type t) {                         \
+		switch (t) {                                                            \
+			BOOST_PP_SEQ_FOR_EACH(                                              \
+					  MEOW_SMART_ENUM_SWITCH_ITEM                               \
+					, ns_name                                                   \
+					, enum_seq                                                  \
+				)                                                               \
+			default:                                                            \
+				assert(!"invalid enum value");                                  \
+		}                                                                       \
+	}                                                                           \
+	decl_prefix char const* enum_as_string(type t) {                            \
+		return enum_as_str_ref(t).data();                                       \
+	}                                                                           \
+	decl_prefix type enum_from_str_ref(                                         \
+			  meow::str_ref const& s                                            \
+			, type not_found_res BOOST_PP_IF(has_none, = ns_name::_none, )      \
+		)                                                                       \
+	{                                                                           \
+		BOOST_PP_SEQ_FOR_EACH(MEOW_SMART_ENUM_FROM_IF_ITEM, ns_name, enum_seq)  \
+		return not_found_res;                                                   \
+	}                                                                           \
 /**/
 
 #define MEOW_EXTRAS_ELEM(e, n) BOOST_PP_TUPLE_ELEM(2, n, e)

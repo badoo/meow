@@ -6,13 +6,11 @@
 #ifndef MEOW_MAPPING__XML_TREE_HPP_
 #define MEOW_MAPPING__XML_TREE_HPP_
 
+#include <cassert>
 #include <vector>
-#include <functional> // function
-#include <stdexcept>  // for std::runtime_error
+#include <functional> // std::function
+#include <stdexcept>  // std::runtime_error
 #include <type_traits>
-
-#include <boost/assert.hpp>
-#include <boost/static_assert.hpp>
 
 #include <meow/str_ref.hpp>
 #include <meow/std_bind.hpp>
@@ -33,7 +31,7 @@ namespace meow { namespace libxml2 {
 			: std::runtime_error(msg)
 			, node_(n)
 		{
-			BOOST_ASSERT(NULL != node_);
+			assert(NULL != node_);
 		}
 
 		xmlNodePtr xml_node() const throw() { return node_; }
@@ -68,7 +66,7 @@ namespace meow { namespace libxml2 {
 		template<class Function, class Caster>
 		self_t& node(char const* xpath_expr, Function const& function, Caster const& cast)
 		{
-			BOOST_STATIC_ASSERT((std::is_convertible<Function, handler_func_t>::value));
+			static_assert(std::is_convertible<Function, handler_func_t>::value, "need compatible function type");
 
 			typedef typename std::remove_reference<typename Caster::template result<ContextT>::type>::type ctx_type;
 			return this->node(xpath_expr, cast, xml_node_t<ctx_type>(function));
@@ -77,7 +75,7 @@ namespace meow { namespace libxml2 {
 		template<class Caster, class CtxT>
 		self_t& node(char const* xpath_expr, Caster const& cast, xml_node_t<CtxT> const& sub_node)
 		{
-			BOOST_ASSERT(NULL != xpath_expr);
+			assert(NULL != xpath_expr);
 
 			typedef typename Caster::template result<ContextT>::type cast_result_type;
 			sub_nodes_.push_back(node_info_t(xpath_expr, std::bind<void>(sub_node, std::bind<cast_result_type>(cast, _1), _2, _3)));
@@ -121,7 +119,7 @@ namespace meow { namespace libxml2 {
 		static void call_handler(Handler const& handler, CtxT& ctx, xmlNodePtr node)
 		{
 			if (!handler) return;
-			BOOST_ASSERT(NULL != node);
+			assert(NULL != node);
 
 //			fprintf(stderr, "node = %p, node->name = %s, node->type = %d\n", node, node->name, node->type);
 

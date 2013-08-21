@@ -6,9 +6,8 @@
 #ifndef MEOW_TREE__STATIC_NODE_HPP_
 #define MEOW_TREE__STATIC_NODE_HPP_
 
+#include <cassert>
 #include <stdexcept> // for std::logic_error
-
-#include <boost/assert.hpp>
 
 // formating exception text
 #include <meow/format/format.hpp>
@@ -27,7 +26,7 @@ namespace meow { namespace tree {
 		template<class T>
 		static void checked_init(T& value, directory_t*)
 		{
-			BOOST_ASSERT(!"static_node_t<>: trying to assign a directory to value");
+			assert(!"static_node_t<>: trying to assign a directory to value");
 		}
 
 		static void checked_init(directory_t*& value, directory_t *dir)
@@ -37,7 +36,7 @@ namespace meow { namespace tree {
 
 		static void checked_init(directory_t*& value, file_t*)
 		{
-			BOOST_ASSERT(!"static_node_t<directory_t>: trying to assign a value to directory");
+			assert(!"static_node_t<directory_t>: trying to assign a value to directory");
 		}
 
 		template<class T>

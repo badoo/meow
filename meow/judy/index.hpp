@@ -108,7 +108,7 @@ namespace judy {
 				, k_(0)
 				, v_(NULL)
 			{
-				BOOST_STATIC_ASSERT(check_iteration<j_ops>::value);
+				static_assert(check_iteration<j_ops>::value, "need iteration enabled for this index key type");
 			}
 
 			key_t    key() const { return k_; }

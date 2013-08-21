@@ -12,7 +12,6 @@
 #include <exception>   // bad_alloc
 #include <type_traits> // remove_const
 
-#include <boost/assert.hpp>
 #include <boost/noncopyable.hpp>
 
 #include <meow/str_ref.hpp>
@@ -72,7 +71,7 @@ namespace meow {
 			, first(begin_ + first_off)
 			, last(begin_ + ((size_t(-1) == last_off) ? sz : last_off))
 		{
-			BOOST_ASSERT(NULL != begin_);
+			assert(NULL != begin_);
 			invariant_check();
 		}
 
@@ -110,7 +109,7 @@ namespace meow {
 		void resize_to(size_t new_sz)
 		{
 			char_t *new_begin = self_t::do_realloc(this->begin_, new_sz);
-			BOOST_ASSERT(NULL != new_begin);
+			assert(NULL != new_begin);
 
 			this->first = new_begin + (this->first - this->begin_);
 			this->last = new_begin + (this->last - this->begin_);
@@ -121,7 +120,7 @@ namespace meow {
 		}
 
 	private:
-		void invariant_check() { BOOST_ASSERT((begin_ <= first) && (first <= last) && (first <= end_)); }
+		void invariant_check() { assert((begin_ <= first) && (first <= last) && (first <= end_)); }
 	};
 
 	using buffer_t        = buffer_impl_t<char>;
@@ -168,7 +167,7 @@ namespace meow {
 
 	inline buffer_move_ptr buffer_create_with_data(void const *data, size_t data_len)
 	{
-		BOOST_ASSERT(data_len > 0);
+		assert(data_len > 0);
 
 		buffer_move_ptr buf = create_buffer(data_len);
 		copy_to_buffer(*buf, data, data_len);
@@ -177,7 +176,7 @@ namespace meow {
 
 	inline buffer_move_ptr buffer_create_with_data(void const *data, void const *data_end)
 	{
-		BOOST_ASSERT(data < data_end);
+		assert(data < data_end);
 		return buffer_create_with_data(data, size_t((char const*)data_end - (char const*)data));
 	}
 

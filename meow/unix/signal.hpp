@@ -6,9 +6,9 @@
 #ifndef MEOW_UNIX__SIGNAL_HPP_
 #define MEOW_UNIX__SIGNAL_HPP_
 
-#include <signal.h>
+#include <cassert>
+#include <csignal>
 
-#include <boost/assert.hpp>
 #include <boost/noncopyable.hpp> 
 
 #include "libc_wrapper.hpp"
@@ -29,7 +29,7 @@ namespace os_unix {
 
 	inline char const* signal_name_from_id(int sig)
 	{
-		BOOST_ASSERT(sig > 0 && sig < NSIG);
+		assert(sig > 0 && sig < NSIG);
 #ifdef __linux__
 		return ::sys_sigabbrev[sig];
 #else
@@ -39,7 +39,7 @@ namespace os_unix {
 
 	inline char const* signal_desc_from_id(int sig)
 	{
-		BOOST_ASSERT(sig > 0 && sig < NSIG);
+		assert(sig > 0 && sig < NSIG);
 		return ::sys_siglist[sig];
 	}
 

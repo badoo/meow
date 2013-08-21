@@ -9,8 +9,8 @@
 #include <sys/types.h>
 #include <netdb.h>
 
+#include <cassert>
 #include <cstdio>						// for snprintf
-#include <boost/assert.hpp>
 
 #include <meow/std_unique_ptr.hpp>
 #include <meow/api_call_error.hpp>
@@ -46,7 +46,7 @@
 	template<class T>
 	T* os_addrinfo_addr(os_addrinfo_t const& ai)
 	{
-		BOOST_ASSERT(sizeof(T) == ai.ai_addrlen);
+		assert(sizeof(T) == ai.ai_addrlen);
 		return reinterpret_cast<T*>(ai.ai_addr);
 	}
 
@@ -76,7 +76,7 @@ namespace os_unix {
 				, int proto = 0
 			)
 	{
-		BOOST_ASSERT(NULL != ai_list);
+		assert(NULL != ai_list);
 
 		struct addrinfo hints = {};
 		hints.ai_family = proto_family;
@@ -94,7 +94,7 @@ namespace os_unix {
 
 		if (0 == r)
 		{
-			BOOST_ASSERT(NULL != result); // success, so result cant be empty
+			assert(NULL != result); // success, so result cant be empty
 			ai_list->reset(result);
 		}
 

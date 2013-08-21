@@ -133,13 +133,13 @@ namespace meow { namespace libev {
 
 		virtual void run_loop(int revents)
 		{
-			BOOST_ASSERT(this->flags->io_started && "call io_startup() first");
+			assert(this->flags->io_started && "call io_startup() first");
 			iomachine_t::run_loop(this, revents);
 		}
 
 		virtual void activate(int revents)
 		{
-			BOOST_ASSERT(this->flags->io_started && "call io_startup() first");
+			assert(this->flags->io_started && "call io_startup() first");
 			iomachine_t::activate_context(this, revents);
 		}
 

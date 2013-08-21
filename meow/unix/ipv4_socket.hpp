@@ -9,8 +9,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#include <boost/assert.hpp>
-
 #include <meow/unix/ipv4_address.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -22,7 +20,7 @@ namespace ipv4 {
 		sockaddr_in a;
 		socklen_t len = sizeof(a);
 		::getpeername(fd, (struct sockaddr*)&a, &len);
-		BOOST_ASSERT(len == sizeof(a));
+		assert(len == sizeof(a));
 		return address_t(a);
 	}
 
@@ -31,7 +29,7 @@ namespace ipv4 {
 		sockaddr_in a;
 		socklen_t len = sizeof(a);
 		::getsockname(fd, (struct sockaddr*)&a, &len);
-		BOOST_ASSERT(len == sizeof(a));
+		assert(len == sizeof(a));
 		return address_t(a);
 	}
 

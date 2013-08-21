@@ -16,7 +16,7 @@ namespace meow { namespace tree {
 	//  and returns it
 	inline directory_t* get_root(node_t *node)
 	{
-		BOOST_ASSERT(NULL != node);
+		assert(NULL != node);
 
 		while (node->parent())
 			node = node->parent();
@@ -26,7 +26,7 @@ namespace meow { namespace tree {
 
 	inline directory_t* get_enclosing_dir(node_t *node)
 	{
-		BOOST_ASSERT(NULL != node);
+		assert(NULL != node);
 
 		switch (node->type())
 		{
@@ -40,7 +40,7 @@ namespace meow { namespace tree {
 					;
 		}
 
-		BOOST_ASSERT(!"must not be reached");
+		assert(!"must not be reached");
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////

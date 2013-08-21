@@ -6,8 +6,6 @@
 #ifndef MEOW_BITFIELD_UNION_HPP_
 #define MEOW_BITFIELD_UNION_HPP_
 
-#include <boost/static_assert.hpp>
-
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow {
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -23,7 +21,7 @@ namespace meow {
 		//  but this is not desirable, because we want to be able to
 		//  pass something like struct big_int_t { uint32_t data[4]; };
 
-		BOOST_STATIC_ASSERT(sizeof(bitfield_type) <= sizeof(integer_type));
+		static_assert(sizeof(bitfield_type) <= sizeof(integer_type), "padding must be large enough for the value");
 
 		union {
 			bitfield_type bits;

@@ -49,7 +49,7 @@ namespace meow { namespace format {
 		static str_ref call(T v, buffer_t const& buf = buffer_t())
 		{
 			ssize_t n = ::snprintf(buf.get(), buf.size(), detail::floating_point_traits<T>::printf_format(), v);
-			BOOST_ASSERT(n > 0 && size_t(n) <= buf.size());
+			assert(n > 0 && size_t(n) <= buf.size());
 			return str_ref(buf.get(), n);
 		}
 	};

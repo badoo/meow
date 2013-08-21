@@ -19,8 +19,6 @@
 #include <functional>
 #include <exception>
 
-#include <boost/assert.hpp>
-
 #include <meow/str_ref.hpp>
 #include <meow/tmp_buffer.hpp>
 
@@ -127,7 +125,7 @@ namespace cmdline_detail {
 	template<class OptinfoT>
 	inline lopts_holder_t make_long_optarray(OptinfoT const *opts, int opts_size, int id_offset)
 	{
-		BOOST_ASSERT(opts_size < id_offset); // checking that we're able to satify request at this offset
+		assert(opts_size < id_offset); // checking that we're able to satify request at this offset
 
 		lopts_holder_t lopts;
 
@@ -201,7 +199,7 @@ namespace cmdline_detail {
 
 		opt_trampoline_t const* get_short_option(int id) const
 		{
-			BOOST_ASSERT((0 <= id) && (id < (int)std::numeric_limits<char>::max()));
+			assert((0 <= id) && (id < (int)std::numeric_limits<char>::max()));
 			for (opts_iterator_t i = opts_.begin(); i != opts_.end(); ++i)
 			{
 				opt_trampoline_t const *opt = &*i;
@@ -217,7 +215,7 @@ namespace cmdline_detail {
 
 		opt_trampoline_t const* get_long_option(int id) const
 		{
-			BOOST_ASSERT(id >= 0);
+			assert(id >= 0);
 			return ((lopt_offset <= size_t(id)) && (size_t(id) < lopt_offset + opts_.size()))
 				? &opts_[id - lopt_offset]
 				: NULL
@@ -231,7 +229,7 @@ namespace cmdline_detail {
 
 		opt_trampoline_t const* get_option(int id) const
 		{
-			BOOST_ASSERT(id >= 0);
+			assert(id >= 0);
 			return (size_t(id) >= lopt_offset) ? get_long_option(id) : get_short_option(id);
 		}
 
@@ -270,7 +268,7 @@ namespace cmdline_detail {
 			else
 				n = snprintf(buf.get(), buf.size(), "--%s", option_i.name);
 
-			BOOST_ASSERT((n > 0) && (size_t(n) <= buf.size()) && "option long name is tooooo long");
+			assert((n > 0) && (size_t(n) <= buf.size()) && "option long name is tooooo long");
 			return buf.get();
 		}
 	};
