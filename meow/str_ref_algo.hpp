@@ -12,14 +12,8 @@
 
 #include <cstring> 		// for std::memchr
 #include <algorithm> 	// for std::find
+#include <iterator>     // next/prior
 #include <vector>
-
-#include <boost/assert.hpp>
-#include <boost/next_prior.hpp>
-#include <boost/static_assert.hpp>
-#include <boost/iterator/iterator_traits.hpp>
-#include <boost/type_traits/is_same.hpp>
-#include <boost/type_traits/remove_cv.hpp>
 
 #include "str_ref.hpp"
 
@@ -34,7 +28,7 @@ namespace meow {
 		template<class Iterator, template<class> class Comp>
 		struct cmp_to_any_t
 		{
-			typedef typename boost::iterator_value<Iterator>::type value_type;
+			typedef typename std::iterator_traits<Iterator>::value_type value_type;
 
 			cmp_to_any_t(Iterator begin, Iterator end) : b_(begin), e_(end) {}
 			bool operator()(value_type const& val) const
@@ -134,7 +128,7 @@ namespace meow {
 	// returns path dirname, doesn't handle trailing slashes
 	inline str_ref dirname(str_ref path, str_ref const slashes = ref_lit("/\\"))
 	{
-		return str_ref(path.begin(), boost::prior(basename(path, slashes).begin()));
+		return str_ref(path.begin(), std::prev(basename(path, slashes).begin()));
 	}
 
 	// returns basename with specific number of levels
@@ -145,7 +139,7 @@ namespace meow {
 		{
 			tmp = dirname(str_ref(path.begin(), tmp.end()), slashes);
 		}
-		return str_ref(boost::next(tmp.end()), path.end());
+		return str_ref(std::next(tmp.end()), path.end());
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -153,7 +147,7 @@ namespace meow {
 	template<class CharT>
 	inline string_ref<CharT> strstr_ex(string_ref<CharT> const& haystack, str_ref const& needle)
 	{
-		BOOST_STATIC_ASSERT((boost::is_same<typename boost::remove_cv<CharT>::type, char>::value));
+		static_assert(std::is_same<typename std::remove_cv<CharT>::type, char>::value, "chars only");
 
 		typedef string_ref<CharT> str_t;
 		typedef typename str_t::iterator iterator_t;
