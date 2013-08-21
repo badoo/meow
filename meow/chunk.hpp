@@ -1,21 +1,19 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // vim: set filetype=cpp autoindent noexpandtab tabstop=4 shiftwidth=4 foldmethod=marker :
-// (c) 2006 Anton Povarov <anton.povarov@gmail.com>
+// (c) Anton Povarov <anton.povarov@gmail.com>
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef MEOW__CHUNK_HPP_
 #define MEOW__CHUNK_HPP_
 
-#include <cstdint>
+#include <cstdint>     // uint32_t
 
-#include <stdexcept> // std::range_error
-#include <iterator>  // std::reverse_iterator
+#include <stdexcept>   // std::range_error
+#include <iterator>    // std::reverse_iterator
+#include <type_traits> // std::aligned_storage
 
-#include <boost/assert.hpp>
 #include <boost/noncopyable.hpp>
-#include <boost/aligned_storage.hpp>
 #include <boost/range/iterator_range.hpp>
-#include <boost/type_traits/alignment_of.hpp>
 #include <boost/utility/in_place_factory.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -29,66 +27,58 @@ namespace meow {
 //  , appending
 //  , in place construction
 template<
-	  class T						// type of objects to store
-	, std::size_t N					// max number of objects
-	, class SizeT = std::size_t		// type used to track sizes and lengths
+	  class T                // type of objects to store
+	, size_t N               // max number of objects
+	, class SizeT = uint32_t // type used to track sizes and lengths
 >
 struct chunk : private boost::noncopyable
 {
-	BOOST_STATIC_ASSERT(N > 0);
+	static_assert(N > 0, "array size must be >= 0");
 	enum {
-		  object_size = sizeof(T)
-		, object_align = boost::alignment_of<T>::value
-		, chunk_size = N
-		, chunk_size_chars = object_size * chunk_size
+		    object_size       = sizeof(T)
+		  , object_align      = alignof(T)
+		  , static_size       = N
+		  , static_size_bytes = object_size * static_size
 	};
 
-	enum { static_size = N };
+	using aligned_storage_t = 
+		typename std::aligned_storage<static_size_bytes, object_align>::type;
 
-	typedef typename boost::aligned_storage<
-			  chunk_size_chars
-			, object_align
-		> aligned_storage_t;
+	using value_type             = T;
+	using size_type              = SizeT;
+	using difference_type        = std::ptrdiff_t;
+	using reference              = value_type&;
+	using const_reference        = value_type const&;
+	using pointer                = value_type*;
+	using const_pointer          = value_type const*;
 
-	typedef T				value_type;
-	typedef T*				pointer;
-	typedef T const*		const_pointer;
-	typedef T&				reference;
-	typedef T const&		const_reference;
-	typedef SizeT			size_type;
-	typedef std::ptrdiff_t	difference_type;
+	using iterator               = T*;
+	using const_iterator         = T const*;
+	using reverse_iterator       = std::reverse_iterator<iterator>;
+	using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-	typedef T*			iterator;
-	typedef T const*	const_iterator;
-
-	typedef std::reverse_iterator<iterator> reverse_iterator;
-	typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
-
-	typedef boost::iterator_range<iterator>			range_t;
-	typedef boost::iterator_range<const_iterator>	const_range_t;
-
-	typedef boost::iterator_range<reverse_iterator>			reverse_range_t;
-	typedef boost::iterator_range<const_reverse_iterator>	const_reverse_range_t;
+	using range                  = boost::iterator_range<iterator>;
+	using const_range            = boost::iterator_range<const_iterator>;
+	using reverse_range          = boost::iterator_range<reverse_iterator>;
+	using const_reverse_range    = boost::iterator_range<const_reverse_iterator>;
 
 public: // iterators
 
-	iterator begin() { return get_data(); }
-	iterator end() { return get_data() + length_; }
+	iterator       begin()       { return data_; }
+	const_iterator begin() const { return data_; }
+	iterator       end()       { return data_ + length_; }
+	const_iterator end() const { return data_ + length_; }
 
-	const_iterator begin() const { return get_data(); }
-	const_iterator end() const { return get_data() + length_; }
-
-	reverse_iterator rbegin() { return reverse_iterator(end()); }
-	reverse_iterator rend() { return reverse_iterator(begin()); }
-
+	reverse_iterator       rbegin()       { return reverse_iterator(end()); }
 	const_reverse_iterator rbegin() const { return const_reverse_iterator(end()); }
+	reverse_iterator       rend()       { return reverse_iterator(begin()); }
 	const_reverse_iterator rend() const { return const_reverse_iterator(begin()); }
 
-	range_t as_range() { return range_t(this->begin(), this->end()); }
-	const_range_t as_range() const { return const_range_t(this->begin(), this->end()); }
+	range       as_range()       { return { begin(), end() }; }
+	const_range as_range() const { return { begin(), end() }; }
 
-	reverse_range_t as_rev_range() { return reverse_range_t(this->rbegin(), this->rend()); }
-	const_reverse_range_t as_rev_range() const { return const_reverse_range_t(this->rbegin(), this->rend()); }
+	reverse_range       as_rev_range()       { return { rbegin(), rend() }; }
+	const_reverse_range as_rev_range() const { return { rbegin(), rend() }; }
 
 	size_type iter_off(iterator it) { range_assert(it); return it - begin(); }
 	size_type iter_off(const_iterator it) const { range_assert(it); return it - begin(); }
@@ -98,28 +88,30 @@ public:
 	bool empty() const { return 0 == size(); }
 	bool full() const { return capacity() == size(); }
 	size_type size() const { return length_; }
-	size_type capacity() const { return chunk_size; }
+	size_type capacity() const { return static_size; }
 	size_type available() const { return capacity() - size(); }
-	
+
 public: // accessors
-	reference operator[](size_type n) { range_assert(n); return get_data()[n]; }
-	const_reference operator[](size_type n) const { range_assert(n); return get_data()[n]; }
 
-	reference at(size_type n) { range_check(n); return get_data()[n]; }
-	const_reference at(size_type n) const { range_check(n); return get_data()[n]; }
+	reference operator[](size_type n) { range_assert(n); return data_[n]; }
+	const_reference operator[](size_type n) const { range_assert(n); return data_[n]; }
 
-	reference front() { get_data()[0]; }
-	const_reference front() const { return get_data()[0]; }
+	reference at(size_type n) { range_check(n); return data_[n]; }
+	const_reference at(size_type n) const { range_check(n); return data_[n]; }
 
-	reference back() { return get_data()[length_ - 1]; }
-	const_reference back() const { return get_data()[length_ - 1]; }
+	reference front() { data_[0]; }
+	const_reference front() const { return data_[0]; }
 
-	const_pointer data() const { return get_data(); }
-	pointer c_array() { return get_data(); }
+	reference back() { return data_[length_ - 1]; }
+	const_reference back() const { return data_[length_ - 1]; }
+
+	const_pointer data() const { return data_; }
+	pointer c_array() { return data_; }
 
 public: // modifiers
 
-	void clear() {
+	void clear()
+	{
 		for (iterator i = begin(), i_end = end(); i != i_end; ++i)
 			do_destroy(i);
 
@@ -127,61 +119,62 @@ public: // modifiers
 	}
 
 	template<class InPlaceFactory>
-	void push_back(InPlaceFactory const& f) {
-		BOOST_ASSERT(!this->full());
-		f.template apply<T>(static_cast<void*>(get_data() + length_));
+	void push_back(InPlaceFactory const& f)
+	{
+		assert(!full());
+		f.template apply<T>(static_cast<void*>(data_ + length_));
 		++length_;
 	}
 
-	void push_back() { // push default constructed object into the chunk
-		BOOST_ASSERT(!this->full());
-		new (static_cast<void*>(get_data() + length_)) T();
+	void push_back() // push default constructed object into the chunk
+	{
+		assert(!full());
+		new (static_cast<void*>(data_ + length_)) T();
 		++length_;
 	}
 
-	void push_back(const_reference value) {
-		return this->push_back(boost::in_place(value));
+	void push_back(const_reference value)
+	{
+		return push_back(boost::in_place(value));
 	}
 
-	void pop_back() {
-		BOOST_ASSERT(!this->empty());
-		do_destroy(get_data() + --length_);
+	void pop_back()
+	{
+		assert(!empty());
+		do_destroy(data_ + --length_);
 	}
 
 	chunk& assign(chunk const& other)
 	{
-		this->clear();
-		for (const_iterator i = other.begin(), e = other.end(); i != e; ++i)
-			this->push_back(*i);
+		clear();
+		for (auto const& o : other)
+			push_back(o);
 		return *this;
 	}
 
 public:
 	chunk() : length_(0) {} // NOTE: don't fill storage with zeroes
-	chunk(chunk const& other) : length_(0) { this->assign(other); }
+	chunk(chunk const& other) : length_(0) { assign(other); }
 
 	chunk& operator=(chunk const& other)
 	{
 		if (this != &other)
-			this->assign(other);
+			assign(other);
 		return *this;
 	}
 
-	~chunk() { this->clear(); }
+	~chunk() { clear(); }
 
 protected:
 
 	void do_destroy(T* p) { p->~T(); }
 
-	pointer get_data() { return static_cast<pointer>(data_.address()); }
-	const_pointer get_data() const { return static_cast<const_pointer>(data_.address()); }
-
 	void range_assert(size_type n) const {
-		BOOST_ASSERT((n < length_) && "chunk<>: offset out of range");
+		assert((n < length_) && "chunk<>: offset out of range");
 	}
 
 	void range_assert(iterator i) const {
-		BOOST_ASSERT((i >= begin()) && (i < end()) && "chunk<>: offset out of range");
+		assert((i >= begin()) && (i < end()) && "chunk<>: offset out of range");
 	}
 
 	void range_check(size_type n) const {
@@ -190,8 +183,11 @@ protected:
 	}
 
 protected:
-	size_type 			length_;
-	aligned_storage_t 	data_;
+	size_type length_;
+	union {
+		aligned_storage_t padding_;
+		T                 data_[static_size];
+	};
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
