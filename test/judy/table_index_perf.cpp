@@ -4,7 +4,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // cd meow/test/judy/
-// g++ -O0 -g3 -I /opt/local/include/ -I ~/_Dev/meow/ -I ~/_Dev/_libs/boost/1.47.0 -o table_index_perf table_index_perf.cpp /opt/local/lib/libJudy.a
+// g++ -std=c++11 -O3 -mtune=native -g3 -I ~/_Dev/meow/ -I ~/_Dev/_libs/boost/1.53.0 -o table_index_perf table_index_perf.cpp -lJudy
 //
 
 #include <meow/judy/table_index.hpp>
@@ -55,7 +55,6 @@ struct test_equal_t
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include <boost/foreach.hpp>
 #include <meow/stopwatch.hpp>
 //#include <meow/judy/table_index_debug.hpp>
 
@@ -84,7 +83,7 @@ void bench_judysl(test_vector_t const& v)
 	{
 		stopwatch_t sw;
 		ff::fmt(stdout, "{0}; inserting started: {1}\n", __func__, sw.now());
-		BOOST_FOREACH(test_t const& t, v)
+		for (auto const& t : v)
 		{
 			test_t **p = (test_t **)j_ops::get_or_create(j_, t.name.ref());
 			*p = (test_t*)&t;
@@ -95,7 +94,7 @@ void bench_judysl(test_vector_t const& v)
 	{
 		stopwatch_t sw;
 		ff::fmt(stdout, "{0}; searching started: {1}\n", __func__, sw.now());
-		BOOST_FOREACH(test_t const& t, v)
+		for (auto const& t : v)
 		{
 			test_t **p = (test_t **)j_ops::get(j_, t.name.ref());
 		}
@@ -118,7 +117,7 @@ void bench_table_index(test_vector_t const& v)
 	{
 		stopwatch_t sw;
 		ff::fmt(stdout, "{0}; inserting started: {1}\n", __PRETTY_FUNCTION__, sw.now());
-		BOOST_FOREACH(test_t const& t, v)
+		for (auto const& t : v)
 		{
 			test_t *tt = (test_t*)&t;
 			test_t **p = idx.get_or_create(t.name, tt);
@@ -129,7 +128,7 @@ void bench_table_index(test_vector_t const& v)
 	{
 		stopwatch_t sw;
 		ff::fmt(stdout, "{0}; searching started: {1}\n", __PRETTY_FUNCTION__, sw.now());
-		BOOST_FOREACH(test_t const& t, v)
+		for (auto const& t : v)
 		{
 			test_t **p = idx.get(t.name);
 		}

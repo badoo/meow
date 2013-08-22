@@ -31,7 +31,7 @@ using meow::str_copy;
 using meow::str_ref;
 using meow::buffer_ref;
 
-#include <boost/type_traits/remove_const.hpp>
+#include <type_traits>
 #include <meow/convert/hex_to_from_bin.hpp>
 
 inline char* bin2hex_table_16(unsigned char b, char* p)
@@ -110,10 +110,10 @@ inline char* my_copy_bin2hex(char const *b, char const *e, char *to)
 
 template<class CharT>
 inline
-std::basic_string<typename boost::remove_const<CharT>::type>
+std::basic_string<typename std::remove_const<CharT>::type>
 as_hex_string_string(meow::string_ref<CharT> const& s)
 {
-	std::basic_string<typename boost::remove_const<CharT>::type> result(s.size() * 2, CharT());
+	std::basic_string<typename std::remove_const<CharT>::type> result(s.size() * 2, CharT());
 
 	CharT *ee = copy_bin2hex(&bin2hex_code, s.begin(), s.end(), &*result.begin());
 	assert(ee == &*result.end());
@@ -123,10 +123,10 @@ as_hex_string_string(meow::string_ref<CharT> const& s)
 
 template<class CharT>
 inline
-meow::string_copy<typename boost::remove_const<CharT>::type>
+meow::string_copy<typename std::remove_const<CharT>::type>
 as_hex_string_str_copy(meow::string_ref<CharT> const& s)
 {
-	meow::string_copy<typename boost::remove_const<CharT>::type> result(s.size() * 2);
+	meow::string_copy<typename std::remove_const<CharT>::type> result(s.size() * 2);
 
 	CharT *ee = copy_bin2hex(&bin2hex_table_16, s.begin(), s.end(), &*result.begin());
 	assert(ee == &*result.end());

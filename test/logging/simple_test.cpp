@@ -7,8 +7,6 @@
 // g++ -O0 -g3 -o simple_test -I ~/_Dev/meow/ -I ~/_Dev/_libs/boost/1.41.0 simple_test.cpp
 //
 
-#include <boost/bind.hpp>
-
 #include <meow/logging/logger.hpp>
 #include <meow/logging/logger_impl.hpp>
 #include <meow/logging/log_prefix.hpp>
@@ -16,6 +14,7 @@
 
 #include <meow/format/sink/FILE.hpp>
 #include <meow/str_ref.hpp>
+#include <meow/std_bind.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -37,7 +36,7 @@ int main()
 	limpl_t *l = new limpl_t();
 
 	l->set_level(log_level::debug);
-	l->set_writer(boost::bind(&log_generic_printf, stdout, _1, _2, _3));
+	l->set_writer(std::bind(&log_generic_printf, stdout, _1, _2, _3));
 
 	prefix_fields_t pf 	= prefix_field::datetime
 						| prefix_field::log_level

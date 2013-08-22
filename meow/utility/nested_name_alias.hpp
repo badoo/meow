@@ -1,14 +1,14 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // vim: set filetype=cpp autoindent noexpandtab tabstop=4 shiftwidth=4 foldmethod=marker :
-// (c) 2010 Anton Povarov <anton.povarov@gmail.com>
+// (c) Anton Povarov <anton.povarov@gmail.com>
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef MEOW_UTILITY__NESTED_NAME_ALIAS_HPP_
 #define MEOW_UTILITY__NESTED_NAME_ALIAS_HPP_
 
-#include <boost/mpl/if.hpp>
+#include <type_traits> // std::conditional, std::is_same
+
 #include <boost/preprocessor/cat.hpp>
-#include <boost/type_traits/is_same.hpp>
 
 #include <meow/utility/nested_type_checker.hpp>
 
@@ -34,7 +34,7 @@
 		};																	\
 		enum { exists = check_nested_name<NESTED_READER_Tr>::value };		\
 		typedef inner_if<exists, NESTED_READER_Tr> inner_t;					\
-		enum { is_void = exists && boost::is_same<void, typename inner_t::type>::value };		\
+		enum { is_void = exists && std::is_same<void, typename inner_t::type>::value };		\
 		typedef typename inner_t::type type;								\
 	};																		\
 /**/
@@ -62,10 +62,10 @@
 		MEOW_DEFINE_NESTED_NAME_READER(name_reader_t, nested_name);			\
 		typedef name_reader_t<NAME_ALIAS_Tr> name_reader;					\
 		typedef 															\
-			typename boost::mpl::if_c<										\
+			typename std::conditional<										\
 					  !name_reader::exists									\
 					, none_type 											\
-					, typename boost::mpl::if_c< 							\
+					, typename std::conditional< 							\
 						  name_reader::is_void 								\
 						, void_type 										\
 						, typename name_reader::type						\
