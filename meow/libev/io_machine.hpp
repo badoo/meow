@@ -276,59 +276,32 @@ namespace meow { namespace libev {
 
 		template<class Tr> struct thunk_t<true, Tr>
 		{
+			// FIXME: why Traits::log_writer here and not Tr ?
 			static bool is_allowed(ContextT *ctx) { return Traits::log_writer::is_allowed(ctx); }
 
-			#define DEFINE_IOMACHINE_LOG_WRITER_FMT_FUNCTION_TRUE(z, n, d) 					\
-				template<class F FMT_TEMPLATE_PARAMS(n)> 									\
-				static void write( 															\
-						  ContextT *ctx 													\
-						, line_mode_t lmode 												\
-						, F const& fmt 														\
-						  FMT_DEF_PARAMS(n)) 												\
-				{ 																			\
-					Tr::write( 																\
-							  ctx 															\
-							, lmode 														\
-							, format::fmt_tmp<512>(fmt FMT_CALL_SITE_ARGS(n)) 				\
-							); 																\
-				} 																			\
-			/**/
-			BOOST_PP_REPEAT(32, DEFINE_IOMACHINE_LOG_WRITER_FMT_FUNCTION_TRUE, _);
+			template<class F, class... A>
+			static void write(ContextT *ctx, line_mode_t lmode, F const& fmt, A const&... args)
+			{
+				Tr::write(ctx, lmode, format::fmt_tmp<512>(fmt, args...));
+			}
 		};
 
 		template<class Tr> struct thunk_t<false, Tr>
 		{
 			static bool is_allowed(ContextT *ctx) { return false; }
 
-			#define DEFINE_IOMACHINE_LOG_WRITER_FMT_FUNCTION_FALSE(z, n, d) 				\
-				template<class F FMT_TEMPLATE_PARAMS(n)> 									\
-				static void write( 															\
-						  ContextT *ctx 													\
-						, line_mode_t lmode 												\
-						, F const& fmt 														\
-						  FMT_DEF_PARAMS(n)) 												\
-				{ 																			\
-				} 																			\
-			/**/
-			BOOST_PP_REPEAT(32, DEFINE_IOMACHINE_LOG_WRITER_FMT_FUNCTION_FALSE, _);
+			template<class F, class... A>
+			static void write(ContextT *ctx, line_mode_t lmode, F const& fmt, A const&... args) {}
 		};
-
 		DEFINE_THUNK(log_writer);
 
 		static bool is_allowed(ContextT *ctx) { return thunk::is_allowed(ctx); }
 
-		#define DEFINE_IOMACHINE_LOG_WRITER_FMT_FUNCTION(z, n, d) 				\
-			template<class F FMT_TEMPLATE_PARAMS(n)> 									\
-			static void write( 															\
-					  ContextT *ctx 													\
-					, line_mode_t lmode 												\
-					, F const& fmt 														\
-					  FMT_DEF_PARAMS(n)) 												\
-			{ 																			\
-				thunk::write(ctx, lmode, fmt FMT_CALL_SITE_ARGS(n)); 					\
-			} 																			\
-		/**/
-		BOOST_PP_REPEAT(32, DEFINE_IOMACHINE_LOG_WRITER_FMT_FUNCTION, _);
+		template<class F, class... A>
+		static void write(ContextT *ctx, line_mode_t lmode, F const& fmt, A const&... args)
+		{
+			thunk::write(ctx, lmode, fmt, args...);
+		}
 	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////

@@ -45,7 +45,7 @@ namespace meow { namespace format {
 			  str_ref const& fmt
 			, str_ref *slices
 			, size_t n_slices
-			, str_ref *arg_slices
+			, str_ref const *arg_slices
 			, size_t n_arg_slices
 		)
 	{

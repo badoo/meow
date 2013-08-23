@@ -19,6 +19,7 @@
 #include "inserter/timeval.hpp"
 
 #include "sink/FILE.hpp"
+#include "sink/std_string.hpp"
 
 #endif // MEOW_FORMAT__FORMAT_HPP_
 

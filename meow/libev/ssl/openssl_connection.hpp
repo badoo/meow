@@ -64,7 +64,7 @@ namespace meow { namespace libev {
 	typedef meow::tmp_buffer<256> openssl_err_buf_t;
 	inline str_ref openssl_get_error_string(int err_code, openssl_err_buf_t const& buf = openssl_err_buf_t())
 	{
-		format::sink::char_buffer_sink_t sink(buf.get(), buf.size());
+		format::char_buffer_sink_t sink(buf.get(), buf.size());
 		format::write(sink, ERR_func_error_string(err_code), ": ", ERR_reason_error_string(err_code));
 		return sink.used_part();
 	}

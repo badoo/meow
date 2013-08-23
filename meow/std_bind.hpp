@@ -8,7 +8,7 @@
 
 #include <functional>
 
-// import _1, _2 ... into global namespace like a boost::bind does
+// import _1, _2 ... into global namespace like boost::bind does
 using namespace std::placeholders;
 
 #endif // MEOW__BIND_HPP_

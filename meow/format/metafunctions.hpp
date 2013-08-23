@@ -26,13 +26,11 @@ namespace meow { namespace format {
 	};
 
 	template<class T>
-	inline std::string tunnel(T const& v) { return type_tunnel<T>::call(v); }
+	inline auto tunnel(T const& v) -> decltype(type_tunnel<T>::call(v))
+	{
+		return type_tunnel<T>::call(v);
+	}
 
-	template<class R, class T>
-	inline R tunnel(T const& v) { return type_tunnel<T>::call(v); }
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-	namespace sink {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	template<class T, class Enabler = void>
@@ -45,14 +43,10 @@ namespace meow { namespace format {
 		}
 	};
 
-////////////////////////////////////////////////////////////////////////////////////////////////
-	} // namespace sink {
-////////////////////////////////////////////////////////////////////////////////////////////////
-
 	template<class SinkT, class CharT>
 	inline SinkT& write_to_sink(SinkT& sink, size_t l, string_ref<CharT> const *slices, size_t n_slices)
 	{
-		sink::sink_write<SinkT>::call(sink, l, slices, n_slices);
+		sink_write<SinkT>::call(sink, l, slices, n_slices);
 		return sink;
 	}
 

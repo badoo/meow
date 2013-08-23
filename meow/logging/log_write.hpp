@@ -7,12 +7,11 @@
 #define MEOW_LOGGING__LOG_WRITE_HPP_
 
 #include <meow/format/format.hpp>
-#include <meow/format/metafunctions.hpp>
 
 #include "logger.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
-namespace meow { namespace format { namespace sink {
+namespace meow { namespace format {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	template<class LoggerT>
@@ -30,46 +29,27 @@ namespace meow { namespace format { namespace sink {
 			, lmode(lm)
 		{
 		}
-	};
 
-	template<class LoggerT>
-	struct sink_write<logger_sink_t<LoggerT> >
-	{
-		static void call(
-				  logger_sink_t<LoggerT>& l
-				, size_t total_len
-				, typename LoggerT::str_t const* slices
-				, size_t n_slices
-				)
+		void write(size_t total_len, typename LoggerT::str_t const* slices, size_t n_slices)
 		{
-			l.log->write(l.level, l.lmode, total_len, slices, n_slices);
+			log->write(level, lmode, total_len, slices, n_slices);
 		}
 	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
-}}} // namespace meow { namespace format { namespace sink {
+}} // namespace meow { namespace format {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace logging {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define LOG_DEFINE_LOG_WRITE_FUNCTION(z, n, d) 								\
-	template<class LoggerT, class F FMT_TEMPLATE_PARAMS(n)> 				\
-	void log_write( 														\
-			  LoggerT& log 													\
-			, log_level_t lvl 												\
-			, line_mode_t lmode 											\
-			, F const& fmt 													\
-			  FMT_DEF_PARAMS(n)) 											\
-	{ 																		\
-		typedef format::sink::logger_sink_t<LoggerT> sink_t; 				\
-		sink_t sink(&log, lvl, lmode); 										\
-		meow::format::fmt(sink, fmt FMT_CALL_SITE_ARGS(n)); 				\
-	} 																		\
-/**/
-
-	BOOST_PP_REPEAT(32, LOG_DEFINE_LOG_WRITE_FUNCTION, _);
+	template<class LoggerT, class F, class... A>
+	void log_write(LoggerT& log, log_level_t lvl, line_mode_t lmode, F const& fmt, A const&... args)
+	{
+		format::logger_sink_t<LoggerT> sink(&log, lvl, lmode);
+		meow::format::fmt(sink, fmt, args...);
+	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 

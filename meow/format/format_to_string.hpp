@@ -6,13 +6,28 @@
 #ifndef MEOW_FORMAT__FORMAT_TO_STRING_HPP_
 #define MEOW_FORMAT__FORMAT_TO_STRING_HPP_
 
+#include "format.hpp"
 #include "sink/std_string.hpp"
-#include "format_functions.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace format {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
+	template<class F, class... A>
+	inline std::string fmt_str(F const& f, A const&... args)
+	{
+		std::string result;
+		return fmt(result, f, args...);
+	}
+
+	template<class... A>
+	inline std::string write_str(A const&... args)
+	{
+		std::string result;
+		return write(result, args...);
+	}
+
+#if 0
 #define MEOW_FORMAT_DEFINE_FMT_STR(z, n, d) 					\
 template<class F FMT_TEMPLATE_PARAMS(n)> 						\
 inline std::string fmt_str( 									\
@@ -39,7 +54,7 @@ BOOST_PP_REPEAT_FROM_TO(0, 32, MEOW_FORMAT_DEFINE_FMT_STR, _);
 /**/
 
 	BOOST_PP_REPEAT_FROM_TO(1, 32, MEOW_DEFINE_WRITE_STR_FN, _);
-
+#endif
 ////////////////////////////////////////////////////////////////////////////////////////////////
 }} // namespace meow { namespace format {
 ////////////////////////////////////////////////////////////////////////////////////////////////

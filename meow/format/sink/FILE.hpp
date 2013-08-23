@@ -13,7 +13,7 @@
 #include <meow/format/metafunctions.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
-namespace meow { namespace format { namespace sink {
+namespace meow { namespace format {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // a generic FILE as a sink (if you don't need to know anything about the file after writing)
 //  can be use to simulate printf for example
@@ -26,7 +26,7 @@ namespace meow { namespace format { namespace sink {
 		{
 			for (size_t i = 0; i < n_slices; ++i)
 			{
-				string_ref<CharT const> const& slice = slices[i];
+				auto const& slice = slices[i];
 				size_t n = ::fwrite(slice.data(), slice.size() * sizeof(CharT), 1, to_file);
 				if (1 != n) // n is the number of objects written, we always write 1
 					throw meow::api_call_error("sink_write<FILE*>::call(): fwrite wrote less than requested");
@@ -53,7 +53,7 @@ namespace meow { namespace format { namespace sink {
 	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
-}}} // namespace meow { namespace format { namespace sink {
+}} // namespace meow { namespace format {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 #endif // MEOW_FORMAT_SINK_FILE_HPP_

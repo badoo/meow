@@ -59,7 +59,7 @@ namespace meow { namespace logging {
 		{
 			using namespace meow::format;
 
-			sink::char_buffer_sink_t sink(buf.begin(), buf.size());
+			char_buffer_sink_t sink(buf.begin(), buf.size());
 			if (pf_ & prefix_field::datetime)
 				write(sink, "[", format::as_log_ts(os_unix::gettimeofday_ex()), "]");
 

@@ -21,7 +21,7 @@ namespace meow { namespace format {
 
 	inline str_ref as_evmask(int revents, evmask_tmp_buffer_t const& b = evmask_tmp_buffer_t())
 	{
-		sink::char_buffer_sink_t sink(b.get(), b.size());
+		char_buffer_sink_t sink(b.get(), b.size());
 
 	#define CHECKED_ADD(ev)				\
 		do { if (ev & revents) {		\

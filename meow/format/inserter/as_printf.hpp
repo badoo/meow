@@ -11,7 +11,7 @@
 #include <cstdio>  // vsnprintf
 
 #include <meow/config/compiler_features.hpp>
-#include <meow/format/metafunctions.hpp>
+#include <meow/format/sink/char_buffer.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace format {
@@ -40,30 +40,12 @@ namespace meow { namespace format {
 	}
 
 	template<size_t N>
-	struct fmt_buffer_t
-	{
-		fmt_buffer_t() : length(0) {}
-
-		size_t  length;
-		char    data[N];
-	};
+	inline stack_buffer_t<N> as_printf_tmp(char const *fmt, ...) MEOW_PRINTF_LIKE(1,2);
 
 	template<size_t N>
-	struct string_access<fmt_buffer_t<N> >
+	inline stack_buffer_t<N> as_printf_tmp(char const *fmt, ...)
 	{
-		static str_ref call(fmt_buffer_t<N> const& b)
-		{
-			return str_ref(b.data, b.length);
-		}
-	};
-
-	template<size_t N>
-	inline fmt_buffer_t<N> as_printf_tmp(char const *fmt, ...) MEOW_PRINTF_LIKE(1,2);
-
-	template<size_t N>
-	inline fmt_buffer_t<N> as_printf_tmp(char const *fmt, ...)
-	{
-		fmt_buffer_t<N> result;
+		stack_buffer_t<N> result;
 
 		va_list ap;
 
@@ -73,6 +55,7 @@ namespace meow { namespace format {
 		va_end(ap);
 
 		result.length = n;
+
 		return result;
 	}
 

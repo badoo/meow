@@ -41,7 +41,9 @@ namespace meow { namespace format {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	template<class T>
-	struct type_tunnel<T, typename std::enable_if<std::is_floating_point<T>::value>::type>
+	struct type_tunnel<
+		  T
+		, typename std::enable_if<std::is_floating_point<T>::value>::type>
 	{
 		enum { buffer_size = sizeof("-1.0123456789E+999") };
 		typedef meow::tmp_buffer<buffer_size> buffer_t;

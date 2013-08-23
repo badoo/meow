@@ -13,60 +13,40 @@
 namespace meow { namespace format {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	namespace sink {
-
-		template<class CharT, class Traits>
-		struct sink_write<string_copy<CharT, Traits> >
+	template<class CharT, class Traits>
+	struct sink_write<string_copy<CharT, Traits> >
+	{
+		static void call(
+				  string_copy<CharT, Traits>& sink
+				, size_t total_len
+				, string_ref<CharT const> const *slices
+				, size_t n_slices
+				)
 		{
-			static void call(
-					  string_copy<CharT, Traits>& sink
-					, size_t total_len
-					, string_ref<CharT const> const *slices
-					, size_t n_slices
-					)
-			{
-				sink.reset_and_resize_to(total_len);
+			sink.reset_and_resize_to(total_len);
 
-				char *to = sink.data();
-				for (size_t i = 0; i < n_slices; ++i)
-				{
-					memcpy(to, slices[i].data(), slices[i].size());
-					to += slices[i].size();
-				}
+			char *to = sink.data();
+			for (size_t i = 0; i < n_slices; ++i)
+			{
+				memcpy(to, slices[i].data(), slices[i].size());
+				to += slices[i].size();
 			}
-		};
+		}
+	};
+
+	template<class F, class... A>
+	inline str_copy fmt_str_copy(F const& f, A const&... args)
+	{
+		str_copy result;
+		return fmt(result, f, args...);
 	}
 
-////////////////////////////////////////////////////////////////////////////////////////////////
-
-#define MEOW_FORMAT_DEFINE_FMT_STR_COPY(z, n, d) 				\
-template<class F FMT_TEMPLATE_PARAMS(n)> 						\
-inline str_copy fmt_str_copy( 									\
-		F const& fmt_str 										\
-		FMT_DEF_PARAMS(n) 										\
-		) 														\
-{ 																\
-	str_copy result; 											\
-	fmt(result, fmt_str FMT_CALL_SITE_ARGS(n)); 				\
-	return result;												\
-} 																\
-/**/
-
-BOOST_PP_REPEAT_FROM_TO(0, 32, MEOW_FORMAT_DEFINE_FMT_STR_COPY, _);
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-
-#define MEOW_FORMAT_DEFINE_WRITE_STR_COPY(z, n, d)						\
-	template<FMT_TEMPLATE_PARAMS_W(n)>									\
-	inline str_copy write_str_copy(FMT_DEF_PARAMS_W(n)) 				\
-	{																	\
-		str_copy result;												\
-		write(result FMT_CALL_SITE_ARGS(n));							\
-		return result;													\
-	}																	\
-/**/
-
-	BOOST_PP_REPEAT_FROM_TO(1, 32, MEOW_FORMAT_DEFINE_WRITE_STR_COPY, _);
+	template<class... A>
+	inline str_copy write_str_copy(A const&... args)
+	{
+		str_copy result;
+		return write(result, args...);
+	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 }} // namespace meow { namespace format {

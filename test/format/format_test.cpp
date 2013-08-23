@@ -4,7 +4,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // cd meow/test/format/
-// g++ -std=c++11 -O0 -g3 -o format_test -I ~/_Dev/meow/ -I ~/_Dev/_libs/boost/1.53.0 format_test.cpp
+// g++ -std=c++11 -O0 -g3 -I ~/_Dev/meow/ -I ~/_Dev/_libs/boost/1.53.0 -o format_test format_test.cpp
 //
 
 #include <meow/format/sink/FILE.hpp>
@@ -25,9 +25,10 @@ using ff::write;
 
 int main()
 {
-	ff::sink::FILE_sink_t sink(stdout);
+	ff::FILE_sink_t sink(stdout);
 
 	fmt(sink, "test string: '{0}'\n", "lalala");
+	fmt(sink, "test_number: {0}\n", 10);
 	fmt(sink, "{0}", "hehe\n");
 	fmt(sink, "preved\n", "");
 	fmt(sink, "no args test\n");
