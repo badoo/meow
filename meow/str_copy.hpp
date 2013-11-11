@@ -80,21 +80,17 @@ namespace meow {
 		string_copy(string_type const& s) { this->init_copy(s.data(), s.size()); }
 
 		explicit string_copy(size_type n) { this->reset_and_resize_to(n); }
-		string_copy(size_type n, char_type fill_c) { this->reset_and_resize_to(n); this->fill(fill_c); }
 
 		explicit string_copy(string_ref<char_type_nc> const& s) { this->init_copy((char_type*)s.data(), s.size()); }
 		explicit string_copy(string_ref<char_type_nc const> const& s) { this->init_copy((char_type*)s.data(), s.size()); }
 
 		string_copy(self_t const& other) { this->init_copy(other.data(), other.size()); }
 
-		string_copy(string_copy_mover<self_t> mover)
+		string_copy(self_t && other)
+			: p_(move(other.p_))
+			, n_(other.n_)
 		{
-			self_t *other = mover.source;
-
-			p_ = move(other->p_);
-			n_ = other->n_;
-
-			other->n_ = 0;
+			other.n_ = 0;
 		}
 
 		template<class U>
@@ -136,18 +132,11 @@ namespace meow {
 
 		void reset_and_resize_to(size_type const new_size)
 		{
-			move_pointer_t pp(reinterpret_cast<char_type*>(new char[new_size * sizeof(char_type)]));
+			move_pointer_t pp(reinterpret_cast<char_type*>(new char[(new_size + 1) * sizeof(char_type)]));
 			p_.swap(pp);
 			n_ = new_size;
-		}
 
-		void fill(char_type fill_c, size_type n = -1)
-		{
-			if (size_type(-1) == n)
-				n = n_;
-
-			assert(n <= n_);
-			memset(p_.get(), fill_c, n);
+			p_[n_] = char_type(0); // always null-terminated
 		}
 
 		void reset() { p_.reset(); n_ = 0; }
@@ -237,29 +226,6 @@ namespace meow {
 	};
 
 	typedef string_copy<char> str_copy;
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-// move helper
-
-	template<class CharT, class Traits>
-	inline
-	string_copy_mover<string_copy<CharT, Traits> >
-	move(string_copy<CharT, Traits>& str)
-	{
-		return string_copy_mover<string_copy<CharT, Traits> >(str);
-	}
-
-	// move-from-const catcher
-	struct string_copy_cant_be_moved_from_const {};
-
-	template<class CharT, class Traits>
-	inline
-	string_copy_cant_be_moved_from_const
-	move(string_copy<CharT, Traits> const& str)
-	{
-		assert(!"never called");
-		return string_copy_cant_be_moved_from_const();
-	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 

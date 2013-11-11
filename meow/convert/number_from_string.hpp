@@ -87,8 +87,8 @@ namespace detail {
 	template<class To>
 	inline bool number_from_string(To *to, char const *b, char const *e)
 	{
-		char *p = NULL;
-		*to = detail::number_from_string_caster_t<To>::cast(b, &p);
+		char const *p = e;
+		*to = detail::number_from_string_caster_t<To>::cast(b, (char**)&p);
 		return (p == e);
 	}
 

@@ -18,8 +18,8 @@ namespace meow { namespace format {
 
 	struct format_info_t
 	{
-		size_t total_length;
-		size_t n_slices;
+		size_t total_length = 0;
+		size_t n_slices     = 0;
 	};
 
 	inline void push_slice(format_info_t& fi, str_ref const& new_slice, str_ref *slices, size_t n_slices)
