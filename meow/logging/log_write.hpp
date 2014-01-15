@@ -30,7 +30,7 @@ namespace meow { namespace format {
 		{
 		}
 
-		void write(size_t total_len, typename LoggerT::str_t const* slices, size_t n_slices)
+		void write(size_t total_len, str_ref const* slices, size_t n_slices)
 		{
 			log->write(level, lmode, total_len, slices, n_slices);
 		}

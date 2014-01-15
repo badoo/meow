@@ -30,9 +30,9 @@ namespace meow { namespace tree {
 		return split_ex(path, "/");
 	}
 
-	inline path_parts_range_t path_make_parts_range(path_parts_t const& parts, ssize_t off_b = 0, ssize_t off_e = 0)
+	inline path_parts_range_t path_parts_as_range(path_parts_t const& parts, ssize_t off_b = 0, ssize_t off_e = 0)
 	{
-		return path_parts_range_t(&*parts.begin() + off_b, &*parts.end() + off_e);
+		return { parts.data() + off_b, parts.data() + parts.size() + off_e };
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -197,7 +197,7 @@ namespace meow { namespace tree {
 	template<class StringT>
 	inline tree::node_t* get_path(tree::node_t *root, StringT const& path)
 	{
-		return get_path(root, path_make_parts_range(path_into_parts(path)));
+		return get_path(root, path_parts_as_range(path_into_parts(path)));
 	}
 
 	inline directory_t* get_path_as_dir(node_t *root, char const *path)
@@ -271,7 +271,7 @@ namespace meow { namespace tree {
 	inline directory_t* tree_create_dir(directory_t *root, StringT const& path)
 	{
 		path_parts_t const parts = path_into_parts(path);
-		return tree_create_dir(root, path_make_parts_range(parts));
+		return tree_create_dir(root, path_parts_as_range(parts));
 	}
 
 	template<class StringT>
@@ -280,7 +280,7 @@ namespace meow { namespace tree {
 		path_parts_t const parts = path_into_parts(path);
 
 		if (parts.size() > 1)
-			root = tree_create_dir(root, path_make_parts_range(parts, 0, -1));
+			root = tree_create_dir(root, path_parts_as_range(parts, 0, -1));
 
 		directory_t::child_t *child = root->get_child(parts.back());
 		if (NULL == child)

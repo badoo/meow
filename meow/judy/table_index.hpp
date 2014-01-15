@@ -25,7 +25,7 @@ it's essentialy a smoothly-growing hash table(JudyL) with chains for conflict re
 requirements:
 - you will be storing pointers to your real values in the container
 - your Value type, must have alignment of at least 2 bytes, and 4 is better
-  (as we're using lower bits of the Judy values as type discrimitators in nodes)
+  (as we're using lower bits of the Judy values as type discriminators in nodes)
 - you can NOT store NULL in the container, doing this may result un undefined-behaviour
   (as we're storing pointers, we must dereference them to compare with passed keys for retrieval)
 
@@ -38,7 +38,7 @@ the main advantages are:
 
 built as a combination of JudyL and complex leaves that morph into
  - direct pointer (most of them will be like this if you hash function is good)
- - compressed array pointer (size of the array is stored in lower bits of the real JudyL value)
+ - compressed array pointer (array size is stored in lower bits of the real JudyL value)
  - vector pointer (full fledged C++ vector, for large nodes, improve your hash function if you got these)
  */
 
@@ -527,6 +527,31 @@ namespace detail {
 
 			this->set_empty();
 		}
+
+		template<class Function>
+		void for_each(Function&& function) const
+		{
+			switch (this->type())
+			{
+				case self_t::type_direct_ptr:
+					function(as_direct_ptr());
+				break;
+
+				case self_t::type_vector_ptr:
+				{
+					value_vector_t *v = as_vector_ptr();
+					for (auto& vv : *v)
+						function(vv);
+				}
+				break;
+
+				default:
+					array_data_t const ad = array_from_node();
+					for (size_t i = 0; i < ad.size; ++i)
+						function(ad.ptr[i]);
+				break;
+			}
+		}
 	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -647,6 +672,21 @@ namespace detail {
 			}
 
 			judy::index_clear(j_);
+		}
+
+		template<class Function>
+		void for_each(Function && function) const
+		{
+			size_t i = 0;
+			judy::judy_t jj = get_handle(*this);
+
+			for (leaf_t *l = (leaf_t*)JudyLFirst(jj, &i, PJE0)
+				; l != NULL
+				; l = (leaf_t*)JudyLNext(jj, &i, PJE0)
+				)
+			{
+				l->for_each(function);
+			}
 		}
 	};
 

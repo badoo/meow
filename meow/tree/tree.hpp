@@ -15,7 +15,6 @@
 #include <meow/smart_enum.hpp>
 #include <meow/std_unique_ptr.hpp>
 #include <meow/str_ref.hpp>
-#include <meow/str_copy.hpp>
 #include <meow/utility/offsetof.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -50,8 +49,8 @@ namespace meow { namespace tree {
 
 	struct node_name_and_ptr_t
 	{
-		str_copy 	name;
-		node_t 		*ptr;
+		std::string  name;
+		node_t      *ptr;
 	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -151,12 +150,12 @@ namespace meow { namespace tree {
 
 		child_range_nc_t get_children()
 		{
-			return boost::make_iterator_range(&*children_.begin(), &*children_.end());
+			return { children_.data(), children_.data() + children_.size() };
 		}
 
 		child_range_t get_children() const
 		{
-			return boost::make_iterator_range(&*children_.begin(), &*children_.end());
+			return { children_.data(), children_.data() + children_.size() };
 		}
 
 		child_t* get_child(str_ref name)
@@ -194,7 +193,7 @@ namespace meow { namespace tree {
 
 		void impl_insert_child(str_ref name, node_t *node)
 		{
-			child_t const ch = { .name = str_copy(name), .ptr = node };
+			child_t const ch = { .name = name.str(), .ptr = node };
 			children_.push_back(ch);
 		}
 

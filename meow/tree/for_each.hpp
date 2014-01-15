@@ -76,7 +76,7 @@ namespace meow { namespace tree {
 					for(directory_t::child_t& child : d->get_children())
 					{
 						node_ptr new_node = tree_map(child.ptr, directory_fn, file_fn, level + 1);
-						new_d->add_child(child.name.ref(), move(new_node));
+						new_d->add_child(child.name, move(new_node));
 					}
 				}
 
@@ -127,7 +127,7 @@ namespace meow { namespace tree {
 
 				for(directory_t::child_t& child_r : dir->get_children())
 				{
-					tree_for_each(child_r.ptr, directory_fn, file_fn, child_r.name.ref(), level + 1);
+					tree_for_each(child_r.ptr, directory_fn, file_fn, child_r.name, level + 1);
 				}
 			}
 			break;
