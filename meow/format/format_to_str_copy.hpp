@@ -7,7 +7,7 @@
 #define MEOW_FORMAT__FORMAT_TO_STR_COPY_HPP_
 
 #include <meow/str_copy.hpp>
-#include "format_functions.hpp"
+#include <meow/format/format_functions.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace format {
