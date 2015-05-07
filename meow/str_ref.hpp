@@ -7,7 +7,7 @@
 #define MEOW_STR_REF_HPP_
 
 #include <cassert>
-#include <limits> 		// for std::numeric_limits<>
+#include <climits> 		// for INT_MAX
 #include <string>		// for std::string and std::char_traits and stuff
 #include <type_traits>
 
@@ -69,7 +69,7 @@ namespace meow {
 
 		size_type size() const { return n_; }
 		size_type length() const { return n_; }
-		int c_length() const { assert(n_ < size_type(std::numeric_limits<int>::max)); return n_; }
+		int c_length() const { assert(n_ < size_type(INT_MAX)); return n_; }
 
 		bool empty() const { return !n_; }
 		char_type* data() const { return p_; }
