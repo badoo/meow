@@ -14,7 +14,7 @@ namespace meow {
 
 	struct stopwatch_t
 	{
-		os_timeval_t start_tv;
+		timeval_t start_tv;
 
 		stopwatch_t(bool start = true)
 		{
@@ -27,12 +27,12 @@ namespace meow {
 			start_tv = now();
 		}
 
-		os_timeval_t now() const
+		timeval_t now() const
 		{
-			return os_unix::gettimeofday_ex();
+			return os_unix::clock_monotonic_now();
 		}
 
-		os_timeval_t stamp() const
+		timeval_t stamp() const
 		{
 			return now() - start_tv;
 		}

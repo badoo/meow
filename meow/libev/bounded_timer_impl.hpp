@@ -49,7 +49,10 @@ namespace meow { namespace libev {
 			: index_(0)
 			, ticker_(loop)
 		{
-			os_timeval_t tv = os_unix::make_timeval(tick_interval_ms / 1000, (tick_interval_ms % 1000) * 1000 );
+			timeval_t const tv = {
+				.tv_sec = tick_interval_ms / msec_in_sec,
+				.tv_nsec = (tick_interval_ms % msec_in_sec) * (nsec_in_sec / msec_in_sec)
+			};
 			ticker_.start(tv, std::bind(&self_t::on_tick, this, std::placeholders::_1, std::placeholders::_2));
 		}
 
@@ -99,10 +102,10 @@ namespace meow { namespace libev {
 
 		static inline size_t make_offset_from_timestamp(timestamp_t ts)
 		{
-			os_timeval_t const tv = os_timeval_from_double(ts);
-			uint64_t msec = tv.tv_sec * 1000 + tv.tv_usec / 1000;
+			timeval_t const tv = timeval_from_double(ts);
+			uint64_t const msec = tv.tv_sec * msec_in_sec + tv.tv_nsec / (nsec_in_sec / msec_in_sec);
 
-			size_t offset = msec / tick_interval_ms;
+			size_t const offset = msec / tick_interval_ms;
 			assert(offset < max_timeout_in_ticks);
 
 			return offset;

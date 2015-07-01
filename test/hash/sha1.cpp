@@ -11,7 +11,7 @@
 #include <meow/format/format.hpp>
 #include <meow/format/sink/FILE.hpp>
 
-#include <meow/unix/time.hpp>
+#include <meow/stopwatch.hpp>
 
 namespace ff = meow::format;
 using namespace meow;
@@ -31,14 +31,15 @@ int main()
 
 	meow::str_ref s = "medvedalsndlaksnd;am000";
 
-	os_timeval_t const start_tv = os_unix::gettimeofday_ex();
+	stopwatch_t sw;
+
 	for (size_t i = 0; i < n_iterations; ++i)
 	{
 		sha1_digest_t d = sha1_digest(s);
 	}
-	os_timeval_t const end_tv = os_unix::gettimeofday_ex();
 
-	double const diff_tv = os_timeval_to_double(end_tv - start_tv);
+	double const diff_tv = timeval_to_double(sw.stamp());
+
 	ff::fmt(stdout, "{0} iterations, {1}s\n~{2} hashes/sec\n"
 			, n_iterations, diff_tv
 			, ff::float_fmt("%.2f", n_iterations / diff_tv)

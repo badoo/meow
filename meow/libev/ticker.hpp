@@ -38,12 +38,12 @@ namespace meow { namespace libev {
 			return loop_;
 		}
 
-		void start(os_timeval_t const& period, callback_t const& cb)
+		void start(timeval_t const& period, callback_t const& cb)
 		{
 			ev_timer_stop(loop_, &ev_);
 			ev_init(&ev_, &libev_cb);
 
-			ev_.repeat = os_timeval_to_double(period);
+			ev_.repeat = timeval_to_double(period);
 			ev_timer_again(loop_, &ev_);
 
 			callback_ = cb;
@@ -55,11 +55,11 @@ namespace meow { namespace libev {
 			callback_ = callback_t();
 		}
 
-		void tick_once(os_timeval_t const& after, callback_t const& cb)
+		void tick_once(timeval_t const& after, callback_t const& cb)
 		{
 			ev_timer_stop(loop_, &ev_);
 			ev_init(&ev_, &libev_cb);
-			ev_timer_set(&ev_, os_timeval_to_double(after), 0.);
+			ev_timer_set(&ev_, timeval_to_double(after), 0.);
 			ev_timer_start(loop_, &ev_);
 
 			callback_ = cb;

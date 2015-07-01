@@ -21,6 +21,18 @@
 
 	typedef struct timeval os_timeval_t;
 	typedef struct timezone os_timezone_t;
+	typedef struct timespec os_timespec_t;
+
+	struct timeval_t
+	{
+		time_t tv_sec;
+		long   tv_nsec; // nanoseconds
+	};
+
+	struct duration_t
+	{
+		int64_t nsec;   // nanoseconds
+	};
 
 	enum
 	{
@@ -31,82 +43,82 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	inline double os_timeval_to_double(os_timeval_t const& tv)
+	inline double timeval_to_double(timeval_t const& tv)
 	{
 		double r;
-		r = tv.tv_usec;
-		r /= usec_in_sec;
+		r = tv.tv_nsec;
+		r /= nsec_in_sec;
 		r += tv.tv_sec;
 		return r;
 	}
 
-	inline os_timeval_t os_timeval_from_double(double const d)
+	inline timeval_t timeval_from_double(double const d)
 	{
 		assert(d >= 0.0);
 
 		double sec_d = 0.0;
-		double usec_d = modf(d, &sec_d);
+		double const nsec_d = modf(d, &sec_d);
 
-		os_timeval_t const tv = {
+		timeval_t const tv = {
 			.tv_sec = static_cast<time_t>(sec_d),
-			.tv_usec = static_cast<suseconds_t>(usec_d * usec_in_sec)
+			.tv_nsec = static_cast<long>(nsec_d * nsec_in_sec)
 		};
 		return tv;
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	inline bool operator==(os_timeval_t const& lhs, os_timeval_t const& rhs)
+	inline bool operator==(timeval_t const& lhs, timeval_t const& rhs)
 	{
-		return (lhs.tv_sec == rhs.tv_sec) && (lhs.tv_usec == rhs.tv_usec);
+		return (lhs.tv_sec == rhs.tv_sec) && (lhs.tv_nsec == rhs.tv_nsec);
 	}
 
-	inline bool operator!=(os_timeval_t const& lhs, os_timeval_t const& rhs)
+	inline bool operator!=(timeval_t const& lhs, timeval_t const& rhs)
 	{
 		return !(lhs == rhs);
 	}
 
-	inline bool operator<(os_timeval_t const& l, os_timeval_t const& r)
+	inline bool operator<(timeval_t const& lhs, timeval_t const& rhs)
 	{
-		if (l.tv_sec < r.tv_sec)
+		if (lhs.tv_sec < rhs.tv_sec)
 			return true;
-		if (l.tv_sec > r.tv_sec)
+		if (lhs.tv_sec > rhs.tv_sec)
 			return false;
-		return l.tv_usec < r.tv_usec;
+		return lhs.tv_nsec < rhs.tv_nsec;
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	inline os_timeval_t& operator-=(os_timeval_t& lhs, os_timeval_t const& rhs)
+	inline timeval_t& operator-=(timeval_t& lhs, timeval_t const& rhs)
 	{
 		lhs.tv_sec -= rhs.tv_sec;
-		lhs.tv_usec -= rhs.tv_usec;
+		lhs.tv_nsec -= rhs.tv_nsec;
 
-		if (lhs.tv_usec < 0)
+		if (lhs.tv_nsec < 0)
 		{
 			lhs.tv_sec -= 1;
-			lhs.tv_usec += usec_in_sec;
+			lhs.tv_nsec += nsec_in_sec;
 		}
 
 		return lhs;
 	}
 
-	inline os_timeval_t& operator+=(os_timeval_t& lhs, os_timeval_t const& rhs)
+	inline timeval_t& operator+=(timeval_t& lhs, timeval_t const& rhs)
 	{
 		lhs.tv_sec += rhs.tv_sec;
-		lhs.tv_usec += rhs.tv_usec;
+		lhs.tv_nsec += rhs.tv_nsec;
 
-		if (lhs.tv_usec > usec_in_sec)
+		if (lhs.tv_nsec > nsec_in_sec)
 		{
 			lhs.tv_sec += 1;
-			lhs.tv_usec -= usec_in_sec;
+			lhs.tv_nsec -= nsec_in_sec;
 		}
 		
 		return lhs;
 	}
 
-	inline os_timeval_t operator-(os_timeval_t lhs, os_timeval_t const& rhs) { return lhs -= rhs; }
-	inline os_timeval_t operator+(os_timeval_t lhs, os_timeval_t const& rhs) { return lhs += rhs; }
+	inline timeval_t operator-(timeval_t lhs, timeval_t const& rhs) { return lhs -= rhs; }
+	inline timeval_t operator+(timeval_t lhs, timeval_t const& rhs) { return lhs += rhs; }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace os_unix {
@@ -122,23 +134,56 @@ namespace os_unix {
 											  ((os_timezone_t const*, "%p"))
 											);
 
+	MEOW_DEFINE_LIBC_THROWING_WRAPPER(int, clock_gettime
+											, ((clockid_t, "%d"))
+											  ((os_timespec_t*, "%p"))
+											);
+
+	MEOW_DEFINE_LIBC_THROWING_WRAPPER(int, clock_settime
+											, ((clockid_t, "%d"))
+											  ((os_timespec_t const*, "%p"))
+											);
+
 	inline time_t time_ex()
 	{
 		return ::time(NULL);
 	}
 
-	inline os_timeval_t gettimeofday_ex()
+	inline timeval_t gettimeofday_ex()
 	{
 		os_timeval_t tv;
 		gettimeofday_ex(&tv, NULL /* timezone ptr must be always null */);
-		return tv;
+
+		timeval_t const result = {
+			.tv_sec  = tv.tv_sec,
+			.tv_nsec = tv.tv_usec * (nsec_in_sec / usec_in_sec),
+		};
+		return result;
 	}
 
-	inline void settimeofday_ex(os_timeval_t const& tv)
+	inline timeval_t clock_gettime_ex(clockid_t clk_id)
 	{
-		settimeofday_ex(&tv, NULL /* timezone ptr must be always null */);
+		os_timespec_t ts;
+		int r = clock_gettime(clk_id, &ts);
+
+		if (__builtin_expect((r != 0), 0))
+			return {};
+
+		timeval_t const result = {
+			.tv_sec  = ts.tv_sec,
+			.tv_nsec = ts.tv_nsec,
+		};
+		return result;
 	}
 
+	inline timeval_t clock_monotonic_now()
+	{
+		return clock_gettime_ex(CLOCK_MONOTONIC);
+	}
+
+#if 0
+	// deprecated, because we've changed from os_timeval_t to timeval_t
+	//
 	inline os_timeval_t make_timeval(time_t sec, suseconds_t usec)
 	{
 		assert(usec < usec_in_sec);
@@ -147,6 +192,7 @@ namespace os_unix {
 	}
 
 	inline os_timeval_t null_timeval() { return make_timeval(0, 0); }
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 } // namespace os_unix {

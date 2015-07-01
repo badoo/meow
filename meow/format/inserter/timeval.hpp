@@ -14,6 +14,7 @@
 #include <meow/tmp_buffer.hpp>
 #include <meow/format/metafunctions.hpp>
 #include <meow/format/detail/integer_to_string.hpp>
+#include <meow/unix/time.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace format {
@@ -29,7 +30,33 @@ namespace meow { namespace format {
 		{
 			char *b = buf.begin();
 			char *p = buf.end();
-			p = detail::integer_to_string(b, p - b, tv.tv_usec % 1000000);
+			p = detail::integer_to_string(b, p - b, tv.tv_usec % usec_in_sec);
+
+			// pad with '0', easier to read that way
+			static unsigned const field_size = sizeof("000000") - 1;
+			unsigned const printed_size = (buf.end() - p);
+			for (unsigned i = 0; i < field_size - printed_size; ++i)
+				*--p = '0';
+
+			*--p = '.';
+			p = detail::integer_to_string(b, p - b, tv.tv_sec);
+			return str_ref(p, buf.end());
+		}
+	};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+	template<>
+	struct type_tunnel<timeval_t>
+	{
+		enum { buffer_size = sizeof("-12345678901234567890.123456") };
+		typedef meow::tmp_buffer<buffer_size> buffer_t;
+
+		inline static str_ref call(timeval_t const& tv, buffer_t const& buf = buffer_t())
+		{
+			char *b = buf.begin();
+			char *p = buf.end();
+			p = detail::integer_to_string(b, p - b, (tv.tv_nsec / (nsec_in_sec / usec_in_sec)) % usec_in_sec);
 
 			// pad with '0', easier to read that way
 			static unsigned const field_size = sizeof("000000") - 1;

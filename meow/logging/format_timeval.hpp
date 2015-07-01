@@ -23,10 +23,10 @@ namespace meow { namespace format {
 
 	struct time_as_log_insert_wrapper_t
 	{
-		struct timeval const& tv;
+		timeval_t const& tv;
 	};
 
-	inline time_as_log_insert_wrapper_t as_log_ts(struct timeval const& tv)
+	inline time_as_log_insert_wrapper_t as_log_ts(timeval_t const& tv)
 	{
 		time_as_log_insert_wrapper_t const r = { .tv = tv };
 		return r;
@@ -46,7 +46,7 @@ namespace meow { namespace format {
 			char *begin = buf.begin();
 			char *p = buf.end();
 
-			suseconds_t const microseconds = twrap.tv.tv_usec % 1000000;
+			auto const microseconds = twrap.tv.tv_nsec / (nsec_in_sec / usec_in_sec);
 
 			p = detail::integer_to_string(begin, p - begin, microseconds);
 

@@ -9,6 +9,7 @@
 #include "libev_fwd.hpp"
 
 #include <meow/movable_handle.hpp>
+#include <meow/unix/time.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace libev {
@@ -62,6 +63,11 @@ namespace meow { namespace libev {
 	inline void break_loop(evloop_t *loop, unsigned int flags = EVUNLOOP_ALL)
 	{
 		ev_unloop(get_handle(loop), flags);
+	}
+
+	inline timeval_t evloop_now(evloop_t *loop)
+	{
+		return timeval_from_double(ev_now(loop));
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////

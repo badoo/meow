@@ -16,7 +16,6 @@
 #include <meow/logging/log_write.hpp>
 #include <meow/unix/fcntl.hpp> 	// nonblocking
 #include <meow/unix/socket.hpp> // getsockopt_ex
-#include <meow/unix/time.hpp> 	// os_timeval_t
 #include <meow/utility/offsetof.hpp>
 
 #include "fd_connector.hpp"

@@ -36,7 +36,7 @@ int main()
 
 	int const number = 1234567890;
 	size_t const sz_number = 34734893849384000;
-	os_timeval_t const tv = os_unix::gettimeofday_ex();
+	timeval_t const tv = os_unix::clock_monotonic_now();
 
 	for (size_t i = 0; i < n_iterations; ++i)
 	{
@@ -63,7 +63,7 @@ int main()
 		str_ref arg_slices[6] = {
 				  ref_lit("/some_url?lala=aaaa")
 				, ref_lit("wwwbma.mlan")
-				, ff::type_tunnel<os_timeval_t>::call(tv)
+				, ff::type_tunnel<decltype(tv)>::call(tv)
 				, ref_lit("bma-proxy/1.0.5")
 				, ref_lit("X-Client-Ip"), "0.0.0.0"//ff::type_tunnel<ff::ipv4_address_just_ip_t>::call(ff::addr_as_ip(os_sockaddr_in_t()))
 				};
