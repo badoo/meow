@@ -45,14 +45,16 @@ namespace meow { namespace libev {
 
 	public:
 
-		bounded_timer_impl_t(evloop_t *loop) 
+		bounded_timer_impl_t(evloop_t *loop)
 			: index_(0)
 			, ticker_(loop)
 		{
-			timeval_t const tv = {
+			// antoxa: best syntax i could come up with for gcc 4.7.2
+			auto const tv = timeval_t {
 				.tv_sec = tick_interval_ms / msec_in_sec,
-				.tv_nsec = (tick_interval_ms % msec_in_sec) * (nsec_in_sec / msec_in_sec)
+				.tv_nsec = (tick_interval_ms % msec_in_sec) * (nsec_in_sec / msec_in_sec),
 			};
+
 			ticker_.start(tv, std::bind(&self_t::on_tick, this, std::placeholders::_1, std::placeholders::_2));
 		}
 
