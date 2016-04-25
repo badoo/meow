@@ -65,6 +65,11 @@ namespace meow { namespace libev {
 		ev_unloop(get_handle(loop), flags);
 	}
 
+	inline ev_tstamp evloop_now_d(evloop_t *loop)
+	{
+		return ev_now(loop);
+	}
+
 	inline timeval_t evloop_now(evloop_t *loop)
 	{
 		return timeval_from_double(ev_now(loop));
