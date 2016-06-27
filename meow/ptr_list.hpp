@@ -110,7 +110,7 @@ namespace meow {
 		}
 
 	public:
-	
+
 		bool empty() const { return l_.empty(); }
 		size_t size() const { return l_.size(); }
 
@@ -170,6 +170,11 @@ namespace meow {
 		{
 			while (!this->empty())
 				this->pop_front();
+		}
+
+		void swap(self_t& other)
+		{
+			l_.swap(other.l_);
 		}
 	};
 

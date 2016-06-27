@@ -80,8 +80,10 @@ namespace meow { namespace libev {
 	{
 		virtual ~openssl_connection_t() {}
 
-		virtual void ssl_init(openssl_ctx_t*) = 0;
-		virtual bool ssl_is_initialized() const = 0;
+		virtual void       ssl_init(openssl_ctx_t*) = 0;
+		virtual bool       ssl_is_initialized() const = 0;
+		virtual openssl_t* ssl_get() const = 0;
+
 	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -369,6 +371,11 @@ namespace meow { namespace libev {
 			if (!ssl)
 				throw std::logic_error("ssl_create() failed: make sure you've got certificate/private-key and memory");
 
+			this->ssl_init_acquire(move(ssl));
+		}
+
+		void ssl_init_acquire(ssl_move_ptr ssl)
+		{
 			static BIO_METHOD openssl_connection_bio_method =
 			{
 				BIO_TYPE_SOURCE_SINK,
@@ -461,8 +468,8 @@ namespace meow { namespace libev {
 			static int create(BIO *bio)
 			{
 				bio->init = 1;
-				bio->shutdown = 1; 
-				bio->num = 0; 
+				bio->shutdown = 1;
+				bio->num = 0;
 				bio->ptr = NULL;
 				bio->flags = 0;
 				return 1;
