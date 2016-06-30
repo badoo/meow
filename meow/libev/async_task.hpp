@@ -17,10 +17,6 @@
 #include <meow/utility/offsetof.hpp>
 
 
-//
-#include <meow/format/format.hpp>
-namespace ff = meow::format;
-
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow { namespace libev {
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -188,11 +184,13 @@ namespace meow { namespace libev {
 				return move(ctx);
 			}();
 
+			// lambda initializers not supported in C++11 yet, so do it explicitly
+			thread_ctx_t *ctx = thr_ctx_.get();
+
 			std::atomic_thread_fence(std::memory_order_seq_cst); // make sure everything is constructed before thread starts
 
-			thr_ = meow::make_unique<std::thread>([ctx = thr_ctx_.get(), task_env_init_func]
+			thr_ = meow::make_unique<std::thread>([ctx, task_env_init_func]
 			{
-				// ff::fmt(stderr, "{0}; thread starting\n", __func__);
 				ctx->task_env = task_env_init_func(ctx->loop.get());
 
 				std::atomic_thread_fence(std::memory_order_seq_cst); // make sure ctx->task_env write is visible to event loop
@@ -207,8 +205,6 @@ namespace meow { namespace libev {
 		{
 			auto *executor = static_cast<self_t*>(ev->data);
 			auto *ctx = MEOW_SELF_FROM_MEMBER(thread_ctx_t, ev, ev);
-
-			// ff::fmt(stderr, "{0}; \n", __func__);
 
 			bool shutting_down;
 			queue_t local_q;
@@ -248,8 +244,6 @@ namespace meow { namespace libev {
 		static void executor_wakeup(evloop_t *loop, evasync_t *ev, int revents)
 		{
 			auto *executor = MEOW_SELF_FROM_MEMBER(self_t, ev_, ev);
-
-			// ff::fmt(stderr, "{0}; \n", __func__);
 
 			queue_t local_q;
 			{
