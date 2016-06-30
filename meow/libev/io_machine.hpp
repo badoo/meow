@@ -369,8 +369,9 @@ namespace meow { namespace libev {
 
 		static void cb(context_t *ctx, int revents)
 		{
-//			tr_log::write(ctx, line_mode::single, "{0}; ctx: {1}, revents: 0x{2}", __func__, ctx, meow::format::as_hex(revents));
+			// tr_log::write(ctx, line_mode::single, "{0}; entering -> ctx: {1}, revents: 0x{2}", __func__, ctx, meow::format::as_hex(revents));
 			self_t::run_loop(ctx, revents);
+			// tr_log::write(ctx, line_mode::single, "{0}; exiting <- ctx: {1}, revents: 0x{2}", __func__, ctx, meow::format::as_hex(revents));
 		}
 
 	private: // io ops

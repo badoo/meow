@@ -180,7 +180,15 @@ namespace meow { namespace libev {
 
 	public:
 
-		virtual buffer_chain_t& wchain_ref() { return wchain_; }
+		virtual void set_loop(evloop_t *loop) override
+		{
+			loop_ = loop;
+		}
+
+		virtual buffer_chain_t& wchain_ref()
+		{
+			return wchain_;
+		}
 
 	public: // closing
 
@@ -206,7 +214,7 @@ namespace meow { namespace libev {
 
 //
 // defines a connection wrapper like mmc_connection_t
-// example: 
+// example:
 //  MEOW_LIBEV_DEFINE_CONNECTION_WRAPPER(mmc_connection_impl_t, mmc_connection_repack_traits, mmc_connection_t);
 //
 #define MEOW_LIBEV_DEFINE_CONNECTION_WRAPPER(name, traits, base_interface) 	\

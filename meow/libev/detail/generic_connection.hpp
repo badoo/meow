@@ -78,6 +78,8 @@ namespace meow { namespace libev {
 
 	public: // access to semi-private information for the brave
 
+		virtual void set_loop(evloop_t*) = 0;   // change event loop, USE WITH EXTREME CARE
+
 		virtual buffer_chain_t& wchain_ref() = 0;
 
 	public: // closing

@@ -96,6 +96,18 @@ namespace meow { namespace libev {
 namespace meow { namespace libev {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
+	struct ssl_info_traits__default
+	{
+		// should return (only makes sense for successful handshakes)
+		//  true  - continue looping and reading data
+		//  false - break the loop, outer code has other plans for this connection
+		template<class ContextT>
+		static bool handshake_finished(ContextT *ctx, int err_code, std::string&& err_string)
+		{
+			return true; // i.e. rd_consume_status::more;
+		}
+	};
+
 	template<class Traits>
 	struct openssl_connection_repack_traits : public Traits
 	{
@@ -103,6 +115,7 @@ namespace meow { namespace libev {
 		typedef openssl_move_ptr  ssl_move_ptr;
 
 		MEOW_DEFINE_NESTED_NAME_ALIAS_OR_MY_TYPE(Traits, ssl_log_writer, ssl_log_writer_traits__default);
+		MEOW_DEFINE_NESTED_NAME_ALIAS_OR_MY_TYPE(Traits, ssl_info, ssl_info_traits__default);
 
 		// this shit needs to be defined here
 		MEOW_DEFINE_NESTED_NAME_ALIAS_OR_MY_TYPE(Traits, base, generic_connection_traits__base<Traits>);
@@ -114,6 +127,7 @@ namespace meow { namespace libev {
 			buffer_move_ptr  ssl_rbuf;
 			buffer_chain_t   ssl_wchain;
 			ssl_move_ptr     rw_ssl;
+			bool             ssl_handshake_done = false;
 		};
 
 		template<class ContextT>
@@ -168,22 +182,37 @@ namespace meow { namespace libev {
 					if (!data_buf)
 						return rd_consume_status::loop_break;
 
-					int r = SSL_read(ssl, data_buf.data(), data_buf.size());
-					SSL_LOG_WRITE(ctx, line_mode::prefix, "SSL_read({0}, {1}, {2}) = {3}", ctx, (void*)data_buf.data(), data_buf.size(), r);
+					int r = 0;
+					if (ctx->ssl_handshake_done)
+					{
+						r = SSL_read(ssl, data_buf.data(), data_buf.size());
+						SSL_LOG_WRITE(ctx, line_mode::prefix, "SSL_read({0}, {1}, {2}) = {3}", ctx, (void*)data_buf.data(), data_buf.size(), r);
+					}
+					else
+					{
+						r = SSL_do_handshake(ssl);
+						SSL_LOG_WRITE(ctx, line_mode::prefix, "SSL_do_handshake({0}) = {1}", ctx, r);
+					}
 
 					if (r <= 0)
 					{
-						int err_code = ERR_get_error();
+						int const err_code = ERR_get_error();
+						std::string err_string;
 						if (err_code)
-							SSL_LOG_WRITE(ctx, line_mode::suffix, ", ssl_code: {0} - {1}", err_code, openssl_get_error_string(err_code));
-						else
+						{
+							err_string = openssl_get_error_string(err_code).str();
+							SSL_LOG_WRITE(ctx, line_mode::suffix, ", ssl_code: {0} - {1}", err_code, err_string);
+						}
+						else {
 							SSL_LOG_WRITE(ctx, line_mode::suffix, "");
+						}
 
 						int ssl_code = SSL_get_error(ssl, r);
 						switch (ssl_code)
 						{
 							case SSL_ERROR_ZERO_RETURN:
 								SSL_shutdown(ssl);
+								ssl_info::handshake_finished(ctx, err_code, move(err_string));
 								return tr_read::consume_buffer(ctx, buffer_ref(), read_status::closed);
 
 							case SSL_ERROR_WANT_READ:
@@ -191,6 +220,7 @@ namespace meow { namespace libev {
 								if (read_status::closed == r_status)
 								{
 									SSL_shutdown(ssl);
+									ssl_info::handshake_finished(ctx, err_code, move(err_string));
 									return tr_read::consume_buffer(ctx, buffer_ref(), r_status);
 								}
 								else
@@ -198,24 +228,43 @@ namespace meow { namespace libev {
 
 							default:
 								// no shutdown, session will be removed from cache
+								ssl_info::handshake_finished(ctx, err_code, move(err_string));
 								return tr_read::consume_buffer(ctx, buffer_ref(), read_status::error);
 						}
 					}
 					else
 					{
-						SSL_LOG_WRITE(ctx, line_mode::suffix, "");
+						if (ctx->ssl_handshake_done)
+						{
+							SSL_LOG_WRITE(ctx, line_mode::suffix, ""); // just a newline
 
-						size_t const read_sz = r;
-						read_status_t const rst = (read_sz == data_buf.size()) ? read_status::full : read_status::again;
+							size_t const read_sz = r;
+							read_status_t const rst = (read_sz == data_buf.size()) ? read_status::full : read_status::again;
 
-						rd_consume_status_t rdc_status = tr_read::consume_buffer(ctx, buffer_ref(data_buf.data(), read_sz), rst);
-						switch (rdc_status) {
-							case rd_consume_status::more:
-								continue;
+							rd_consume_status_t rdc_status = tr_read::consume_buffer(ctx, buffer_ref(data_buf.data(), read_sz), rst);
+							switch (rdc_status) {
+								case rd_consume_status::more:
+									continue;
 
-							case rd_consume_status::loop_break:
-							case rd_consume_status::closed:
-								return rdc_status;
+								case rd_consume_status::loop_break:
+								case rd_consume_status::closed:
+									return rdc_status;
+							}
+						}
+						else
+						{
+							if (r != 1) // openssl promises to return 1 when handshake has been completed, but fuck knows
+							{
+								SSL_LOG_WRITE(ctx, line_mode::middle, " WHOA (r != 1) as we expect from openssl!");
+							}
+
+							SSL_LOG_WRITE(ctx, line_mode::suffix, ""); // just a newline
+							ctx->ssl_handshake_done = 1;
+
+							return (ssl_info::handshake_finished(ctx, 0, std::string{}))
+									? rd_consume_status::more
+									: rd_consume_status::loop_break
+									;
 						}
 					}
 				}
@@ -232,6 +281,8 @@ namespace meow { namespace libev {
 			static write_result_t write_buffer_to_ssl(ContextT *ctx, buffer_t *b)
 			{
 				ssl_t *ssl = ssl_from_context(ctx);
+
+				assert(ctx->ssl_handshake_done && "must be impossible to write to ssl connection before handshake is complete");
 
 				while (!b->empty())
 				{

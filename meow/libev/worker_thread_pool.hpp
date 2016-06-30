@@ -151,7 +151,6 @@ namespace meow {
 		auto item = meow::make_unique<worker_item_impl_t<T, WF, CF>>(std::forward<T>(state), work, callback);
 		auto parent = &ctx;
 
-		// TODO: do not accept new messages when shutting down (return something sensible, or callback with a code?)
 		{
 			std::lock_guard<std::mutex> g_{ parent->w_lock };
 			if (parent->shutting_down != 0)
