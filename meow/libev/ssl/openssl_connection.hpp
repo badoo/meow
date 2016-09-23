@@ -261,10 +261,14 @@ namespace meow { namespace libev {
 							SSL_LOG_WRITE(ctx, line_mode::suffix, ""); // just a newline
 							ctx->ssl_handshake_done = 1;
 
-							return (ssl_info::handshake_finished(ctx, 0, std::string{}))
-									? rd_consume_status::more
-									: rd_consume_status::loop_break
-									;
+							bool const do_continue = ssl_info::handshake_finished(ctx, 0, std::string{});
+							if (!do_continue)
+								return rd_consume_status::loop_break;
+
+							// continue the read loop, handshake done, might have some data to read from BIO still
+							// i.e. might have the case with no data from the network (i.e. rd_consume_status::more would do nothing)
+							// but there might still be data already read, but not yet processed from BIO,
+							//  (since we're switching from handshake to read mode)
 						}
 					}
 				}
