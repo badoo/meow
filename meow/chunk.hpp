@@ -21,7 +21,7 @@ namespace meow {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // NOTE: can't be used with incomplete types
-// 
+//
 // a simple noncopyable fixed-size chunk class with
 //    iteration
 //  , appending
@@ -41,7 +41,7 @@ struct chunk : private boost::noncopyable
 		  , static_size_bytes = object_size * static_size
 	};
 
-	using aligned_storage_t = 
+	using aligned_storage_t =
 		typename std::aligned_storage<static_size_bytes, object_align>::type;
 
 	using value_type             = T;
@@ -99,7 +99,7 @@ public: // accessors
 	reference at(size_type n) { range_check(n); return data_[n]; }
 	const_reference at(size_type n) const { range_check(n); return data_[n]; }
 
-	reference front() { data_[0]; }
+	reference front() { return data_[0]; }
 	const_reference front() const { return data_[0]; }
 
 	reference back() { return data_[length_ - 1]; }
