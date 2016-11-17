@@ -102,7 +102,13 @@ namespace meow {
 				return a.n_ < b.n_;
 		}
 
-		char_type_nc operator[](size_t offset) const
+		char_type& operator[](size_t offset)
+		{
+			assert(offset < length());
+			return p_[offset];
+		}
+
+		char_type const& operator[](size_t offset) const
 		{
 			assert(offset < length());
 			return p_[offset];
@@ -156,6 +162,12 @@ namespace meow {
 	inline string_ref<Char> ref_array(Char (&arr)[len])
 	{
 		return string_ref<Char>(arr, len);
+	}
+
+	template<class Char>
+	inline string_ref<Char const> ref_array(Char *arr, size_t len)
+	{
+		return string_ref<Char const>(arr, len);
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
