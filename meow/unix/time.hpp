@@ -42,6 +42,7 @@
 	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
+// timeval_t operations
 
 	inline double timeval_to_double(timeval_t const& tv)
 	{
@@ -66,8 +67,6 @@
 		return tv;
 	}
 
-////////////////////////////////////////////////////////////////////////////////////////////////
-
 	inline bool operator==(timeval_t const& lhs, timeval_t const& rhs)
 	{
 		return (lhs.tv_sec == rhs.tv_sec) && (lhs.tv_nsec == rhs.tv_nsec);
@@ -86,8 +85,6 @@
 			return false;
 		return lhs.tv_nsec < rhs.tv_nsec;
 	}
-
-////////////////////////////////////////////////////////////////////////////////////////////////
 
 	inline timeval_t& operator-=(timeval_t& lhs, timeval_t const& rhs)
 	{
@@ -113,12 +110,32 @@
 			lhs.tv_sec += 1;
 			lhs.tv_nsec -= nsec_in_sec;
 		}
-		
+
 		return lhs;
 	}
 
 	inline timeval_t operator-(timeval_t lhs, timeval_t const& rhs) { return lhs -= rhs; }
 	inline timeval_t operator+(timeval_t lhs, timeval_t const& rhs) { return lhs += rhs; }
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+// duration_t operations
+
+	inline duration_t duration_from_float(float const d)
+	{
+		float sec_d;
+		float const nsec_d = modff(d, &sec_d);
+
+		duration_t const result = {
+			.nsec = static_cast<int64_t>(sec_d) * nsec_in_sec + static_cast<int64_t>(nsec_d * nsec_in_sec)
+		};
+		return result;
+	}
+
+	inline duration_t& operator+=(duration_t& to, duration_t const& from)
+	{
+		to.nsec += from.nsec;
+		return to;
+	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace os_unix {

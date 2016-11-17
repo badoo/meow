@@ -157,6 +157,32 @@ namespace meow { namespace format {
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
+
+	template<>
+	struct type_tunnel<duration_t>
+	{
+		enum { buffer_size = sizeof("-1234567890.123456") };
+		typedef meow::tmp_buffer<buffer_size> buffer_t;
+
+		inline static str_ref call(duration_t const& d, buffer_t const& buf = buffer_t())
+		{
+			char *b = buf.begin();
+			char *p = buf.end();
+			p = detail::integer_to_string(b, p - b, (d.nsec / (nsec_in_sec / usec_in_sec)) % usec_in_sec);
+
+			// pad with '0', easier to read that way
+			static unsigned const field_size = sizeof("000000") - 1;
+			unsigned const printed_size = (buf.end() - p);
+			for (unsigned i = 0; i < field_size - printed_size; ++i)
+				*--p = '0';
+
+			*--p = '.';
+			p = detail::integer_to_string(b, p - b, (d.nsec / nsec_in_sec));
+			return str_ref(p, buf.end());
+		}
+	};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
 }} // namespace meow { namespace format {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
