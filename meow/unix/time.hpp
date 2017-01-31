@@ -41,6 +41,10 @@
 		, nsec_in_sec = 1000 * 1000 * 1000
 	};
 
+	constexpr duration_t const d_second =      { nsec_in_sec / 1 };
+	constexpr duration_t const d_millisecond = { nsec_in_sec / msec_in_sec };
+	constexpr duration_t const d_microsecond = { nsec_in_sec / usec_in_sec };
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // timeval_t operations
 
@@ -67,6 +71,14 @@
 		return tv;
 	}
 
+	inline timeval_t timeval_from_duration(duration_t const& d)
+	{
+		return timeval_t {
+			.tv_sec  = d.nsec / nsec_in_sec,
+			.tv_nsec = d.nsec % nsec_in_sec,
+		};
+	}
+
 	inline bool operator==(timeval_t const& lhs, timeval_t const& rhs)
 	{
 		return (lhs.tv_sec == rhs.tv_sec) && (lhs.tv_nsec == rhs.tv_nsec);
@@ -84,6 +96,11 @@
 		if (lhs.tv_sec > rhs.tv_sec)
 			return false;
 		return lhs.tv_nsec < rhs.tv_nsec;
+	}
+
+	inline bool operator<=(timeval_t const& lhs, timeval_t const& rhs)
+	{
+		return !(rhs < lhs);
 	}
 
 	inline timeval_t& operator-=(timeval_t& lhs, timeval_t const& rhs)
@@ -118,6 +135,27 @@
 	inline timeval_t operator+(timeval_t lhs, timeval_t const& rhs) { return lhs += rhs; }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
+
+	inline timeval_t& operator+=(timeval_t& tv, duration_t const& d)
+	{
+		tv.tv_sec  += d.nsec / nsec_in_sec;
+		tv.tv_nsec += d.nsec % nsec_in_sec;
+
+		if (tv.tv_nsec > nsec_in_sec)
+		{
+			tv.tv_sec += 1;
+			tv.tv_nsec -= nsec_in_sec;
+		}
+
+		return tv;
+	}
+
+	inline timeval_t operator+(timeval_t tv, duration_t const& d)
+	{
+		return tv += d;
+	}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
 // duration_t operations
 
 	inline duration_t duration_from_float(float const d)
@@ -131,10 +169,73 @@
 		return result;
 	}
 
+	inline constexpr duration_t duration_from_timeval(timeval_t const& tv)
+	{
+		return duration_t { .nsec = tv.tv_sec * nsec_in_sec + tv.tv_nsec };
+	}
+
+	inline constexpr double duration_seconds_as_double(duration_t const& d)
+	{
+		return (double)d.nsec / (double)nsec_in_sec;
+	}
+
 	inline duration_t& operator+=(duration_t& to, duration_t const& from)
 	{
 		to.nsec += from.nsec;
 		return to;
+	}
+
+	inline constexpr duration_t operator+(duration_t const& l, duration_t const& r)
+	{
+		return duration_t { .nsec = l.nsec + r.nsec };
+	}
+
+	inline constexpr duration_t operator-(duration_t const& l, duration_t const& r)
+	{
+		return duration_t { .nsec = l.nsec - r.nsec };
+	}
+
+	template<class I>
+	inline constexpr duration_t operator*(duration_t const& d, I const factor)
+	{
+		return duration_t { .nsec = d.nsec * factor };
+	}
+
+	template<class I>
+	inline constexpr duration_t operator*(I const factor, duration_t const& d)
+	{
+		return d * factor;
+	}
+
+	template<class I>
+	inline constexpr duration_t operator/(duration_t const& d, I const factor)
+	{
+		return duration_t { .nsec = d.nsec / factor };
+	}
+
+	inline constexpr bool operator==(duration_t const& l, duration_t const& r)
+	{
+		return l.nsec == r.nsec;
+	}
+
+	inline constexpr bool operator<(duration_t const& l, duration_t const& r)
+	{
+		return l.nsec < r.nsec;
+	}
+
+	inline constexpr bool operator<=(duration_t const& l, duration_t const& r)
+	{
+		return l.nsec <= r.nsec;
+	}
+
+	inline constexpr bool operator>(duration_t const& l, duration_t const& r)
+	{
+		return l.nsec > r.nsec;
+	}
+
+	inline constexpr bool operator>=(duration_t const& l, duration_t const& r)
+	{
+		return l.nsec >= r.nsec;
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
