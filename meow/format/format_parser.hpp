@@ -36,11 +36,6 @@ namespace meow { namespace format {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	inline bool my_isdigit(unsigned char const c)
-	{
-		return std::isdigit(c);//(c ^ 0x30) < 10;
-	}
-
 	inline format_info_t parse_format_expression(
 			  str_ref const& fmt
 			, str_ref *slices
@@ -78,11 +73,11 @@ namespace meow { namespace format {
 				head = abegin;
 
 				unsigned int arg_n = 0;
-				if (__builtin_expect(my_isdigit(*head), 1))
+				if (__builtin_expect(std::isdigit(*head), 1))
 				{
 					arg_n = *head++ - '0';
 
-					for (; head != hend && my_isdigit(*head); ++head)
+					for (; head != hend && std::isdigit(*head); ++head)
 					{
 						arg_n *= 10;
 						arg_n += *head - '0';

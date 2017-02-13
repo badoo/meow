@@ -20,16 +20,17 @@
 namespace meow { namespace logging {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	struct prefix_field
+	// struct prefix_field
+	enum prefix_field : uint32_t
 	{
-		typedef uint32_t int_t;
+		_null     = 0x00000000,
+		_all      = 0xFFFFFFFF,
 
-		static int_t const _null 		= 0x00000000;
-		static int_t const datetime 	= 0x00000001;
-		static int_t const log_level 	= 0x00000010;
-		static int_t const log_name 	= 0x00000100;
+		datetime  = 0x00000001,
+		log_level = 0x00000010,
+		log_name  = 0x00000100,
 	};
-	typedef prefix_field::int_t prefix_fields_t;
+	typedef uint32_t prefix_fields_t;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -169,6 +169,17 @@
 		return result;
 	}
 
+	inline duration_t duration_from_double(double const d)
+	{
+		double sec_d;
+		double const nsec_d = modf(d, &sec_d);
+
+		duration_t const result = {
+			.nsec = static_cast<int64_t>(sec_d) * nsec_in_sec + static_cast<int64_t>(nsec_d * nsec_in_sec)
+		};
+		return result;
+	}
+
 	inline constexpr duration_t duration_from_timeval(timeval_t const& tv)
 	{
 		return duration_t { .nsec = tv.tv_sec * nsec_in_sec + tv.tv_nsec };
@@ -285,7 +296,7 @@ namespace os_unix {
 		int r = clock_gettime(clk_id, &ts);
 
 		if (__builtin_expect((r != 0), 0))
-			return {};
+			return {0,0};
 
 		timeval_t const result = {
 			.tv_sec  = ts.tv_sec,
