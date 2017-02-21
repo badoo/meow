@@ -187,7 +187,8 @@
 
 	inline constexpr double duration_seconds_as_double(duration_t const& d)
 	{
-		return (double)d.nsec / (double)nsec_in_sec;
+		// return (double)d.nsec / (double)nsec_in_sec;
+		return double(d.nsec / nsec_in_sec) + double(1.0 / nsec_in_sec) * (d.nsec % nsec_in_sec);
 	}
 
 	inline duration_t& operator+=(duration_t& to, duration_t const& from)
