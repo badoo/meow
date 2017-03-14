@@ -24,7 +24,7 @@ namespace meow { namespace logging {
 			, sink_(fd)
 		{
 			this->set_writer([this](size_t total_len, str_ref const *slices, size_t n_slices) {
-				meow::format::write(sink_, total_len, slices, n_slices);
+				meow::format::write_to_sink(sink_, total_len, slices, n_slices);
 			});
 		}
 
