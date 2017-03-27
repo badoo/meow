@@ -79,6 +79,14 @@
 		};
 	}
 
+	inline timeval_t timeval_from_os_timeval(struct timeval const& tv)
+	{
+		return timeval_t {
+			.tv_sec  = tv.tv_sec,
+			.tv_nsec = tv.tv_usec * (nsec_in_sec / usec_in_sec),
+		};
+	}
+
 	inline bool operator==(timeval_t const& lhs, timeval_t const& rhs)
 	{
 		return (lhs.tv_sec == rhs.tv_sec) && (lhs.tv_nsec == rhs.tv_nsec);
