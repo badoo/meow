@@ -31,6 +31,9 @@ namespace meow { namespace format {
 		template<class CharT>
 		static void call(fd_sink_t& sink, size_t total_len, string_ref<CharT const> const *slices, size_t n_slices)
 		{
+			if (!total_len)
+				return;
+
 #if defined(MEOW_FORMAT_FD_SINK_NO_WRITEV) && (0 != MEOW_FORMAT_FD_SINK_NO_WRITEV)
 			char buf[total_len];
 			size_t offset = 0;
