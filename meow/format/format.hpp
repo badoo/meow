@@ -21,5 +21,8 @@
 #include "sink/FILE.hpp"
 #include "sink/std_string.hpp"
 
+#include "format_to_string.hpp"
+#include "format_to_error.hpp"
+
 #endif // MEOW_FORMAT__FORMAT_HPP_
 
