@@ -30,7 +30,22 @@ namespace meow {
 		error_t(error_t&& other) : what_(std::move(other.what_)) {}
 		error_t(error_t const& other) : what_(other.what_) {}
 
-		std::string const& what() const { return what_; }
+		error_t& operator=(error_t&& other)
+		{
+			what_ = std::move(other.what_);
+			return *this;
+		}
+
+		error_t& operator=(error_t const& other)
+		{
+			what_ = other.what_;
+			return *this;
+		}
+
+		std::string const& what() const
+		{
+			return what_;
+		}
 
 		operator unspecified_bool_type() const
 		{
