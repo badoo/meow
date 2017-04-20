@@ -7,7 +7,10 @@
 #define MEOW_FORMAT_SINK_FD_HPP_
 
 #include <fcntl.h>    // open
+#include <unistd.h>   // write
 #include <sys/uio.h>  // writev
+
+#include <stdexcept> // std::runtime_error
 
 #include <meow/api_call_error.hpp>
 #include <meow/str_ref.hpp>
