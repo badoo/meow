@@ -15,6 +15,9 @@
 #define MEOW_SELF_FROM_MEMBER(class_name, member_name, member_ptr) \
 	((class_name*)((char*)member_ptr - MEOW_OFFSETOF(class_name, member_name)))
 
+#define MEOW_MEMBER_PTR_AT_OFFSET(class_ptr, member_type, member_offset) \
+	((member_type*)((char*)class_ptr + member_offset))
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 #endif // MEOW_UTILITY__OFFSETOF_HPP_
