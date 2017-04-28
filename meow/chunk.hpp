@@ -7,12 +7,11 @@
 #define MEOW__CHUNK_HPP_
 
 #include <cstdint>     // uint32_t
-
+#include <array>       // std::array
 #include <stdexcept>   // std::range_error
 #include <iterator>    // std::reverse_iterator
 #include <type_traits> // std::aligned_storage
 
-#include <boost/noncopyable.hpp>
 #include <boost/range/iterator_range.hpp>
 #include <boost/utility/in_place_factory.hpp>
 
@@ -31,7 +30,7 @@ template<
 	, size_t N               // max number of objects
 	, class SizeT = uint32_t // type used to track sizes and lengths
 >
-struct chunk : private boost::noncopyable
+struct chunk
 {
 	static_assert(N > 0, "array size must be >= 0");
 	enum {
@@ -144,23 +143,72 @@ public: // modifiers
 		do_destroy(data_ + --length_);
 	}
 
-	chunk& assign(chunk const& other)
+	template<class U, size_t L, class LT>
+	chunk& assign(chunk<U, L, LT> const& other)
 	{
 		clear();
-		for (auto const& o : other)
-			push_back(o);
+		return append(other);
+	}
+
+	template<class U, size_t L, class LT>
+	chunk& append(chunk<U, L, LT> const& other)
+	{
+		assert((other.size() <= capacity()) && "chunk<>::append(chunk) - chunk will overflow");
+
+		std::copy(other.begin(), other.end(), end());
+		length_ += other.size();
+		return *this;
+	}
+
+	template<class U, size_t L>
+	chunk& assign(std::array<U, L> const& arr)
+	{
+		clear();
+		return append(arr);
+	}
+
+	template<class U, size_t L>
+	chunk& append(std::array<U, L> const& arr)
+	{
+		assert(((size() + arr.size()) <= capacity()) && "chunk<>::append(std::array) - chunk will overflow");
+
+		std::copy(arr.begin(), arr.end(), end());
+		length_ += arr.size();
 		return *this;
 	}
 
 public:
-	chunk() : length_(0) {} // NOTE: don't fill storage with zeroes
-	chunk(chunk const& other) : length_(0) { assign(other); }
+
+	chunk() // NOTE: storage is NOT filled with zeroes
+		: length_(0)
+	{
+	}
+
+	template<class U, size_t L, class LT>
+	chunk(chunk<U, L, LT> const& other)
+		: length_(0)
+	{
+		assign(other);
+	}
+
+	template<class U, size_t L>
+	chunk(std::array<U, L> const& arr)
+		: length_(0)
+	{
+		assign(arr);
+	}
 
 	chunk& operator=(chunk const& other)
 	{
 		if (this != &other)
 			assign(other);
 		return *this;
+	}
+
+	template<class U, size_t L>
+	chunk& operator=(std::array<U, L> const& arr)
+	{
+		return assign(arr);
 	}
 
 	~chunk() { clear(); }
