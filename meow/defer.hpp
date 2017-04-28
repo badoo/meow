@@ -13,20 +13,27 @@
 namespace meow {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
+	template<class F>
 	struct defer_wrapper_t
 	{
-		mutable std::function<void()> cleaner;
+		F *cleaner;
 
 		~defer_wrapper_t()
 		{
-			if (cleaner)
-				cleaner();
+			(*cleaner)();
 		}
 	};
 
+	template<class F>
+	inline defer_wrapper_t<F> make_defer_wrapper(F *func)
+	{
+		return { .cleaner = func };
+	}
+
 
 	#define MEOW_DEFER_EX(body) \
-		auto const& BOOST_PP_CAT(defer_wrapper___,__LINE__) = meow::defer_wrapper_t { .cleaner = body }; \
+		auto const BOOST_PP_CAT(defer_func___,__LINE__) = body ; \
+		auto const BOOST_PP_CAT(defer_wrapper___,__LINE__) = meow::make_defer_wrapper(& BOOST_PP_CAT(defer_func___,__LINE__) );
 	/**/
 
 	#define MEOW_DEFER(body) \
