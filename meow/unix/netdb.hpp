@@ -123,7 +123,7 @@ namespace os_unix {
 					, host, port, proto_family, socktype, proto
 				);
 
-		return move(ai_list);
+		return ai_list;
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
