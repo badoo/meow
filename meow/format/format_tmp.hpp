@@ -21,7 +21,7 @@ namespace meow { namespace format {
 	}
 
 	template<size_t N, class... A>
-	inline str_ref write_tmp(A const&... args)
+	inline stack_buffer_t<N> write_tmp(A const&... args)
 	{
 		stack_buffer_sink_t<N> sink;
 		return write(sink, args...);
