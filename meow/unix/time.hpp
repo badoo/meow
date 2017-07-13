@@ -199,15 +199,21 @@
 		return double(d.nsec / nsec_in_sec) + double(1.0 / nsec_in_sec) * (d.nsec % nsec_in_sec);
 	}
 
-	inline duration_t& operator+=(duration_t& to, duration_t const& from)
+	inline duration_t& operator+=(duration_t& l, duration_t const& r)
 	{
-		to.nsec += from.nsec;
-		return to;
+		l.nsec += r.nsec;
+		return l;
 	}
 
 	inline constexpr duration_t operator+(duration_t const& l, duration_t const& r)
 	{
 		return duration_t { .nsec = l.nsec + r.nsec };
+	}
+
+	inline duration_t& operator-=(duration_t& l, duration_t const& r)
+	{
+		l.nsec -= r.nsec;
+		return l;
 	}
 
 	inline constexpr duration_t operator-(duration_t const& l, duration_t const& r)
@@ -225,6 +231,11 @@
 	inline constexpr duration_t operator*(I const factor, duration_t const& d)
 	{
 		return d * factor;
+	}
+
+	inline constexpr duration_t operator/(duration_t const& d, duration_t const& divisor)
+	{
+		return duration_t { .nsec = d.nsec / divisor.nsec };
 	}
 
 	template<class I>

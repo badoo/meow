@@ -20,9 +20,15 @@ namespace meow {
 	}
 
 	template<class T, class... A>
-	inline boost::intrusive_ptr<T> acquire_intrusive(A&&... a)
+	inline boost::intrusive_ptr<T> make_intrusive_noref(A&&... a)
 	{
 		return boost::intrusive_ptr<T>(new T(std::forward<A>(a)...), false /* add_ref */);
+	}
+
+	template<class T>
+	inline boost::intrusive_ptr<T> acquire_intrusive(T *px)
+	{
+		return boost::intrusive_ptr<T>(px);
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
