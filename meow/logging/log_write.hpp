@@ -51,6 +51,12 @@ namespace meow { namespace logging {
 		meow::format::fmt(sink, fmt, args...);
 	}
 
+	template<class LoggerT>
+	format::logger_sink_t<LoggerT> logger_as_sink(LoggerT& log, log_level_t lvl, line_mode_t lmode = meow::line_mode::single)
+	{
+		return format::logger_sink_t<LoggerT>(&log, lvl, lmode);
+	}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define LOG_GENERIC_LEVEL_I(l, lvl, lmode, args...) 	\
