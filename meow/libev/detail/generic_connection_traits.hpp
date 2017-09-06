@@ -260,6 +260,15 @@ namespace meow { namespace libev {
 		typedef generic_connection_traits__base<Traits>  base;
 		typedef generic_connection_traits__write<base>   write;
 
+		struct virtuals
+		{
+			template<class ContextT>
+			static bool has_buffers_to_send(ContextT *ctx)
+			{
+				return !ctx->wchain_.empty();
+			}
+		};
+
 		struct custom_op
 		{
 			template<class ContextT>

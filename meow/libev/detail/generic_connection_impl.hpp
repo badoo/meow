@@ -33,14 +33,16 @@ namespace meow { namespace libev {
 		typedef generic_connection_impl_t 		base_t; // macro at the bottom uses it
 		typedef EventsT							events_t;
 
+		typedef Traits                            connection_traits;
 		typedef generic_connection_traits<Traits> default_traits;
 
 		struct traits_t
 		{
-			typedef typename Traits::read                         read;
+			using read = typename Traits::read;
 
-			MEOW_DEFINE_NESTED_NAME_ALIAS_OR_MY_TYPE(Traits, base, typename default_traits::base);
-			MEOW_DEFINE_NESTED_NAME_ALIAS_OR_MY_TYPE(Traits, write, typename default_traits::write);
+			MEOW_DEFINE_NESTED_NAME_ALIAS_OR_MY_TYPE(Traits, base,      typename default_traits::base);
+			MEOW_DEFINE_NESTED_NAME_ALIAS_OR_MY_TYPE(Traits, virtuals,  typename default_traits::virtuals);
+			MEOW_DEFINE_NESTED_NAME_ALIAS_OR_MY_TYPE(Traits, write,     typename default_traits::write);
 			MEOW_DEFINE_NESTED_NAME_ALIAS_OR_MY_TYPE(Traits, custom_op, typename default_traits::custom_op);
 
 			MEOW_DEFINE_NESTED_NAME_ALIAS_OR_VOID(Traits, allowed_ops);
@@ -49,7 +51,7 @@ namespace meow { namespace libev {
 			MEOW_DEFINE_NESTED_NAME_ALIAS_OR_VOID(Traits, activity_tracker);
 		};
 
-		typedef libev::io_machine_t<self_t, traits_t> iomachine_t;
+		typedef libev::io_machine_t<self_t, traits_t>  iomachine_t;
 
 	public:
 		struct option_automatic_startup_io_default { enum { value = true }; };
@@ -173,9 +175,11 @@ namespace meow { namespace libev {
 			this->w_activate();
 		}
 
+	public:
+
 		virtual bool has_buffers_to_send() const
 		{
-			return !wchain_.empty();
+			return traits_t::virtuals::has_buffers_to_send(this);
 		}
 
 	public:

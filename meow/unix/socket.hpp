@@ -8,6 +8,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 
 #include <cassert>
 
@@ -22,6 +23,8 @@
     typedef struct sockaddr         os_sockaddr_t;
     typedef struct sockaddr_in      os_sockaddr_in_t;
     typedef struct sockaddr_in6     os_sockaddr_in6_t;
+
+    typedef struct sockaddr_storage os_sockaddr_storage_t;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace os_unix {

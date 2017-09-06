@@ -111,6 +111,7 @@ namespace meow { namespace libev {
 	template<class Traits>
 	struct openssl_connection_repack_traits : public Traits
 	{
+		typedef openssl_ctx_t     ssl_ctx_t;
 		typedef openssl_t         ssl_t;
 		typedef openssl_move_ptr  ssl_move_ptr;
 
@@ -122,6 +123,8 @@ namespace meow { namespace libev {
 
 		typedef typename Traits::read tr_read;
 
+	public: // io context
+
 		struct rw_context_t : public tr_read::context_t
 		{
 			buffer_move_ptr  ssl_rbuf;
@@ -130,11 +133,24 @@ namespace meow { namespace libev {
 			bool             ssl_handshake_done = false;
 		};
 
+	public: // helpers
+
 		template<class ContextT>
 		static ssl_t* ssl_from_context(ContextT *ctx)
 		{
 			return ctx->rw_ssl.get();
 		}
+
+	public: // connection-related static traits stuff
+
+		struct virtuals
+		{
+			template<class ContextT>
+			static bool has_buffers_to_send(ContextT *ctx)
+			{
+				return !(ctx->wchain_.empty() && ctx->ssl_wchain.empty());
+			}
+		};
 
 		struct read
 		{
@@ -389,6 +405,149 @@ namespace meow { namespace libev {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
+	template<class ConnectionT>
+	struct openssl_connection_bio
+	{
+		using connection_traits = typename ConnectionT::connection_traits;
+		using ssl_log_writer    = typename connection_traits::ssl_log_writer;
+
+		static int bwrite(BIO *bio, char const *buf, int buf_sz)
+		{
+			auto *ctx = (ConnectionT*)bio->ptr;
+
+			SSL_LOG_WRITE(ctx, line_mode::single, "{0}; buf: {{ {1}, {2} }", __func__, buf_sz, meow::format::as_hex_string(str_ref(buf, buf_sz)));
+
+			if (buf_sz <= 0)
+				return 0;
+
+			buffer_move_ptr b = buffer_create_with_data(buf, buf_sz);
+			ctx->ssl_wchain.push_back(move(b));
+
+			return buf_sz;
+		}
+
+		static int bread(BIO *bio, char *buf, int buf_sz)
+		{
+			auto *ctx = (ConnectionT*)bio->ptr;
+
+			SSL_LOG_WRITE(ctx, line_mode::prefix, "{0}; to buf_sz: {1} ", __func__, buf_sz);
+
+			assert(buf_sz > 0);
+			buffer_move_ptr& b = ctx->ssl_rbuf;
+
+			if (!b)
+			{
+				SSL_LOG_WRITE(ctx, line_mode::suffix, "<-- WANT_READ [no buf]");
+				BIO_set_retry_read(bio);
+				return -1;
+			}
+
+			if (b->empty())
+			{
+				b->clear();
+				SSL_LOG_WRITE(ctx, line_mode::suffix, "<-- WANT_READ [empty]");
+				BIO_set_retry_read(bio);
+				return -1;
+			}
+
+			BIO_clear_retry_flags(bio);
+
+			size_t const sz = std::min((size_t)buf_sz, b->used_size());
+			std::memcpy(buf, b->first, sz);
+			b->advance_first(sz);
+
+			SSL_LOG_WRITE(ctx, line_mode::suffix, "<-- {{ {0}, {1} }", sz, meow::format::as_hex_string(str_ref(buf, sz)));
+			return sz;
+		}
+
+		static int bputs(BIO *bio, char const *str) { return -1; }
+		static int bgets(BIO *bio, char *buf, int buf_sz) { return -1; }
+
+		static int create(BIO *bio)
+		{
+			bio->init = 1;
+			bio->shutdown = 1;
+			bio->num = 0;
+			bio->ptr = NULL;
+			bio->flags = 0;
+			return 1;
+		}
+
+		static int destroy(BIO *bio)
+		{
+			bio->init = 0;
+			bio->ptr = NULL;
+			return 1;
+		}
+
+		static long ctrl(BIO *bio, int cmd, long num, void *ptr)
+		{
+			switch (cmd) {
+				case BIO_CTRL_FLUSH: return 1;
+				default:             return 0;
+			}
+		}
+
+	//	static long callback_ctrl(BIO *, int, bio_info_cb *) { return 0; }
+	};
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+// extra functions to use with openssl connection final object
+
+	template<class ConnectionT>
+	openssl_t* openssl_connection_get_ssl(ConnectionT *conn)
+	{
+		return conn->rw_ssl.get();
+	}
+
+	template<class ConnectionT>
+	bool openssl_connection_is_initialized(ConnectionT *conn)
+	{
+		return !!conn->rw_ssl;
+	}
+
+	template<class ConnectionT>
+	void openssl_connection_init_acquire_ssl(ConnectionT *conn, openssl_move_ptr ssl)
+	{
+		using bio_t = openssl_connection_bio<ConnectionT>;
+
+		// TODO: move this to openssl_connection_bio::construct() or something
+		static BIO_METHOD openssl_connection_bio_method =
+		{
+			BIO_TYPE_SOURCE_SINK,
+			"openssl_connection_bio",
+			bio_t::bwrite,
+			bio_t::bread,
+			bio_t::bputs,
+			bio_t::bgets,
+			bio_t::ctrl,
+			bio_t::create,
+			bio_t::destroy,
+			NULL
+		};
+
+		BIO *bio = BIO_new(&openssl_connection_bio_method);
+		bio->ptr = conn;
+		SSL_set_bio(ssl.get(), bio, bio);
+
+		SSL_set_accept_state(ssl.get()); // TODO: maybe move this out as well
+
+		conn->rw_ssl = move(ssl);
+	}
+
+	template<class ConnectionT>
+	void openssl_connection_init_with_ctx(ConnectionT *conn, openssl_ctx_t *ssl_ctx)
+	{
+		// TODO: rebuild with meow::error_t
+		openssl_move_ptr ssl = openssl_create(ssl_ctx);
+		if (!ssl)
+			throw std::logic_error("ssl_create() failed: make sure you've got certificate/private-key and memory");
+
+		openssl_connection_init_acquire_ssl(conn, move(ssl));
+	}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
 	template<
 		  class Traits
 		, class Interface = generic_connection_t
@@ -399,12 +558,12 @@ namespace meow { namespace libev {
 		typedef openssl_connection_impl_t                 connection_t;
 		typedef openssl_connection_repack_traits<Traits>  connection_traits;
 
-		typedef openssl_ctx_t     ssl_ctx_t;
-		typedef openssl_move_ptr  ssl_move_ptr;
+		// typedef openssl_ctx_t     ssl_ctx_t;
+		// typedef openssl_move_ptr  ssl_move_ptr;
 
 		typedef generic_connection_impl_t<Interface, connection_traits> impl_t;
 		typedef typename impl_t::events_t                   events_t;
-		typedef typename connection_traits::ssl_log_writer  ssl_log_writer;
+		// typedef typename connection_traits::ssl_log_writer  ssl_log_writer;
 
 	public:
 
@@ -412,141 +571,6 @@ namespace meow { namespace libev {
 			: impl_t(loop, fd, ev)
 		{
 		}
-
-		virtual bool has_buffers_to_send() const
-		{
-			return !(this->wchain_.empty() && this->ssl_wchain.empty());
-		}
-
-	public:
-
-		void ssl_init(ssl_ctx_t *ssl_ctx)
-		{
-			ssl_move_ptr ssl = openssl_create(ssl_ctx);
-			if (!ssl)
-				throw std::logic_error("ssl_create() failed: make sure you've got certificate/private-key and memory");
-
-			this->ssl_init_acquire(move(ssl));
-		}
-
-		void ssl_init_acquire(ssl_move_ptr ssl)
-		{
-			static BIO_METHOD openssl_connection_bio_method =
-			{
-				BIO_TYPE_SOURCE_SINK,
-				"openssl_connection_bio",
-				connection_bio_t::bwrite,
-				connection_bio_t::bread,
-				connection_bio_t::bputs,
-				connection_bio_t::bgets,
-				connection_bio_t::ctrl,
-				connection_bio_t::create,
-				connection_bio_t::destroy,
-				NULL
-			};
-
-			BIO *bio = BIO_new(&openssl_connection_bio_method);
-			bio->ptr = this;
-			SSL_set_bio(ssl.get(), bio, bio);
-
-			SSL_set_accept_state(ssl.get());
-
-			this->rw_ssl = move(ssl);
-		}
-
-		bool ssl_is_initialized() const
-		{
-			return !!this->rw_ssl;
-		}
-
-		openssl_t* ssl_get() const
-		{
-			return this->rw_ssl.get();
-		}
-
-	private:
-
-		struct connection_bio_t
-		{
-			static int bwrite(BIO *bio, char const *buf, int buf_sz)
-			{
-				connection_t *c = (connection_t*)bio->ptr;
-
-				SSL_LOG_WRITE(c, line_mode::single, "{0}; buf: {{ {1}, {2} }", __func__, buf_sz, meow::format::as_hex_string(str_ref(buf, buf_sz)));
-
-				if (buf_sz <= 0)
-					return 0;
-
-				buffer_move_ptr b = buffer_create_with_data(buf, buf_sz);
-				c->ssl_wchain.push_back(move(b));
-
-				return buf_sz;
-			}
-
-			static int bread(BIO *bio, char *buf, int buf_sz)
-			{
-				connection_t *c = (connection_t*)bio->ptr;
-
-				SSL_LOG_WRITE(c, line_mode::prefix, "{0}; to buf_sz: {1} ", __func__, buf_sz);
-
-				assert(buf_sz > 0);
-				buffer_move_ptr& b = c->ssl_rbuf;
-
-				if (!b)
-				{
-					SSL_LOG_WRITE(c, line_mode::suffix, "<-- WANT_READ [no buf]");
-					BIO_set_retry_read(bio);
-					return -1;
-				}
-
-				if (b->empty())
-				{
-					b->clear();
-					SSL_LOG_WRITE(c, line_mode::suffix, "<-- WANT_READ [empty]");
-					BIO_set_retry_read(bio);
-					return -1;
-				}
-
-				BIO_clear_retry_flags(bio);
-
-				size_t const sz = std::min((size_t)buf_sz, b->used_size());
-				std::memcpy(buf, b->first, sz);
-				b->advance_first(sz);
-
-				SSL_LOG_WRITE(c, line_mode::suffix, "<-- {{ {0}, {1} }", sz, meow::format::as_hex_string(str_ref(buf, sz)));
-				return sz;
-			}
-
-			static int bputs(BIO *bio, char const *str) { return -1; }
-			static int bgets(BIO *bio, char *buf, int buf_sz) { return -1; }
-
-			static int create(BIO *bio)
-			{
-				bio->init = 1;
-				bio->shutdown = 1;
-				bio->num = 0;
-				bio->ptr = NULL;
-				bio->flags = 0;
-				return 1;
-			}
-
-			static int destroy(BIO *bio)
-			{
-				bio->init = 0;
-				bio->ptr = NULL;
-				return 1;
-			}
-
-			static long ctrl(BIO *bio, int cmd, long num, void *ptr)
-			{
-				switch (cmd) {
-					case BIO_CTRL_FLUSH: return 1;
-					default:             return 0;
-				}
-			}
-
-		//	static long callback_ctrl(BIO *, int, bio_info_cb *) { return 0; }
-		};
 	};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
