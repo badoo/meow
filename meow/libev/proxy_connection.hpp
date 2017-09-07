@@ -173,7 +173,9 @@ namespace meow { namespace libev {
 
 					if ('\n' != end[1]) // no LF after CR
 					{
-						// TODO: log
+						IO_LOG_WRITE(ctx, line_mode::single,
+							"proxy_connection; no LF found after CR", b->used_size());
+
 						return tr_read::consume_buffer(ctx, buffer_ref(), read_status::error);
 					}
 
@@ -243,6 +245,8 @@ namespace meow { namespace libev {
 				else if (af_s == meow::ref_lit("TCP"))
 				{
 					pd->address_family = AF_INET;
+					pd->src_addr.ss_family = pd->address_family;
+					pd->dst_addr.ss_family = pd->address_family;
 
 					auto *src_sa = (os_sockaddr_in_t*)&pd->src_addr;
 					auto *dst_sa = (os_sockaddr_in_t*)&pd->dst_addr;
@@ -264,6 +268,8 @@ namespace meow { namespace libev {
 				else if (af_s == meow::ref_lit("TCP6"))
 				{
 					pd->address_family = AF_INET6;
+					pd->src_addr.ss_family = pd->address_family;
+					pd->dst_addr.ss_family = pd->address_family;
 
 					auto *src_sa = (os_sockaddr_in6_t*)&pd->src_addr;
 					auto *dst_sa = (os_sockaddr_in6_t*)&pd->dst_addr;
@@ -296,8 +302,11 @@ namespace meow { namespace libev {
 				// feed the rest of the buffer upstream!
 				while (!b->empty())
 				{
+					IO_LOG_WRITE(ctx, line_mode::single, "{0}; buf_data: {{ {1}, {2} }",
+									__func__, b->used_size(), meow::format::as_hex_string(b->used_part()));
+
 					buffer_ref data_buf = tr_read::get_buffer(ctx);
-					if (data_buf)
+					if (!data_buf)
 					{
 						// try writing first and then poll for more
 						// FIXME: taking this branch is basically guaranteed to not process all data
