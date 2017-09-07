@@ -93,6 +93,11 @@ namespace meow { namespace format {
 		}
 	}
 
+	inline str_ref os_sockaddr_print_to(buffer_ref buf, struct sockaddr_storage const *sa, bool print_port = true)
+	{
+		return os_sockaddr_print_to(buf, (struct sockaddr const*)sa, print_port);
+	}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define MEOW_DEFINE_SOCKADDR_TYPE_TUNNEL(struct_type, arg_type, arg_call, buf_size) 	\
@@ -110,6 +115,10 @@ namespace meow { namespace format {
 	MEOW_DEFINE_SOCKADDR_TYPE_TUNNEL(struct sockaddr const*, sockaddr const*,  , INET6_ADDRSTRLEN + port_strlen);
 	MEOW_DEFINE_SOCKADDR_TYPE_TUNNEL(struct sockaddr*,       sockaddr const*,  , INET6_ADDRSTRLEN + port_strlen);
 	MEOW_DEFINE_SOCKADDR_TYPE_TUNNEL(struct sockaddr,        sockaddr const&, &, INET6_ADDRSTRLEN + port_strlen);
+
+	MEOW_DEFINE_SOCKADDR_TYPE_TUNNEL(struct sockaddr_storage const*, sockaddr_storage const*,  , INET6_ADDRSTRLEN + port_strlen);
+	MEOW_DEFINE_SOCKADDR_TYPE_TUNNEL(struct sockaddr_storage*,       sockaddr_storage const*,  , INET6_ADDRSTRLEN + port_strlen);
+	MEOW_DEFINE_SOCKADDR_TYPE_TUNNEL(struct sockaddr_storage,        sockaddr_storage const&, &, INET6_ADDRSTRLEN + port_strlen);
 
 	MEOW_DEFINE_SOCKADDR_TYPE_TUNNEL(struct sockaddr_in const*, sockaddr_in const*,  , INET_ADDRSTRLEN + port_strlen);
 	MEOW_DEFINE_SOCKADDR_TYPE_TUNNEL(struct sockaddr_in*,       sockaddr_in const*,  , INET_ADDRSTRLEN + port_strlen);
@@ -136,14 +145,17 @@ namespace meow { namespace format {
 	} 																	\
 /**/
 
-	MEOW_DEFINE_SOCKADDR_FUNCTIONS(struct sockaddr const*,  , INET6_ADDRSTRLEN + 1);
-	MEOW_DEFINE_SOCKADDR_FUNCTIONS(struct sockaddr const&, &, INET6_ADDRSTRLEN + 1);
+	MEOW_DEFINE_SOCKADDR_FUNCTIONS(struct sockaddr const*,  , INET6_ADDRSTRLEN + port_strlen);
+	MEOW_DEFINE_SOCKADDR_FUNCTIONS(struct sockaddr const&, &, INET6_ADDRSTRLEN + port_strlen);
 
-	MEOW_DEFINE_SOCKADDR_FUNCTIONS(struct sockaddr_in const*,  , INET_ADDRSTRLEN + 1);
-	MEOW_DEFINE_SOCKADDR_FUNCTIONS(struct sockaddr_in const&, &, INET_ADDRSTRLEN + 1);
+	MEOW_DEFINE_SOCKADDR_FUNCTIONS(struct sockaddr_storage const*,  , INET6_ADDRSTRLEN + port_strlen);
+	MEOW_DEFINE_SOCKADDR_FUNCTIONS(struct sockaddr_storage const&, &, INET6_ADDRSTRLEN + port_strlen);
 
-	MEOW_DEFINE_SOCKADDR_FUNCTIONS(struct sockaddr_in6 const*,  , INET6_ADDRSTRLEN + 1);
-	MEOW_DEFINE_SOCKADDR_FUNCTIONS(struct sockaddr_in6 const&, &, INET6_ADDRSTRLEN + 1);
+	MEOW_DEFINE_SOCKADDR_FUNCTIONS(struct sockaddr_in const*,  , INET_ADDRSTRLEN + port_strlen);
+	MEOW_DEFINE_SOCKADDR_FUNCTIONS(struct sockaddr_in const&, &, INET_ADDRSTRLEN + port_strlen);
+
+	MEOW_DEFINE_SOCKADDR_FUNCTIONS(struct sockaddr_in6 const*,  , INET6_ADDRSTRLEN + port_strlen);
+	MEOW_DEFINE_SOCKADDR_FUNCTIONS(struct sockaddr_in6 const&, &, INET6_ADDRSTRLEN + port_strlen);
 
 #undef MEOW_DEFINE_SOCKADDR_FUNCTIONS
 
