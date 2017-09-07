@@ -310,7 +310,12 @@ namespace meow { namespace libev {
 					{
 						// try writing first and then poll for more
 						// FIXME: taking this branch is basically guaranteed to not process all data
-						// if nothing more comes from the network
+						//  if nothing more comes from the network
+						// FIXME: actually, this branch is guaranteed to fail assertion in get_buffer()
+						//  since we're not clearing proxy_rbuf here
+						//  but returning something else is not an option either, since we'd loop infinitely in that case
+						//  so just have an assert() right here for now
+						assert(!"got loop_break from wrapped connection, can't handle it (see code comments)");
 						return rd_consume_status::loop_break;
 					}
 
@@ -333,6 +338,7 @@ namespace meow { namespace libev {
 							continue;
 
 						case rd_consume_status::closed:
+							// returning 'closed', we're guaranteed to never be called again, so we should be fine
 							return rdc_status;
 					}
 				}
