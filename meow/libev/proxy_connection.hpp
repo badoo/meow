@@ -7,8 +7,10 @@
 #define MEOW_LIBEV__PROXY_CONNECTION_HPP_
 
 #include <functional>
+#include <climits>
 
 #include <meow/buffer.hpp>
+#include <meow/defer.hpp>
 #include <meow/error.hpp>
 #include <meow/str_ref.hpp>
 #include <meow/str_ref_algo.hpp>
@@ -201,7 +203,7 @@ namespace meow { namespace libev {
 				else // wrong protocol, signal error and close the connection
 				{
 					IO_LOG_WRITE(ctx, line_mode::single,
-						"proxy_connection; bad proxy header data: {0}", meow::format::as_hex_string(b->used_part()));
+						"proxy_connection; bad proxy header data: {{ {0}, {1} }", b->used_size(), meow::format::as_hex_string(b->used_part()));
 
 					// FIXME: replace this with explicit callback to on_error() and proper error code
 					//        or even - don't callback here, just close the conn with error logging
@@ -242,7 +244,7 @@ namespace meow { namespace libev {
 					// maybe we need to zero address fields?
 					return {};
 				}
-				else if (af_s == meow::ref_lit("TCP"))
+				else if (af_s == meow::ref_lit("TCP4"))
 				{
 					pd->address_family = AF_INET;
 					pd->src_addr.ss_family = pd->address_family;
@@ -250,6 +252,9 @@ namespace meow { namespace libev {
 
 					auto *src_sa = (os_sockaddr_in_t*)&pd->src_addr;
 					auto *dst_sa = (os_sockaddr_in_t*)&pd->dst_addr;
+
+					uint32_t src_port = 0;
+					uint32_t dst_port = 0;
 
 					if (1 != inet_pton(pd->address_family, src_addr_s.str().c_str(), (void*)&src_sa->sin_addr))
 						return meow::format::fmt_err("error parsing src_addr '{0}'", src_addr_s);
@@ -263,6 +268,15 @@ namespace meow { namespace libev {
 					if (!meow::number_from_string(&dst_sa->sin_port, dst_port_s))
 						return meow::format::fmt_err("error parsing dst_port '{0}'", dst_port_s);
 
+					if (src_port > USHRT_MAX)
+						return meow::format::fmt_err("error parsing src_port '{0}', {1} >= 65535", src_port_s, src_port);
+
+					if (dst_port > USHRT_MAX)
+						return meow::format::fmt_err("error parsing dst_port '{0}', {1} >= 65535", dst_port_s, dst_port);
+
+					src_sa->sin_port = htons(src_port);
+					dst_sa->sin_port = htons(dst_port);
+
 					return {};
 				}
 				else if (af_s == meow::ref_lit("TCP6"))
@@ -274,23 +288,35 @@ namespace meow { namespace libev {
 					auto *src_sa = (os_sockaddr_in6_t*)&pd->src_addr;
 					auto *dst_sa = (os_sockaddr_in6_t*)&pd->dst_addr;
 
+					uint32_t src_port = 0;
+					uint32_t dst_port = 0;
+
 					if (1 != inet_pton(pd->address_family, src_addr_s.str().c_str(), (void*)&src_sa->sin6_addr))
 						return meow::format::fmt_err("error parsing src_addr '{0}'", src_addr_s);
 
 					if (1 != inet_pton(pd->address_family, dst_addr_s.str().c_str(), (void*)&dst_sa->sin6_addr))
 						return meow::format::fmt_err("error parsing dst_addr '{0}'", dst_addr_s);
 
-					if (!meow::number_from_string(&src_sa->sin6_port, src_port_s))
+					if (!meow::number_from_string(&src_port, src_port_s))
 						return meow::format::fmt_err("error parsing src_port '{0}'", src_port_s);
 
-					if (!meow::number_from_string(&dst_sa->sin6_port, dst_port_s))
+					if (!meow::number_from_string(&dst_port, dst_port_s))
 						return meow::format::fmt_err("error parsing dst_port '{0}'", dst_port_s);
+
+					if (src_port > USHRT_MAX)
+						return meow::format::fmt_err("error parsing src_port '{0}', {1} >= 65535", src_port_s, src_port);
+
+					if (dst_port > USHRT_MAX)
+						return meow::format::fmt_err("error parsing dst_port '{0}', {1} >= 65535", dst_port_s, dst_port);
+
+					src_sa->sin6_port = htons(src_port);
+					dst_sa->sin6_port = htons(dst_port);
 
 					return {};
 				}
 				else
 				{
-					return meow::format::fmt_err("unknown v1 af: '{0}', need TCP|TCP6|UNKNOWN", af_s);
+					return meow::format::fmt_err("unknown v1 af: '{0}', need TCP4|TCP6|UNKNOWN", af_s);
 				}
 			}
 
@@ -299,11 +325,19 @@ namespace meow { namespace libev {
 			{
 				buffer_move_ptr& b = ctx->proxy_rbuf;
 
+				MEOW_DEFER(
+					IO_LOG_WRITE(ctx, line_mode::single,
+						"proxy_connection___consume_rbuf_data; returning, buf: {0} {{ {1}, {2} }",
+						b.get(), b ? b->used_size() : 0,
+						meow::format::as_hex_string(b ? b->used_part() : buffer_ref{}));
+				);
+
 				// feed the rest of the buffer upstream!
 				while (!b->empty())
 				{
-					IO_LOG_WRITE(ctx, line_mode::single, "{0}; buf_data: {{ {1}, {2} }",
-									__func__, b->used_size(), meow::format::as_hex_string(b->used_part()));
+					IO_LOG_WRITE(ctx, line_mode::single,
+						"proxy_connection___consume_rbuf_data; buf_data: {{ {0}, {1} }",
+						__func__, b->used_size(), meow::format::as_hex_string(b->used_part()));
 
 					buffer_ref data_buf = tr_read::get_buffer(ctx);
 					if (!data_buf)
@@ -321,12 +355,20 @@ namespace meow { namespace libev {
 
 					size_t const read_sz = std::min(data_buf.size(), b->used_size());
 
+					IO_LOG_WRITE(ctx, line_mode::single,
+						"proxy_connection___consume_rbuf_data; get_buffer() returned size: {0}, b->size(): {1}, using: {2}",
+						__func__, data_buf.size(), b->used_size(), read_sz);
+
 					memcpy(data_buf.begin(), b->first, read_sz);
 					b->advance_first(read_sz);
 
 					read_status_t const rst = (read_sz == data_buf.size()) ? read_status::full : read_status::again;
 
 					rd_consume_status_t rdc_status = tr_read::consume_buffer(ctx, buffer_ref(data_buf.data(), read_sz), rst);
+
+					IO_LOG_WRITE(ctx, line_mode::single,
+						"proxy_connection___consume_rbuf_data; tr_read::consume_buffer() -> {0}", __func__, rdc_status);
+
 					switch (rdc_status) {
 						case rd_consume_status::more:
 							continue;

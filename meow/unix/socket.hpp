@@ -88,8 +88,8 @@ namespace os_unix {
 		AddressT a = {};
 		socklen_t len = sizeof(a);
 
-		if (0 == ::getpeername(fd, reinterpret_cast<struct sockaddr*>(&a), &len))
-			assert(len == sizeof(a));
+		if (0 != ::getpeername(fd, reinterpret_cast<struct sockaddr*>(&a), &len))
+			throw meow::api_call_error("getpeername(%d, %p, %u)", fd, &a, len);
 
 		return a;
 	}
@@ -100,8 +100,8 @@ namespace os_unix {
 		AddressT a = {};
 		socklen_t len = sizeof(a);
 
-		if (0 == ::getsockname(fd, reinterpret_cast<struct sockaddr*>(&a), &len))
-			assert(len == sizeof(a));
+		if (0 != ::getsockname(fd, reinterpret_cast<struct sockaddr*>(&a), &len))
+			throw meow::api_call_error("getsockname(%d, %p, %u)", fd, &a, len);
 
 		return a;
 	}
