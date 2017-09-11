@@ -34,12 +34,14 @@ namespace meow { namespace libev {
 		os_sockaddr_storage_t  dst_addr;
 	};
 
-	struct proxy_protocol_header_v2_t
+	struct proxy_protocol_message_v2_t
 	{
-		uint8_t  sig[12];
-		uint8_t  ver_cmd;
-		uint8_t  fam;
-		uint16_t len;
+		struct {
+			uint8_t  sig[12];    // magic signature
+			uint8_t  ver_cmd;    // <version:4><command:4>
+			uint8_t  fam_proto;  // <family:4 (AF_INET|AF_INET6|AF_UNIX)><transport_proto:4 (SOCK_STREAM|SOCK_DGRAM)>
+			uint16_t len;        // remaining length, not including this header
+		} hdr;
 
 		union {
 			struct {        /* for TCP/UDP over IPv4, len = 12 */
@@ -60,8 +62,10 @@ namespace meow { namespace libev {
 				uint8_t src_addr[108];
 				uint8_t dst_addr[108];
 			} unx;
-		} addr;
+		};
 	};
+	static_assert(sizeof(proxy_protocol_message_v2_t::hdr) == 16, "no padding expected");
+	static_assert(sizeof(proxy_protocol_message_v2_t) == 232, "no padding expected");
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -146,14 +150,44 @@ namespace meow { namespace libev {
 				static str_ref const v1_sig    = meow::ref_lit("PROXY "); // note the space at end
 				static size_t const  v1_maxlen = 107;
 
-				static str_ref const v2_sig = meow::ref_array("\x0D\x0A\x0D\x0A\x00\x0D\x0A\x51\x55\x49\x54\x0A");
+				static str_ref const v2_sig = meow::ref_lit("\x0D\x0A\x0D\x0A\x00\x0D\x0A\x51\x55\x49\x54\x0A");
 				static size_t const  v2_maxlen = 232; // 216 for body + 16 for header
 
 				// v2
 				if (b->used_size() >= 16 && v2_sig == str_ref{b->first, v2_sig.size()})
 				{
-					// FIXME
-					return tr_read::consume_buffer(ctx, buffer_ref(), read_status::error);
+					auto const *msg = reinterpret_cast<proxy_protocol_message_v2_t const*>(b->first);
+
+					size_t const size = 16 + ntohs(msg->hdr.len);
+					if (size > b->used_size())
+					{
+						if (size > v2_maxlen) // we do not support v2 extensions as of yet
+						{
+							IO_LOG_WRITE(ctx, line_mode::single,
+								"proxy_connection; got v2 header is too long {0} > max: {1}", size, v2_maxlen);
+							return tr_read::consume_buffer(ctx, buffer_ref(), read_status::error);
+						}
+						else
+						{
+							return rd_consume_status::more;
+						}
+					}
+
+					// got full header read
+					b->advance_first(size); // b now contains only upstream connection data
+
+					proxy_connection_data_t pdata = {};
+					auto const err = proxy_connection___parse_data_v2(&pdata, msg);
+					if (err)
+					{
+						IO_LOG_WRITE(ctx, line_mode::single, "proxy_connection; v2 message error: {0}", err);
+						return tr_read::consume_buffer(ctx, buffer_ref(), read_status::error);
+					}
+
+					ctx->proxy_got_headers = true;
+					ctx->cb_proxy_data(pdata);
+
+					return proxy_connection___consume_rbuf_data(ctx);
 				}
 				// v1
 				else if (b->used_size() >= 8 && v1_sig == str_ref{b->first, v1_sig.size()})
@@ -205,13 +239,72 @@ namespace meow { namespace libev {
 					IO_LOG_WRITE(ctx, line_mode::single,
 						"proxy_connection; bad proxy header data: {{ {0}, {1} }", b->used_size(), meow::format::as_hex_string(b->used_part()));
 
-					// FIXME: replace this with explicit callback to on_error() and proper error code
-					//        or even - don't callback here, just close the conn with error logging
 					return tr_read::consume_buffer(ctx, buffer_ref(), read_status::error);
 				}
 			}
 
 		private: // helpers
+
+			static meow::error_t proxy_connection___parse_data_v2(proxy_connection_data_t *pd, proxy_protocol_message_v2_t const *msg)
+			{
+				uint8_t const version = (msg->hdr.ver_cmd & 0xf0) >> 4;
+				if (version != 2)
+					return meow::format::fmt_err("unexpected version: {0}", version);
+
+				pd->version = version;
+
+				uint8_t const command = (msg->hdr.ver_cmd & 0x0f);
+				if (command == 0x00) // LOCAL command
+				{
+					pd->command        = command;
+					pd->address_family = AF_UNSPEC;
+					return {};
+				}
+				else if (command == 0x01) // PROXY command
+				{
+					pd->command = command;
+
+					if (msg->hdr.fam_proto == 0x11) // (AF_INET + SOCK_STREAM) = TCP4
+					{
+						pd->address_family = AF_INET;
+						pd->src_addr.ss_family = pd->address_family;
+						pd->dst_addr.ss_family = pd->address_family;
+
+						auto *src_sa = (os_sockaddr_in_t*)&pd->src_addr;
+						auto *dst_sa = (os_sockaddr_in_t*)&pd->dst_addr;
+
+						memcpy(&src_sa->sin_addr.s_addr, &msg->ipv4.src_addr, sizeof(src_sa->sin_addr.s_addr));
+						memcpy(&dst_sa->sin_addr.s_addr, &msg->ipv4.dst_addr, sizeof(dst_sa->sin_addr.s_addr));
+						src_sa->sin_port = msg->ipv4.src_port;
+						dst_sa->sin_port = msg->ipv4.dst_port;
+					}
+					else if (msg->hdr.fam_proto == 0x21) // (AF_INET6 + SOCK_STREAM) = TCP6
+					{
+						pd->address_family = AF_INET6;
+						pd->src_addr.ss_family = pd->address_family;
+						pd->dst_addr.ss_family = pd->address_family;
+
+						auto *src_sa = (os_sockaddr_in6_t*)&pd->src_addr;
+						auto *dst_sa = (os_sockaddr_in6_t*)&pd->dst_addr;
+
+						memcpy(&src_sa->sin6_addr, &msg->ipv6.src_addr, sizeof(src_sa->sin6_addr));
+						memcpy(&dst_sa->sin6_addr, &msg->ipv6.dst_addr, sizeof(dst_sa->sin6_addr));
+						src_sa->sin6_port = msg->ipv6.src_port;
+						dst_sa->sin6_port = msg->ipv6.dst_port;
+					}
+					else
+					{
+						pd->address_family = AF_UNSPEC;
+						// NOT parsing addresses, might be unix, but cba implementing that
+					}
+
+					return {};
+				}
+				else
+				{
+					return meow::format::fmt_err("unsupported command: {0}", meow::format::as_hex(command));
+				}
+			}
 
 			static meow::error_t proxy_connection___parse_data_v1(proxy_connection_data_t *pd, str_ref line)
 			{
