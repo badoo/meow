@@ -8,6 +8,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 
 #include <cassert>
 
@@ -22,6 +23,8 @@
     typedef struct sockaddr         os_sockaddr_t;
     typedef struct sockaddr_in      os_sockaddr_in_t;
     typedef struct sockaddr_in6     os_sockaddr_in6_t;
+
+    typedef struct sockaddr_storage os_sockaddr_storage_t;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace os_unix {
@@ -85,8 +88,8 @@ namespace os_unix {
 		AddressT a = {};
 		socklen_t len = sizeof(a);
 
-		if (0 == ::getpeername(fd, reinterpret_cast<struct sockaddr*>(&a), &len))
-			assert(len == sizeof(a));
+		if (0 != ::getpeername(fd, reinterpret_cast<struct sockaddr*>(&a), &len))
+			throw meow::api_call_error("getpeername(%d, %p, %u)", fd, &a, len);
 
 		return a;
 	}
@@ -97,8 +100,8 @@ namespace os_unix {
 		AddressT a = {};
 		socklen_t len = sizeof(a);
 
-		if (0 == ::getsockname(fd, reinterpret_cast<struct sockaddr*>(&a), &len))
-			assert(len == sizeof(a));
+		if (0 != ::getsockname(fd, reinterpret_cast<struct sockaddr*>(&a), &len))
+			throw meow::api_call_error("getsockname(%d, %p, %u)", fd, &a, len);
 
 		return a;
 	}
