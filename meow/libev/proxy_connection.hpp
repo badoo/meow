@@ -355,10 +355,10 @@ namespace meow { namespace libev {
 					if (1 != inet_pton(pd->address_family, dst_addr_s.str().c_str(), (void*)&dst_sa->sin_addr))
 						return meow::format::fmt_err("error parsing dst_addr '{0}'", dst_addr_s);
 
-					if (!meow::number_from_string(&src_sa->sin_port, src_port_s))
+					if (!meow::number_from_string(&src_port, src_port_s))
 						return meow::format::fmt_err("error parsing src_port '{0}'", src_port_s);
 
-					if (!meow::number_from_string(&dst_sa->sin_port, dst_port_s))
+					if (!meow::number_from_string(&dst_port, dst_port_s))
 						return meow::format::fmt_err("error parsing dst_port '{0}'", dst_port_s);
 
 					if (src_port > USHRT_MAX)
