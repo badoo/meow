@@ -88,25 +88,25 @@ namespace meow { namespace libev {
 				this->io_startup();
 		}
 
-		~generic_connection_impl_t()
+		virtual ~generic_connection_impl_t()
 		{
 			this->io_shutdown();
 		}
 
 	public:
 
-		virtual int fd() const { return io_ctx_.fd(); }
-		virtual evloop_t* loop() const { return loop_; }
+		virtual int fd() const override { return io_ctx_.fd(); }
+		virtual evloop_t* loop() const override { return loop_; }
 
-		virtual evio_t*       io_event() { return io_context()->event(); }
-		virtual io_context_t* io_context() { return &io_ctx_; }
+		virtual evio_t*       io_event() override { return io_context()->event(); }
+		virtual io_context_t* io_context() override { return &io_ctx_; }
 
 		virtual events_t* ev() const { return ev_; }
 		virtual void set_ev(events_t *ev) { ev_ = ev; }
 
 	public:
 
-		virtual void io_startup()
+		virtual void io_startup() override
 		{
 			if (this->flags->io_started)
 				return;
@@ -118,7 +118,7 @@ namespace meow { namespace libev {
 			this->flags->io_started = true;
 		}
 
-		virtual void io_shutdown()
+		virtual void io_shutdown() override
 		{
 			if (!this->flags->io_started)
 				return;
@@ -127,19 +127,19 @@ namespace meow { namespace libev {
 			this->flags->io_started = false;
 		}
 
-		virtual void io_reset()
+		virtual void io_reset() override
 		{
 			io_shutdown();
 			io_ctx_.reset_fd();
 		}
 
-		virtual void run_loop(int revents)
+		virtual void run_loop(int revents) override
 		{
 			assert(this->flags->io_started && "call io_startup() first");
 			iomachine_t::run_loop(this, revents);
 		}
 
-		virtual void activate(int revents)
+		virtual void activate(int revents) override
 		{
 			assert(this->flags->io_started && "call io_startup() first");
 			iomachine_t::activate_context(this, revents);
@@ -147,7 +147,7 @@ namespace meow { namespace libev {
 
 	public:
 
-		virtual void queue_buf(buffer_move_ptr buf)
+		virtual void queue_buf(buffer_move_ptr buf) override
 		{
 			if (!buf || buf->empty())
 				return;
@@ -155,12 +155,12 @@ namespace meow { namespace libev {
 			wchain_.push_back(move(buf));
 		}
 
-		virtual void queue_chain(buffer_chain_t& chain)
+		virtual void queue_chain(buffer_chain_t& chain) override
 		{
 			wchain_.append_chain(chain);
 		}
 
-		virtual void send(buffer_move_ptr buf)
+		virtual void send(buffer_move_ptr buf) override
 		{
 			if (!buf || buf->empty())
 				return;
@@ -189,28 +189,28 @@ namespace meow { namespace libev {
 			loop_ = loop;
 		}
 
-		virtual buffer_chain_t& wchain_ref()
+		virtual buffer_chain_t& wchain_ref() override
 		{
 			return wchain_;
 		}
 
 	public: // closing
 
-		virtual void close_after_write()
+		virtual void close_after_write() override
 		{
 			this->flags->is_closing = true;
 			this->flags->write_before_close = true;
 			this->activate(EV_WRITE /* don't add EV_CUSTOM here, it will cause a close immediately */);
 		}
 
-		virtual void close_immediately()
+		virtual void close_immediately() override
 		{
 			this->flags->is_closing = true;
 			this->flags->write_before_close = false;
 			this->activate(EV_CUSTOM);
 		}
 
-		virtual void close_syncronously()
+		virtual void close_syncronously() override
 		{
 			this->cb_sync_closed(io_close_report(io_close_reason::sync_close));
 		}

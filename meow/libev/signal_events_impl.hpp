@@ -60,7 +60,7 @@ namespace meow { namespace libev {
 			return loop_;
 		}
 
-		virtual void handle(int signo, callback_t const& cb)
+		virtual void handle(int signo, callback_t const& cb) override
 		{
 			item_t *item = item_get(signo);
 			evsignal_t *ev = &item->ev;
