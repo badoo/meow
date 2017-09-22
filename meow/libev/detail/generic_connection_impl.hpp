@@ -7,6 +7,7 @@
 #define MEOW_LIBEV_DETAIL__GENERIC_CONNECTION_IMPL_HPP_
 
 #include <stdexcept>
+#include <type_traits>
 
 #include <meow/unix/fcntl.hpp>
 #include <meow/utility/nested_name_alias.hpp>
