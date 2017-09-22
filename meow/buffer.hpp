@@ -171,7 +171,7 @@ namespace meow {
 
 		buffer_move_ptr buf = create_buffer(data_len);
 		copy_to_buffer(*buf, data, data_len);
-		return move(buf);
+		return buf;
 	}
 
 	inline buffer_move_ptr buffer_create_with_data(void const *data, void const *data_end)

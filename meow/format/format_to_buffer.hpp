@@ -18,7 +18,7 @@ namespace meow { namespace format {
 	{
 		buffer_move_ptr buf = create_buffer(initial_sz);
 		fmt(*buf, fmt_str, args...);
-		return move(buf);
+		return buf;
 	}
 
 	template<class... A>
@@ -26,7 +26,7 @@ namespace meow { namespace format {
 	{
 		buffer_move_ptr buf = create_buffer(initial_sz);
 		write(*buf, args...);
-		return move(buf);
+		return buf;
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
