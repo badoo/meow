@@ -143,11 +143,11 @@ namespace meow { namespace tree {
 	template<class Function>
 	inline void path_walk(node_t *root, str_ref const& path, Function const& function)
 	{
-		path_parts_range_t const parts_r = path_into_parts(path);
+		path_parts_t const parts = path_into_parts(path);
 
-		for(str_ref const& name : parts_r)
+		for(str_ref const& name : parts)
 		{
-			if (!function(root, parts_r, name))
+			if (!function(root, parts, name))
 				break;
 		}
 	}
