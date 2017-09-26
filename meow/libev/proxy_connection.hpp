@@ -311,6 +311,25 @@ namespace meow { namespace libev {
 
 			static meow::error_t proxy_connection___parse_data_v1(proxy_connection_data_t *pd, str_ref line)
 			{
+				// parser helper
+				auto const parse_port = [](uint32_t *out_port, str_ref port_s) -> meow::error_t
+				{
+					// FIXME: this depends on current locale
+
+					bool const is_allowed_digit = (port_s[0] >= '1') && (port_s[0] <= '9');
+					if (!is_allowed_digit)
+						return meow::format::fmt_err("bad leading chars, need [1-9]");
+
+					if (!meow::number_from_string(out_port, port_s))
+						return meow::format::fmt_err("string is not a number");
+
+					if (*out_port > USHRT_MAX)
+						return meow::format::fmt_err("{0} >= 65535", *out_port);
+
+					return {};
+				};
+
+				// XXX: simple split allows multiple consecutive spaces, which is against the spec, but whatever
 				auto parts = meow::split_ex(line, " ");
 
 				constexpr size_t const n_parts_expected = 5; // family + 2 addrs + 2 ports
@@ -335,9 +354,6 @@ namespace meow { namespace libev {
 				if (af_s == meow::ref_lit("UNKNOWN"))
 				{
 					pd->address_family = AF_UNSPEC;
-
-					// i've got no idea how to parse addresses/ports without knowing af
-					// maybe we need to zero address fields?
 					return {};
 				}
 				else if (af_s == meow::ref_lit("TCP4"))
@@ -358,17 +374,11 @@ namespace meow { namespace libev {
 					if (1 != inet_pton(pd->address_family, dst_addr_s.str().c_str(), (void*)&dst_sa->sin_addr))
 						return meow::format::fmt_err("error parsing dst_addr '{0}'", dst_addr_s);
 
-					if (!meow::number_from_string(&src_port, src_port_s))
-						return meow::format::fmt_err("error parsing src_port '{0}'", src_port_s);
+					if (auto const err = parse_port(&src_port, src_port_s))
+						return meow::format::fmt_err("error parsing src_port '{0}': {1}", src_port_s, err);
 
-					if (!meow::number_from_string(&dst_port, dst_port_s))
-						return meow::format::fmt_err("error parsing dst_port '{0}'", dst_port_s);
-
-					if (src_port > USHRT_MAX)
-						return meow::format::fmt_err("error parsing src_port '{0}', {1} >= 65535", src_port_s, src_port);
-
-					if (dst_port > USHRT_MAX)
-						return meow::format::fmt_err("error parsing dst_port '{0}', {1} >= 65535", dst_port_s, dst_port);
+					if (auto const err = parse_port(&dst_port, dst_port_s))
+						return meow::format::fmt_err("error parsing dst_port '{0}': {1}", dst_port_s, err);
 
 					src_sa->sin_port = htons(src_port);
 					dst_sa->sin_port = htons(dst_port);
@@ -393,17 +403,11 @@ namespace meow { namespace libev {
 					if (1 != inet_pton(pd->address_family, dst_addr_s.str().c_str(), (void*)&dst_sa->sin6_addr))
 						return meow::format::fmt_err("error parsing dst_addr '{0}'", dst_addr_s);
 
-					if (!meow::number_from_string(&src_port, src_port_s))
-						return meow::format::fmt_err("error parsing src_port '{0}'", src_port_s);
+					if (auto const err = parse_port(&src_port, src_port_s))
+						return meow::format::fmt_err("error parsing src_port '{0}': {1}", src_port_s, err);
 
-					if (!meow::number_from_string(&dst_port, dst_port_s))
-						return meow::format::fmt_err("error parsing dst_port '{0}'", dst_port_s);
-
-					if (src_port > USHRT_MAX)
-						return meow::format::fmt_err("error parsing src_port '{0}', {1} >= 65535", src_port_s, src_port);
-
-					if (dst_port > USHRT_MAX)
-						return meow::format::fmt_err("error parsing dst_port '{0}', {1} >= 65535", dst_port_s, dst_port);
+					if (auto const err = parse_port(&dst_port, dst_port_s))
+						return meow::format::fmt_err("error parsing dst_port '{0}': {1}", dst_port_s, err);
 
 					src_sa->sin6_port = htons(src_port);
 					dst_sa->sin6_port = htons(dst_port);
