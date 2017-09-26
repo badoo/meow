@@ -195,14 +195,15 @@ namespace meow { namespace libev {
 				// v1
 				else if (b->used_size() >= 8 && v1_sig == str_ref{b->first, v1_sig.size()})
 				{
-					char const *end = (char const*)memchr(b->first, '\r', b->used_size() - 1);
-					if (end == NULL) // no \r yet, not full header read, or error
+					size_t const header_len = std::min(b->used_size(), v1_maxlen);
+
+					char const *end = (char const*)memchr(b->first, '\r', header_len - 1);
+					if (end == NULL) // no \r yet or not full header read
 					{
-						// we have enough space in buffer for the whole header
-						if (b->used_size() >= v1_maxlen)
+						if (b->used_size() >= v1_maxlen) // header fully read, but no '\r' there, bail
 						{
 							IO_LOG_WRITE(ctx, line_mode::single,
-								"proxy_connection; got text line longer than max ({0} >= {1})", b->used_size(), v1_maxlen);
+								"proxy_connection; bad header, too long ({0} >= {1})", b->used_size(), v1_maxlen);
 
 							return tr_read::consume_buffer(ctx, buffer_ref(), read_status::error);
 						}
@@ -212,8 +213,7 @@ namespace meow { namespace libev {
 
 					if ('\n' != end[1]) // no LF after CR
 					{
-						IO_LOG_WRITE(ctx, line_mode::single,
-							"proxy_connection; no LF found after CR", b->used_size());
+						IO_LOG_WRITE(ctx, line_mode::single, "proxy_connection; bad header, no LF found after CR");
 
 						return tr_read::consume_buffer(ctx, buffer_ref(), read_status::error);
 					}
