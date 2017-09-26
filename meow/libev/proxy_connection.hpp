@@ -139,6 +139,9 @@ namespace meow { namespace libev {
 				if (read_status::error == r_status)
 					return tr_read::consume_buffer(ctx, buffer_ref(), r_status);
 
+				if (read_status::closed == r_status)
+					return tr_read::consume_buffer(ctx, buffer_ref(), r_status);
+
 				if (read_status::again == r_status && read_part.empty())
 					return rd_consume_status::loop_break;
 
@@ -196,10 +199,10 @@ namespace meow { namespace libev {
 					if (end == NULL) // no \r yet, not full header read, or error
 					{
 						// we have enough space in buffer for the whole header
-						if (b->used_size() > v1_maxlen)
+						if (b->used_size() >= v1_maxlen)
 						{
 							IO_LOG_WRITE(ctx, line_mode::single,
-								"proxy_connection; got text line longer than max ({0} > {1})", b->used_size(), v1_maxlen);
+								"proxy_connection; got text line longer than max ({0} >= {1})", b->used_size(), v1_maxlen);
 
 							return tr_read::consume_buffer(ctx, buffer_ref(), read_status::error);
 						}
