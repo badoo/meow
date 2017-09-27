@@ -136,14 +136,24 @@ namespace meow { namespace libev {
 					return tr_read::consume_buffer(ctx, read_part, r_status);
 				}
 
+				// now we might have our connection dead already
 				if (read_status::error == r_status)
-					return tr_read::consume_buffer(ctx, buffer_ref(), r_status);
+				{
+					MEOW_LIBEV_GENERIC_CONNECTION_CTX_CALLBACK(ctx, on_closed, io_close_report(io_close_reason::io_error, errno));
+					return rd_consume_status::closed;
+				}
 
+				// or closed
 				if (read_status::closed == r_status)
-					return tr_read::consume_buffer(ctx, buffer_ref(), r_status);
+				{
+					MEOW_LIBEV_GENERIC_CONNECTION_CTX_CALLBACK(ctx, on_closed, io_close_report(io_close_reason::peer_close));
+					return rd_consume_status::closed;
+				}
 
 				if (read_status::again == r_status && read_part.empty())
 					return rd_consume_status::loop_break;
+
+				// ok, looks like we've read something and connection is still alive
 
 				buffer_move_ptr& b = ctx->proxy_rbuf;
 				b->advance_last(read_part.size());
@@ -190,7 +200,7 @@ namespace meow { namespace libev {
 					ctx->proxy_got_headers = true;
 					ctx->cb_proxy_data(pdata);
 
-					return proxy_connection___consume_rbuf_data(ctx);
+					return proxy_connection___consume_rbuf_data(ctx, r_status);
 				}
 				// v1
 				else if (b->used_size() >= 8 && v1_sig == str_ref{b->first, v1_sig.size()})
@@ -207,8 +217,10 @@ namespace meow { namespace libev {
 
 							return tr_read::consume_buffer(ctx, buffer_ref(), read_status::error);
 						}
-
-						return rd_consume_status::more;
+						else
+						{
+							return rd_consume_status::more;
+						}
 					}
 
 					if ('\n' != end[1]) // no LF after CR
@@ -235,7 +247,7 @@ namespace meow { namespace libev {
 					ctx->proxy_got_headers = true;
 					ctx->cb_proxy_data(pdata);
 
-					return proxy_connection___consume_rbuf_data(ctx);
+					return proxy_connection___consume_rbuf_data(ctx, r_status);
 				}
 				else // wrong protocol, signal error and close the connection
 				{
@@ -421,7 +433,7 @@ namespace meow { namespace libev {
 			}
 
 			template<class ContextT>
-			static rd_consume_status_t proxy_connection___consume_rbuf_data(ContextT *ctx)
+			static rd_consume_status_t proxy_connection___consume_rbuf_data(ContextT *ctx, read_status_t r_status)
 			{
 				buffer_move_ptr& b = ctx->proxy_rbuf;
 
@@ -462,7 +474,10 @@ namespace meow { namespace libev {
 					memcpy(data_buf.begin(), b->first, read_sz);
 					b->advance_first(read_sz);
 
-					read_status_t const rst = (read_sz == data_buf.size()) ? read_status::full : read_status::again;
+					// since we're re-buffering data, must provide full or again
+					read_status_t const rst = (read_sz == data_buf.size())
+												? read_status::full
+												: read_status::again;
 
 					rd_consume_status_t rdc_status = tr_read::consume_buffer(ctx, buffer_ref(data_buf.data(), read_sz), rst);
 
