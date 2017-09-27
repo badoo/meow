@@ -10,7 +10,6 @@
 #include <climits>
 
 #include <meow/buffer.hpp>
-#include <meow/defer.hpp>
 #include <meow/error.hpp>
 #include <meow/str_ref.hpp>
 #include <meow/str_ref_algo.hpp>
@@ -437,18 +436,11 @@ namespace meow { namespace libev {
 			{
 				buffer_move_ptr& b = ctx->proxy_rbuf;
 
-				MEOW_DEFER(
-					IO_LOG_WRITE(ctx, line_mode::single,
-						"proxy_connection___consume_rbuf_data; returning, buf: {0} {{ {1}, {2} }",
-						b.get(), b ? b->used_size() : 0,
-						meow::format::as_hex_string(b ? b->used_part() : buffer_ref{}));
-				);
-
 				// feed the rest of the buffer upstream!
 				while (!b->empty())
 				{
 					IO_LOG_WRITE(ctx, line_mode::single,
-						"proxy_connection___consume_rbuf_data; buf_data: {{ {0}, {1} }",
+						"{0}; remaining buf_data: {{ {1}, {2} }",
 						__func__, b->used_size(), meow::format::as_hex_string(b->used_part()));
 
 					buffer_ref data_buf = tr_read::get_buffer(ctx);
@@ -467,10 +459,6 @@ namespace meow { namespace libev {
 
 					size_t const read_sz = std::min(data_buf.size(), b->used_size());
 
-					IO_LOG_WRITE(ctx, line_mode::single,
-						"proxy_connection___consume_rbuf_data; get_buffer() returned size: {0}, b->size(): {1}, using: {2}",
-						__func__, data_buf.size(), b->used_size(), read_sz);
-
 					memcpy(data_buf.begin(), b->first, read_sz);
 					b->advance_first(read_sz);
 
@@ -480,10 +468,6 @@ namespace meow { namespace libev {
 												: read_status::again;
 
 					rd_consume_status_t rdc_status = tr_read::consume_buffer(ctx, buffer_ref(data_buf.data(), read_sz), rst);
-
-					IO_LOG_WRITE(ctx, line_mode::single,
-						"proxy_connection___consume_rbuf_data; tr_read::consume_buffer() -> {0}", __func__, rdc_status);
-
 					switch (rdc_status) {
 						case rd_consume_status::more:
 							continue;
