@@ -10,7 +10,6 @@
 #include <climits>
 
 #include <meow/buffer.hpp>
-#include <meow/defer.hpp>
 #include <meow/error.hpp>
 #include <meow/str_ref.hpp>
 #include <meow/str_ref_algo.hpp>
@@ -136,11 +135,24 @@ namespace meow { namespace libev {
 					return tr_read::consume_buffer(ctx, read_part, r_status);
 				}
 
+				// now we might have our connection dead already
 				if (read_status::error == r_status)
-					return tr_read::consume_buffer(ctx, buffer_ref(), r_status);
+				{
+					MEOW_LIBEV_GENERIC_CONNECTION_CTX_CALLBACK(ctx, on_closed, io_close_report(io_close_reason::io_error, errno));
+					return rd_consume_status::closed;
+				}
+
+				// or closed
+				if (read_status::closed == r_status)
+				{
+					MEOW_LIBEV_GENERIC_CONNECTION_CTX_CALLBACK(ctx, on_closed, io_close_report(io_close_reason::peer_close));
+					return rd_consume_status::closed;
+				}
 
 				if (read_status::again == r_status && read_part.empty())
 					return rd_consume_status::loop_break;
+
+				// ok, looks like we've read something and connection is still alive
 
 				buffer_move_ptr& b = ctx->proxy_rbuf;
 				b->advance_last(read_part.size());
@@ -187,30 +199,32 @@ namespace meow { namespace libev {
 					ctx->proxy_got_headers = true;
 					ctx->cb_proxy_data(pdata);
 
-					return proxy_connection___consume_rbuf_data(ctx);
+					return proxy_connection___consume_rbuf_data(ctx, r_status);
 				}
 				// v1
 				else if (b->used_size() >= 8 && v1_sig == str_ref{b->first, v1_sig.size()})
 				{
-					char const *end = (char const*)memchr(b->first, '\r', b->used_size() - 1);
-					if (end == NULL) // no \r yet, not full header read, or error
+					size_t const header_len = std::min(b->used_size(), v1_maxlen);
+
+					char const *end = (char const*)memchr(b->first, '\r', header_len - 1);
+					if (end == NULL) // no \r yet or not full header read
 					{
-						// we have enough space in buffer for the whole header
-						if (b->used_size() > v1_maxlen)
+						if (b->used_size() >= v1_maxlen) // header fully read, but no '\r' there, bail
 						{
 							IO_LOG_WRITE(ctx, line_mode::single,
-								"proxy_connection; got text line longer than max ({0} > {1})", b->used_size(), v1_maxlen);
+								"proxy_connection; bad header, too long ({0} >= {1})", b->used_size(), v1_maxlen);
 
 							return tr_read::consume_buffer(ctx, buffer_ref(), read_status::error);
 						}
-
-						return rd_consume_status::more;
+						else
+						{
+							return rd_consume_status::more;
+						}
 					}
 
 					if ('\n' != end[1]) // no LF after CR
 					{
-						IO_LOG_WRITE(ctx, line_mode::single,
-							"proxy_connection; no LF found after CR", b->used_size());
+						IO_LOG_WRITE(ctx, line_mode::single, "proxy_connection; bad header, no LF found after CR");
 
 						return tr_read::consume_buffer(ctx, buffer_ref(), read_status::error);
 					}
@@ -232,7 +246,7 @@ namespace meow { namespace libev {
 					ctx->proxy_got_headers = true;
 					ctx->cb_proxy_data(pdata);
 
-					return proxy_connection___consume_rbuf_data(ctx);
+					return proxy_connection___consume_rbuf_data(ctx, r_status);
 				}
 				else // wrong protocol, signal error and close the connection
 				{
@@ -308,6 +322,25 @@ namespace meow { namespace libev {
 
 			static meow::error_t proxy_connection___parse_data_v1(proxy_connection_data_t *pd, str_ref line)
 			{
+				// parser helper
+				auto const parse_port = [](uint32_t *out_port, str_ref port_s) -> meow::error_t
+				{
+					// FIXME: this depends on current locale
+
+					bool const is_allowed_digit = (port_s[0] >= '1') && (port_s[0] <= '9');
+					if (!is_allowed_digit)
+						return meow::format::fmt_err("bad leading chars, need [1-9]");
+
+					if (!meow::number_from_string(out_port, port_s))
+						return meow::format::fmt_err("string is not a number");
+
+					if (*out_port > USHRT_MAX)
+						return meow::format::fmt_err("{0} >= 65535", *out_port);
+
+					return {};
+				};
+
+				// XXX: simple split allows multiple consecutive spaces, which is against the spec, but whatever
 				auto parts = meow::split_ex(line, " ");
 
 				constexpr size_t const n_parts_expected = 5; // family + 2 addrs + 2 ports
@@ -332,9 +365,6 @@ namespace meow { namespace libev {
 				if (af_s == meow::ref_lit("UNKNOWN"))
 				{
 					pd->address_family = AF_UNSPEC;
-
-					// i've got no idea how to parse addresses/ports without knowing af
-					// maybe we need to zero address fields?
 					return {};
 				}
 				else if (af_s == meow::ref_lit("TCP4"))
@@ -355,17 +385,11 @@ namespace meow { namespace libev {
 					if (1 != inet_pton(pd->address_family, dst_addr_s.str().c_str(), (void*)&dst_sa->sin_addr))
 						return meow::format::fmt_err("error parsing dst_addr '{0}'", dst_addr_s);
 
-					if (!meow::number_from_string(&src_port, src_port_s))
-						return meow::format::fmt_err("error parsing src_port '{0}'", src_port_s);
+					if (auto const err = parse_port(&src_port, src_port_s))
+						return meow::format::fmt_err("error parsing src_port '{0}': {1}", src_port_s, err);
 
-					if (!meow::number_from_string(&dst_port, dst_port_s))
-						return meow::format::fmt_err("error parsing dst_port '{0}'", dst_port_s);
-
-					if (src_port > USHRT_MAX)
-						return meow::format::fmt_err("error parsing src_port '{0}', {1} >= 65535", src_port_s, src_port);
-
-					if (dst_port > USHRT_MAX)
-						return meow::format::fmt_err("error parsing dst_port '{0}', {1} >= 65535", dst_port_s, dst_port);
+					if (auto const err = parse_port(&dst_port, dst_port_s))
+						return meow::format::fmt_err("error parsing dst_port '{0}': {1}", dst_port_s, err);
 
 					src_sa->sin_port = htons(src_port);
 					dst_sa->sin_port = htons(dst_port);
@@ -390,17 +414,11 @@ namespace meow { namespace libev {
 					if (1 != inet_pton(pd->address_family, dst_addr_s.str().c_str(), (void*)&dst_sa->sin6_addr))
 						return meow::format::fmt_err("error parsing dst_addr '{0}'", dst_addr_s);
 
-					if (!meow::number_from_string(&src_port, src_port_s))
-						return meow::format::fmt_err("error parsing src_port '{0}'", src_port_s);
+					if (auto const err = parse_port(&src_port, src_port_s))
+						return meow::format::fmt_err("error parsing src_port '{0}': {1}", src_port_s, err);
 
-					if (!meow::number_from_string(&dst_port, dst_port_s))
-						return meow::format::fmt_err("error parsing dst_port '{0}'", dst_port_s);
-
-					if (src_port > USHRT_MAX)
-						return meow::format::fmt_err("error parsing src_port '{0}', {1} >= 65535", src_port_s, src_port);
-
-					if (dst_port > USHRT_MAX)
-						return meow::format::fmt_err("error parsing dst_port '{0}', {1} >= 65535", dst_port_s, dst_port);
+					if (auto const err = parse_port(&dst_port, dst_port_s))
+						return meow::format::fmt_err("error parsing dst_port '{0}': {1}", dst_port_s, err);
 
 					src_sa->sin6_port = htons(src_port);
 					dst_sa->sin6_port = htons(dst_port);
@@ -414,22 +432,15 @@ namespace meow { namespace libev {
 			}
 
 			template<class ContextT>
-			static rd_consume_status_t proxy_connection___consume_rbuf_data(ContextT *ctx)
+			static rd_consume_status_t proxy_connection___consume_rbuf_data(ContextT *ctx, read_status_t r_status)
 			{
 				buffer_move_ptr& b = ctx->proxy_rbuf;
-
-				MEOW_DEFER(
-					IO_LOG_WRITE(ctx, line_mode::single,
-						"proxy_connection___consume_rbuf_data; returning, buf: {0} {{ {1}, {2} }",
-						b.get(), b ? b->used_size() : 0,
-						meow::format::as_hex_string(b ? b->used_part() : buffer_ref{}));
-				);
 
 				// feed the rest of the buffer upstream!
 				while (!b->empty())
 				{
 					IO_LOG_WRITE(ctx, line_mode::single,
-						"proxy_connection___consume_rbuf_data; buf_data: {{ {0}, {1} }",
+						"{0}; remaining buf_data: {{ {1}, {2} }",
 						__func__, b->used_size(), meow::format::as_hex_string(b->used_part()));
 
 					buffer_ref data_buf = tr_read::get_buffer(ctx);
@@ -448,20 +459,15 @@ namespace meow { namespace libev {
 
 					size_t const read_sz = std::min(data_buf.size(), b->used_size());
 
-					IO_LOG_WRITE(ctx, line_mode::single,
-						"proxy_connection___consume_rbuf_data; get_buffer() returned size: {0}, b->size(): {1}, using: {2}",
-						__func__, data_buf.size(), b->used_size(), read_sz);
-
 					memcpy(data_buf.begin(), b->first, read_sz);
 					b->advance_first(read_sz);
 
-					read_status_t const rst = (read_sz == data_buf.size()) ? read_status::full : read_status::again;
+					// since we're re-buffering data, must provide full or again
+					read_status_t const rst = (read_sz == data_buf.size())
+												? read_status::full
+												: read_status::again;
 
 					rd_consume_status_t rdc_status = tr_read::consume_buffer(ctx, buffer_ref(data_buf.data(), read_sz), rst);
-
-					IO_LOG_WRITE(ctx, line_mode::single,
-						"proxy_connection___consume_rbuf_data; tr_read::consume_buffer() -> {0}", __func__, rdc_status);
-
 					switch (rdc_status) {
 						case rd_consume_status::more:
 							continue;

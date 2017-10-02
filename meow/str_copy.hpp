@@ -166,7 +166,7 @@ namespace meow {
 		bool empty() const { return !n_; }
 		size_type size() const { return n_; }
 		size_type length() const { return n_; }
-		int c_length() const { assert(n_ < size_type(std::numeric_limits<int>::max)); return n_; }
+		int c_length() const { assert(n_ < size_type(std::numeric_limits<int>::max())); return n_; }
 
 	public: // operators
 
