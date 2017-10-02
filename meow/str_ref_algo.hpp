@@ -14,6 +14,7 @@
 #include <algorithm> 	// for std::find
 #include <iterator>     // next/prior
 #include <vector>
+#include <functional>
 
 #include "str_ref.hpp"
 
