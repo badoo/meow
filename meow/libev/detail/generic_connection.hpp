@@ -50,6 +50,15 @@ namespace meow { namespace libev {
 
 		flags_t flags;
 
+	public: // stats
+
+		struct io_stats_t
+		{
+			uint64_t bytes_read    = 0; // not implemmented
+			uint64_t bytes_written = 0;
+		};
+		io_stats_t io_stats;
+
 	public: // io
 
 		virtual void io_startup() = 0;   // activate full-duplex io_machine

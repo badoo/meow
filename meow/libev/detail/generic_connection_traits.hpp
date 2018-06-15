@@ -136,6 +136,7 @@ namespace meow { namespace libev {
 						}
 
 						offset += n;
+						ctx->io_stats.bytes_written += n;
 					}
 				}
 
@@ -220,6 +221,8 @@ namespace meow { namespace libev {
 					return wr_complete_status::closed;
 
 				default:
+					ctx->io_stats.bytes_written += n;
+
 					size_t len = n;
 					while (len > 0 && len >= bufs->iov_len)
 					{

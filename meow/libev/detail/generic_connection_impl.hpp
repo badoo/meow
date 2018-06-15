@@ -39,7 +39,36 @@ namespace meow { namespace libev {
 
 		struct traits_t
 		{
-			using read = typename Traits::read;
+			struct read
+			{
+				template<class ContextT>
+				static buffer_ref get_buffer(ContextT *ctx)
+				{
+					return Traits::read::get_buffer(ctx);
+				}
+
+				template<class ContextT>
+				static rd_consume_status_t consume_buffer(ContextT* ctx, buffer_ref read_part, read_status_t r_status)
+				{
+					switch (r_status)
+					{
+						case read_status::error:
+							break;
+
+						case read_status::closed:
+						case read_status::again:
+						case read_status::full:
+							ctx->io_stats.bytes_read += read_part.size();
+							break;
+
+						default:
+							assert(!"must not be reached");
+							break;
+					}
+
+					return Traits::read::consume_buffer(ctx, read_part, r_status);
+				}
+			};
 
 			MEOW_DEFINE_NESTED_NAME_ALIAS_OR_MY_TYPE(Traits, base,      typename default_traits::base);
 			MEOW_DEFINE_NESTED_NAME_ALIAS_OR_MY_TYPE(Traits, virtuals,  typename default_traits::virtuals);
