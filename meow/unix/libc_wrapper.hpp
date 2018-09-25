@@ -8,7 +8,7 @@
 
 /*
 DESCRIPTION:
-	define a function that wraps a function that 
+	define a function that wraps a function that
 	returns -1 on error and >=0 on success,
 	(most unix libc functions have this semantics)
 
@@ -108,7 +108,6 @@ MEOW_DEFINE_LIBC_THROWING_WRAPPER(int, inotify_init)
 #define MEOW_DEFINE_LIBC_THROWING_WRAPPER_IMPL(res_t, syscall_name, n, types, formats)	\
 	inline res_t BOOST_PP_CAT(syscall_name, _ex)									\
 		(MEOW_LIBCWRAP_ENUM_ARGS(n, types))											\
-		throw(meow::api_call_error)													\
 	{																				\
 		res_t res = ::syscall_name(BOOST_PP_ENUM_PARAMS(n, arg));					\
 		if (-1 == res)																\
