@@ -15,6 +15,7 @@
 #include <meow/api_call_error.hpp>
 #include <meow/unix/libc_wrapper.hpp>
 #include <meow/format/format_to_string.hpp>
+#include <meow/format/inserter/sockaddr.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
