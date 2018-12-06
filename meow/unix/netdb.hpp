@@ -71,23 +71,10 @@ namespace os_unix {
 				  os_addrinfo_list_ptr *ai_list // outparameter
 				, char const *host
 				, char const *port
-				, int proto_family
-				, int socktype
-				, int proto = 0
+				, struct addrinfo const& hints
 			)
 	{
 		assert(NULL != ai_list);
-
-		struct addrinfo hints = {};
-		hints.ai_family = proto_family;
-		hints.ai_socktype = socktype;
-		hints.ai_protocol = proto;
-
-		if (host && '*' == *host)
-			host = NULL;
-
-		if (NULL == host)
-			hints.ai_flags |= AI_PASSIVE;
 
 		struct addrinfo *result = NULL;
 		int r = ::getaddrinfo(host, port, &hints, &result);
@@ -101,7 +88,54 @@ namespace os_unix {
 		return r;
 	}
 
+
+	// returns: the getaddrinfo() error code
+	//       == 0 -> ok, ai_list outparameter is now filled with stuff
+	//       != 0 -> error, call gai_strerror() to get error string
+	inline int getaddrinfo_ex(
+				  os_addrinfo_list_ptr *ai_list // outparameter
+				, char const *host
+				, char const *port
+				, int proto_family
+				, int socktype
+				, int proto = 0
+			)
+	{
+		struct addrinfo hints = {};
+		hints.ai_family = proto_family;
+		hints.ai_socktype = socktype;
+		hints.ai_protocol = proto;
+
+		if (host && '*' == *host)
+			host = NULL;
+
+		if (NULL == host)
+			hints.ai_flags |= AI_PASSIVE;
+
+		return getaddrinfo_ex(ai_list, host, port, hints);
+	}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
+
+	// returns: addrinfo call result, empty pointer if not found
+	// throws: api_call_error_ex on real errors
+	inline os_addrinfo_list_ptr getaddrinfo_ex(
+			  char const *host
+			, char const *port
+			, struct addrinfo const& hints
+			)
+	{
+		os_addrinfo_list_ptr ai_list;
+
+		int r = getaddrinfo_ex(&ai_list, host, port, hints);
+		if (0 != r)
+			throw meow::api_call_error_ex<getaddrinfo_error_printer_t>(
+					  r, "getaddrinfo_ex('%s', '%s', PF = %d, socktype = %d, proto = %d)"
+					, host, port, hints.ai_family, hints.ai_socktype, hints.ai_protocol
+				);
+
+		return ai_list;
+	}
 
 	// if (NULL == host) -> assumes everything i.e. INADDR_ANY for IPv4
 	// returns: addrinfo call result, empty pointer if not found
