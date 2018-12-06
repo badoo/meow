@@ -76,7 +76,11 @@ namespace meow { namespace format {
 
 		char *p = (char*)res;
 		p += std::strlen(p);
-		p += snprintf(p, buf.end() - p, ".%hu", ntohs(sa->sin6_port));
+
+		if (print_port)
+		{
+			p += snprintf(p, buf.end() - p, ".%hu", ntohs(sa->sin6_port));
+		}
 
 		return str_ref(res, p);
 	}
