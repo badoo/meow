@@ -30,9 +30,7 @@ namespace meow {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	inline
-	movable::fn_result<demangled_string_t>
-	gcc_demangle_name(char const *name)
+	inline demangled_string_t gcc_demangle_name(char const *name)
 	{
 		int status = 0;
 		demangled_string_t res(abi::__cxa_demangle(name, NULL, NULL, &status));

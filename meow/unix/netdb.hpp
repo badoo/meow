@@ -99,12 +99,14 @@ namespace os_unix {
 				, int proto_family
 				, int socktype
 				, int proto = 0
+				, int flags = 0
 			)
 	{
 		struct addrinfo hints = {};
 		hints.ai_family = proto_family;
 		hints.ai_socktype = socktype;
 		hints.ai_protocol = proto;
+		hints.ai_flags    = flags;
 
 		if (host && '*' == *host)
 			host = NULL;

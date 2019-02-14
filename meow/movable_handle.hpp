@@ -10,15 +10,12 @@
 
 #include <boost/call_traits.hpp>
 
-#include <meow/movable.hpp>
-
 ////////////////////////////////////////////////////////////////////////////////////////////////
 namespace meow {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 	template<class Traits>
 	struct movable_handle
-		: public movable::move_enabled<movable_handle<Traits> >
 	{
 		typedef movable_handle		self_type;
 		typedef Traits				traits_type;
@@ -37,23 +34,6 @@ namespace meow {
 
 		handle_type handle_;
 
-	private:
-
-		movable_handle(movable_handle&);
-
-		movable_handle(movable::constant<self_type> other);
-/*
-		template<class T> struct cant_move_from_const;
-
-		template<class T>
-		struct cant_move_from_const<const movable_handle<T> > { 
-			typedef typename self_type::error type; 
-		};
-
-		// the const lvalue move catcher, disallow that
-		template<class U>
-		movable_handle(U&, typename cant_move_from_const<U>::type * = 0) {}
-*/
 	public:
 
 		movable_handle()
@@ -66,19 +46,14 @@ namespace meow {
 		{
 		}
 
-		// move construction
-		movable_handle(movable::temporary<self_type> other)
-			: handle_(other.get().release())
+		movable_handle(movable_handle&& other)
+			: handle_(other.release())
 		{
 		}
-/*
-		// copy construction from temporary, see the lvalue const catcher above
-		movable_handle(movable_handle const& other)
-			: movable_handle::move_base_t()
-			, handle_(const_cast<self_type&>(other).release())
-		{
-		}
-*/
+
+		movable_handle(movable_handle&) = delete;
+		movable_handle(movable_handle const&) = delete;
+
 		~movable_handle()
 		{
 			if (!traits_type::is_null(handle_))
